@@ -37,6 +37,8 @@ from helicopter_instructor.envelope_limits import (
     LIMIT_DRIFT_SPEED_ORANGE_M_S,
     LIMIT_VERT_SPEED_GREEN_M_S,
     LIMIT_VERT_SPEED_ORANGE_M_S,
+    LIMIT_YAW_SPEED_GREEN_DEG_S,
+    LIMIT_YAW_SPEED_ORANGE_DEG_S,
 )
 
 # Safety and Performance warning margin constants
@@ -55,6 +57,7 @@ GREEN_ZONE_ALT_M = LIMIT_ALT_GREEN_M
 GREEN_ZONE_DRIFT_M = LIMIT_DRIFT_GREEN_M
 GREEN_ZONE_DRIFT_SPEED_M_S = LIMIT_DRIFT_SPEED_GREEN_M_S
 GREEN_ZONE_VERT_SPEED_M_S = LIMIT_VERT_SPEED_GREEN_M_S
+GREEN_ZONE_YAW_SPEED_DEG_S = LIMIT_YAW_SPEED_GREEN_DEG_S
 
 # Limit thresholds for 0% precision score calculation
 LIMIT_HDG_DEG = LIMIT_HDG_ORANGE_DEG
@@ -62,6 +65,7 @@ LIMIT_ALT_M = LIMIT_ALT_ORANGE_M
 LIMIT_DRIFT_M = LIMIT_DRIFT_RED_M
 LIMIT_DRIFT_SPEED_M_S = LIMIT_DRIFT_SPEED_ORANGE_M_S
 LIMIT_VERT_SPEED_M_S = LIMIT_VERT_SPEED_ORANGE_M_S
+LIMIT_YAW_SPEED_DEG_S = LIMIT_YAW_SPEED_ORANGE_DEG_S
 
 
 
@@ -139,6 +143,8 @@ class PerformanceMetricsEvaluator(object):
         self.drift_speed_score = 100.0
         self.vert_speed = 0.0
         self.vert_speed_score = 100.0
+        self.yaw_speed = 0.0
+        self.yaw_speed_score = 100.0
         self.coaching_tips = "Keep controls steady to begin hover evaluation."
 
         # Praise specific state tracking
@@ -298,6 +304,19 @@ class PerformanceMetricsEvaluator(object):
                 ))
             )
 
+        # Compute yaw rate in deg/s and corresponding score component
+        self.yaw_speed = abs(telemetry.get("R", 0.0))
+        if self.yaw_speed <= GREEN_ZONE_YAW_SPEED_DEG_S:
+            self.yaw_speed_score = 100.0
+        else:
+            self.yaw_speed_score = max(
+                0.0,
+                100.0 * (1.0 - (
+                    (self.yaw_speed - GREEN_ZONE_YAW_SPEED_DEG_S) /
+                    (LIMIT_YAW_SPEED_DEG_S - GREEN_ZONE_YAW_SPEED_DEG_S)
+                ))
+            )
+
         # --- A. Precision Scoring ---
         prec_components = []
 
@@ -320,6 +339,9 @@ class PerformanceMetricsEvaluator(object):
                         ))
                     )
                 prec_components.append(comp)
+
+                # Yaw speed component (heading rate) — gated on yaw being student
+                prec_components.append(self.yaw_speed_score)
 
         # Altitude component (Collective)
         if phase_config.get("collective") == "STUDENT":
@@ -471,6 +493,9 @@ class PerformanceMetricsEvaluator(object):
             # Vertical Speed
             frame_vert_speed = abs(telemetry.get("vy", 0.0))
 
+            # Yaw Speed
+            frame_yaw_speed = abs(telemetry.get("R", 0.0))
+
             # Smoothness
             max_oci = max(oci.values())
 
@@ -482,6 +507,7 @@ class PerformanceMetricsEvaluator(object):
                 or max_oci > 1.5
                 or frame_drift_speed > LIMIT_DRIFT_SPEED_M_S
                 or frame_vert_speed > LIMIT_VERT_SPEED_M_S
+                or frame_yaw_speed > LIMIT_YAW_SPEED_DEG_S
             ):
                 unstable_count += 1
             elif (
@@ -490,6 +516,7 @@ class PerformanceMetricsEvaluator(object):
                 and hdg_err < GREEN_ZONE_HDG_DEG
                 and frame_drift_speed < GREEN_ZONE_DRIFT_SPEED_M_S
                 and frame_vert_speed < GREEN_ZONE_VERT_SPEED_M_S
+                and frame_yaw_speed < GREEN_ZONE_YAW_SPEED_DEG_S
                 and oci.get("roll", 0.0) < 0.3
                 and oci.get("pitch", 0.0) < 0.3
                 and oci.get("yaw", 0.0) < 0.2

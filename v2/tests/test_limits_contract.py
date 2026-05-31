@@ -68,6 +68,16 @@ class TestLimitsContract(unittest.TestCase):
         self.assertEqual(metrics.GREEN_ZONE_VERT_SPEED_M_S, envelope_limits.LIMIT_VERT_SPEED_GREEN_M_S)
         self.assertEqual(metrics.LIMIT_VERT_SPEED_M_S, envelope_limits.LIMIT_VERT_SPEED_ORANGE_M_S)
 
+        # 6. Yaw speed scoring boundaries must equal envelope limits
+        self.assertEqual(
+            metrics.GREEN_ZONE_YAW_SPEED_DEG_S,
+            envelope_limits.LIMIT_YAW_SPEED_GREEN_DEG_S
+        )
+        self.assertEqual(
+            metrics.LIMIT_YAW_SPEED_DEG_S,
+            envelope_limits.LIMIT_YAW_SPEED_ORANGE_DEG_S
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

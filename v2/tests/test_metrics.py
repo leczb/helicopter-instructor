@@ -199,11 +199,14 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
 
     def test_precision_scoring_ramped_penalties(self):
         """Verifies ramped precision penalties apply outside green zones."""
-        # 1. Heading component outside green zone (45 deg err -> halfway between 30 and 60 -> 50% score)
+        # 1. Heading and yaw speed components outside green zone (both at 50% -> 50% avg)
+        #    Heading err = 45 deg (halfway between 30 and 60 -> 50%)
+        #    Yaw speed = 6.0 deg/s (halfway between 2.0 and 10.0 -> 50%)
         telemetry = self.nominal_telemetry.copy()
         telemetry.update({
             'psi': 45.0,
             'target_psi': 0.0,
+            'R': 6.0,
         })
         self.metrics.update(
             0.02, telemetry, self.nominal_inputs, True, 1
@@ -504,6 +507,51 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         # Should trigger now
         self.assertIn("Nice recovery.wav", self.metrics.audio_queue)
         self.assertFalse(self.metrics.was_in_warning_zone)
+
+    def test_perfect_praise_yaw_rate_limit(self):
+        """Verifies Perfect praise yaw rate limit of 2.0 deg/s in all phases."""
+        self.metrics.history.clear()
+        
+        # 1. Populate history with frames having high yaw rate (> 2.0 deg/s limit)
+        unstable_telemetry = self.nominal_telemetry.copy()
+        unstable_telemetry.update({'R': 2.5})
+        for _ in range(10):
+            frame = {
+                "telemetry": unstable_telemetry,
+                "inputs": dict(self.nominal_inputs),
+                "oci": {
+                    "roll": 0.1,
+                    "pitch": 0.1,
+                    "yaw": 0.05,
+                    "collective": 0.0,
+                },
+            }
+            self.metrics.history.append(frame)
+
+        # Evaluate envelope -> should not be Excellent since yaw rate > 2.0 limit
+        self.metrics._evaluate_proficiency_envelope()
+        self.assertNotEqual(self.metrics.envelope, "Excellent")
+
+        # 2. Populate history with frames having low yaw rate (< 2.0 deg/s limit)
+        self.metrics.history.clear()
+        excellent_telemetry = self.nominal_telemetry.copy()
+        excellent_telemetry.update({'R': 1.5})
+        for _ in range(10):
+            frame = {
+                "telemetry": excellent_telemetry,
+                "inputs": dict(self.nominal_inputs),
+                "oci": {
+                    "roll": 0.1,
+                    "pitch": 0.1,
+                    "yaw": 0.05,
+                    "collective": 0.0,
+                },
+            }
+            self.metrics.history.append(frame)
+
+        # Evaluate envelope -> should be Excellent
+        self.metrics._evaluate_proficiency_envelope()
+        self.assertEqual(self.metrics.envelope, "Excellent")
 
 
 if __name__ == '__main__':

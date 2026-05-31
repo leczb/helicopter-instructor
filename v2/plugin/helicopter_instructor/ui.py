@@ -264,6 +264,14 @@ def draw_window(ui_controller, window_id, ref_con):
             overlay=f"{int(metrics.vert_speed_score)}%"
         )
 
+        imgui.spacing()
+        imgui.text("Yaw Rate Stability:")
+        imgui.progress_bar(
+            metrics.yaw_speed_score / 100.0,
+            size=(0, 20),
+            overlay=f"{int(metrics.yaw_speed_score)}%"
+        )
+
         # OCI Table
         imgui.spacing()
         imgui.text("Axis Over-Controlling Indices (OCI):")
@@ -319,6 +327,9 @@ def draw_window(ui_controller, window_id, ref_con):
         )
         imgui.text(
             f"  Current Vertical Speed: {metrics.vert_speed:.2f} m/s"
+        )
+        imgui.text(
+            f"  Current Yaw Rate: {metrics.yaw_speed:.2f} deg/s"
         )
 
         # Instructor Coaching Advice
