@@ -254,7 +254,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             }
             self.metrics.history.append(frame)
 
-        self.metrics._evaluate_proficiency_envelope()
+        self.metrics._evaluate_proficiency_envelope(6)
         self.assertEqual(self.metrics.envelope, "Excellent")
 
     def test_sliding_window_unstable_envelope(self):
@@ -277,7 +277,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             self.metrics.history.append(frame)
 
         # 3 unstable frames out of 10 = 30% unstable ratio (> 15% limit)
-        self.metrics._evaluate_proficiency_envelope()
+        self.metrics._evaluate_proficiency_envelope(6)
         self.assertEqual(self.metrics.envelope, "Unstable")
 
     def test_jerk_feedback_warnings(self):
@@ -361,7 +361,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
     def test_perfect_hover_praise_cue(self):
         """Verifies Perfect praise cue triggers after stable excellent hover."""
         # Prevent update() from overwriting manually mocked envelope evaluations
-        self.metrics._evaluate_proficiency_envelope = lambda: None
+        self.metrics._evaluate_proficiency_envelope = lambda phase: None
 
         self.metrics.envelope = "Excellent"
         self.metrics.perfect_hover_timer = 9.5
@@ -394,7 +394,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
     def test_praise_blocked_by_drift_speed(self):
         """Verifies praise is blocked/reset when drift speed is > 1.0 m/s."""
         # 1. Block Perfect hover praise
-        self.metrics._evaluate_proficiency_envelope = lambda: None
+        self.metrics._evaluate_proficiency_envelope = lambda phase: None
         self.metrics.envelope = "Excellent"
         self.metrics.perfect_hover_timer = 9.5
         
@@ -529,7 +529,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             self.metrics.history.append(frame)
 
         # Evaluate envelope -> should not be Excellent since yaw rate > 2.0 limit
-        self.metrics._evaluate_proficiency_envelope()
+        self.metrics._evaluate_proficiency_envelope(6)
         self.assertNotEqual(self.metrics.envelope, "Excellent")
 
         # 2. Populate history with frames having low yaw rate (< 2.0 deg/s limit)
@@ -550,8 +550,39 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             self.metrics.history.append(frame)
 
         # Evaluate envelope -> should be Excellent
-        self.metrics._evaluate_proficiency_envelope()
+        self.metrics._evaluate_proficiency_envelope(6)
         self.assertEqual(self.metrics.envelope, "Excellent")
+
+    def test_envelope_evaluation_ignores_vfi_controlled_axes(self):
+        """Verifies envelope ignores errors/OCI on VFI-controlled axes in Phase 1."""
+        self.metrics.history.clear()
+        
+        # Populate history with frames having high roll OCI (1.8 > 1.5 limit) and high drift (50.0m > 45.0m limit)
+        # but otherwise nominal yaw (pedal) metrics.
+        unstable_vfi_telemetry = self.nominal_telemetry.copy()
+        unstable_vfi_telemetry.update({
+            'x': 150.0, # 50m drift (ignored in Phase 1)
+        })
+        for _ in range(10):
+            frame = {
+                "telemetry": unstable_vfi_telemetry,
+                "inputs": dict(self.nominal_inputs),
+                "oci": {
+                    "roll": 1.8, # Jerky roll cyclic (ignored in Phase 1)
+                    "pitch": 0.1,
+                    "yaw": 0.05,
+                    "collective": 0.0,
+                },
+            }
+            self.metrics.history.append(frame)
+
+        # Evaluate envelope in Phase 1 -> should be Excellent (as yaw is excellent and cyclic is ignored)
+        self.metrics._evaluate_proficiency_envelope(1)
+        self.assertEqual(self.metrics.envelope, "Excellent")
+
+        # In Phase 6 (all axes under student control), the same frames must be Unstable
+        self.metrics._evaluate_proficiency_envelope(6)
+        self.assertEqual(self.metrics.envelope, "Unstable")
 
 
 if __name__ == '__main__':

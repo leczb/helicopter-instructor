@@ -217,7 +217,7 @@ class PerformanceMetricsEvaluator(object):
         self._evaluate_frame_performance(telemetry, phase)
 
         # 6. sliding window statistics & proficiency envelope
-        self._evaluate_proficiency_envelope()
+        self._evaluate_proficiency_envelope(phase)
 
         # 7. Check for immediate warning triggers and praise cues
         self._check_feedback_triggers(dt, telemetry, phase)
@@ -453,12 +453,13 @@ class PerformanceMetricsEvaluator(object):
             self.smoothness_score * 0.4
         )
 
-    def _evaluate_proficiency_envelope(self):
+    def _evaluate_proficiency_envelope(self, phase):
         """Grades performance (Excellent/Good/Unstable) over sliding window."""
         if not self.history:
             self.envelope = "Excellent"
             return
 
+        phase_config = PHASE_CONFIGS.get(phase, {})
         total_samples = len(self.history)
         unstable_count = 0
         excellent_count = 0
@@ -496,32 +497,79 @@ class PerformanceMetricsEvaluator(object):
             # Yaw Speed
             frame_yaw_speed = abs(telemetry.get("R", 0.0))
 
-            # Smoothness
-            max_oci = max(oci.values())
+            # Evaluate unstable criteria (gated by student-controlled axes)
+            is_unstable = False
+            
+            # Smoothness stability (OCI > 1.5) on active student axes
+            for axis in ["roll", "pitch", "yaw", "collective"]:
+                if (
+                    phase_config.get(axis) == "STUDENT"
+                    and oci.get(axis, 0.0) > 1.5
+                ):
+                    is_unstable = True
 
-            # Evaluate envelope category
+            # Drift stability (Cyclic STUDENT)
             if (
-                drift > LIMIT_DRIFT_M
-                or alt_err > LIMIT_ALT_M
-                or hdg_err > LIMIT_HDG_DEG
-                or max_oci > 1.5
-                or frame_drift_speed > LIMIT_DRIFT_SPEED_M_S
-                or frame_vert_speed > LIMIT_VERT_SPEED_M_S
-                or frame_yaw_speed > LIMIT_YAW_SPEED_DEG_S
+                phase_config.get("roll") == "STUDENT"
+                and phase_config.get("pitch") == "STUDENT"
             ):
+                if (
+                    drift > LIMIT_DRIFT_M
+                    or frame_drift_speed > LIMIT_DRIFT_SPEED_M_S
+                ):
+                    is_unstable = True
+
+            # Altitude stability (Collective STUDENT)
+            if phase_config.get("collective") == "STUDENT":
+                if (
+                    alt_err > LIMIT_ALT_M
+                    or frame_vert_speed > LIMIT_VERT_SPEED_M_S
+                ):
+                    is_unstable = True
+
+            # Heading stability (Yaw STUDENT)
+            if phase_config.get("yaw") == "STUDENT":
+                if (
+                    hdg_err > LIMIT_HDG_DEG
+                    or frame_yaw_speed > LIMIT_YAW_SPEED_DEG_S
+                ):
+                    is_unstable = True
+
+            if is_unstable:
                 unstable_count += 1
-            elif (
-                drift < GREEN_ZONE_DRIFT_M
-                and alt_err < GREEN_ZONE_ALT_M
-                and hdg_err < GREEN_ZONE_HDG_DEG
-                and frame_drift_speed < GREEN_ZONE_DRIFT_SPEED_M_S
-                and frame_vert_speed < GREEN_ZONE_VERT_SPEED_M_S
-                and frame_yaw_speed < GREEN_ZONE_YAW_SPEED_DEG_S
-                and oci.get("roll", 0.0) < 0.3
-                and oci.get("pitch", 0.0) < 0.3
-                and oci.get("yaw", 0.0) < 0.2
-            ):
-                excellent_count += 1
+            else:
+                # Evaluate excellent criteria (gated by student-controlled axes)
+                is_excellent = True
+
+                if (
+                    phase_config.get("roll") == "STUDENT"
+                    and phase_config.get("pitch") == "STUDENT"
+                ):
+                    if (
+                        drift >= GREEN_ZONE_DRIFT_M
+                        or frame_drift_speed >= GREEN_ZONE_DRIFT_SPEED_M_S
+                        or oci.get("roll", 0.0) >= 0.3
+                        or oci.get("pitch", 0.0) >= 0.3
+                    ):
+                        is_excellent = False
+
+                if phase_config.get("collective") == "STUDENT":
+                    if (
+                        alt_err >= GREEN_ZONE_ALT_M
+                        or frame_vert_speed >= GREEN_ZONE_VERT_SPEED_M_S
+                    ):
+                        is_excellent = False
+
+                if phase_config.get("yaw") == "STUDENT":
+                    if (
+                        hdg_err >= GREEN_ZONE_HDG_DEG
+                        or frame_yaw_speed >= GREEN_ZONE_YAW_SPEED_DEG_S
+                        or oci.get("yaw", 0.0) >= 0.2
+                    ):
+                        is_excellent = False
+
+                if is_excellent:
+                    excellent_count += 1
 
         # Classify based on dominant window characteristics
         unstable_ratio = float(unstable_count) / total_samples
