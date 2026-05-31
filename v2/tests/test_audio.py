@@ -137,6 +137,29 @@ class TestAudio(unittest.TestCase):
         mock_xp.stopAudio.assert_called_once_with(99)
         self.assertIsNone(self.audio_manager.active_channel)
 
+    def test_play_sound_stops_active_sound_first(self):
+        # Register a mock sound
+        mock_data = b"\x01\x02\x03\x04"
+        self.audio_manager.sound_registry["Perfect.wav"] = {
+            "data": mock_data,
+            "data_size": len(mock_data),
+            "sample_width": 2,
+            "frame_rate": 22050,
+            "num_channels": 2,
+        }
+
+        # Set currently active channel
+        self.audio_manager.active_channel = 99
+
+        # Play a new sound
+        mock_xp.playPCMOnBus.return_value = 100
+        self.audio_manager.play_sound("Perfect.wav")
+
+        # Verify the previous active channel (99) was stopped first
+        mock_xp.stopAudio.assert_called_once_with(99)
+        # Verify the new channel is set as the active channel
+        self.assertEqual(self.audio_manager.active_channel, 100)
+
 
 class TestPluginAudio(unittest.TestCase):
     def setUp(self):

@@ -71,6 +71,8 @@ class AudioManager(object):
         Args:
             filename: A string filename of the sound to be played.
         """
+        self.stop_sound()
+
         sound_info = self.sound_registry.get(filename)
 
         if not sound_info:
