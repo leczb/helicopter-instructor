@@ -434,6 +434,77 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         )
         self.assertNotIn("Nice recovery.wav", self.metrics.audio_queue)
 
+    def test_nice_recovery_takeover_and_warning_conditions(self):
+        """Verifies Nice Recovery is blocked by takeover and active warnings."""
+        # 1. Test takeover resets warning zone flag and timers
+        self.metrics.was_in_warning_zone = True
+        self.metrics.drift_warning_timer = 2.0
+        self.metrics.jerk_timers["cyclic"] = 1.0
+        
+        # When student is not active, all should be reset
+        self.metrics.update(
+            0.1, self.nominal_telemetry, self.nominal_inputs, False, 6
+        )
+        self.assertFalse(self.metrics.was_in_warning_zone)
+        self.assertEqual(self.metrics.drift_warning_timer, 0.0)
+        self.assertEqual(self.metrics.jerk_timers["cyclic"], 0.0)
+
+        # 2. Test Nice Recovery blocked while still in active drift warning
+        self.metrics.was_in_warning_zone = True
+        # Set telemetry with drift of 8.0 meters (limit is MARGIN_DRIFT_LIMIT = 7.0m)
+        drift_telemetry = self.nominal_telemetry.copy()
+        drift_telemetry.update({
+            'x': 108.0,
+            'z': 200.0,
+        })
+        # Mock precision_score to >= 85.0 to isolate the warning check
+        self.metrics.precision_score = 90.0
+        self.metrics.drift_speed = 0.5
+        
+        self.metrics.update(
+            0.1, drift_telemetry, self.nominal_inputs, True, 6
+        )
+        # Should NOT trigger because drift (8.0m) > MARGIN_DRIFT_LIMIT (7.0m)
+        self.assertNotIn("Nice recovery.wav", self.metrics.audio_queue)
+        self.assertTrue(self.metrics.was_in_warning_zone)
+
+        # 3. Test Nice Recovery blocked while still in active altitude warning
+        self.metrics.audio_queue.clear()
+        self.metrics.was_in_warning_zone = True
+        # Set telemetry with altitude error (y_agl = 3.5m, limit low is 4.0m)
+        alt_telemetry = self.nominal_telemetry.copy()
+        alt_telemetry.update({
+            'y_agl': 3.5,
+        })
+        self.metrics.precision_score = 90.0
+        self.metrics.drift_speed = 0.5
+        
+        self.metrics.update(
+            0.1, alt_telemetry, self.nominal_inputs, True, 6
+        )
+        # Should NOT trigger because altitude < MARGIN_ALT_LOW
+        self.assertNotIn("Nice recovery.wav", self.metrics.audio_queue)
+        self.assertTrue(self.metrics.was_in_warning_zone)
+
+        # 4. Test Nice Recovery triggers when back in warning-free zone
+        self.metrics.audio_queue.clear()
+        # Set telemetry in warning-free zone (drift = 5.0m, alt = 6.0m)
+        recovered_telemetry = self.nominal_telemetry.copy()
+        recovered_telemetry.update({
+            'x': 105.0,
+            'z': 200.0,
+            'y_agl': 6.0,
+        })
+        self.metrics.precision_score = 90.0
+        self.metrics.drift_speed = 0.5
+        
+        self.metrics.update(
+            0.1, recovered_telemetry, self.nominal_inputs, True, 6
+        )
+        # Should trigger now
+        self.assertIn("Nice recovery.wav", self.metrics.audio_queue)
+        self.assertFalse(self.metrics.was_in_warning_zone)
+
 
 if __name__ == '__main__':
     unittest.main()

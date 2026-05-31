@@ -190,6 +190,13 @@ class PerformanceMetricsEvaluator(object):
             self.pedal_praise_timer = 0.0
             self.cyclic_praise_timer = 0.0
             self.perfect_hover_timer = 0.0
+            self.jerk_timers["cyclic"] = 0.0
+            self.jerk_timers["yaw"] = 0.0
+            self.jerk_timers["collective"] = 0.0
+            self.drift_warning_timer = 0.0
+            self.low_alt_warning_timer = 0.0
+            self.high_alt_warning_timer = 0.0
+            self.was_in_warning_zone = False
             return
 
         # 4. Append current telemetry and hardware state to 60-second window
@@ -666,8 +673,36 @@ class PerformanceMetricsEvaluator(object):
         else:
             self.cyclic_praise_timer = 0.0
 
+        # Check if the student is currently violating any warning thresholds
+        violating_warning = False
+        if cyclic_student:
+            x = telemetry.get("x")
+            z = telemetry.get("z")
+            tx = telemetry.get("target_x")
+            tz = telemetry.get("target_z")
+            if (
+                x is not None
+                and z is not None
+                and tx is not None
+                and tz is not None
+            ):
+                drift = math.sqrt((x - tx)**2 + (z - tz)**2)
+                if drift > MARGIN_DRIFT_LIMIT:
+                    violating_warning = True
+
+        if phase_config.get("collective") == "STUDENT":
+            y_agl = telemetry.get("y_agl")
+            if y_agl is not None:
+                if y_agl < MARGIN_ALT_LOW or y_agl > MARGIN_ALT_HIGH:
+                    violating_warning = True
+
         # 3. "Nice recovery" (Returning to target at stable drift speed)
-        if self.was_in_warning_zone and self.precision_score >= 85.0 and self.drift_speed <= 1.0:
+        if (
+            self.was_in_warning_zone
+            and not violating_warning
+            and self.precision_score >= 85.0
+            and self.drift_speed <= 1.0
+        ):
             if self.audio_cooldowns[SOUND_NICE_RECOVERY] == 0.0:
                 self.audio_queue.append(SOUND_NICE_RECOVERY)
                 self.audio_cooldowns[SOUND_NICE_RECOVERY] = 30.0
