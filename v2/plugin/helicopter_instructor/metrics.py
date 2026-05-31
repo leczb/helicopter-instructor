@@ -32,7 +32,6 @@ from helicopter_instructor.envelope_limits import (
     LIMIT_ALT_GREEN_M,
     LIMIT_ALT_ORANGE_M,
     LIMIT_DRIFT_GREEN_M,
-    LIMIT_DRIFT_ORANGE_M,
     LIMIT_DRIFT_RED_M,
     LIMIT_DRIFT_SPEED_GREEN_M_S,
     LIMIT_DRIFT_SPEED_ORANGE_M_S,
@@ -44,8 +43,8 @@ from helicopter_instructor.envelope_limits import (
 # Warn as soon as the student exits the green zone (target 6.0m ± LIMIT_ALT_GREEN_M)
 MARGIN_ALT_LOW = 6.0 - LIMIT_ALT_GREEN_M   # Lower green edge: 4.0m AGL
 MARGIN_ALT_HIGH = 6.0 + LIMIT_ALT_GREEN_M  # Upper green edge: 8.0m AGL
-# Warn as soon as the student exits the green zone and enters the orange zone
-MARGIN_DRIFT_LIMIT = LIMIT_DRIFT_GREEN_M
+# Warn as soon as the student gets near the edge of the green zone
+MARGIN_DRIFT_LIMIT = LIMIT_DRIFT_GREEN_M - 8.0
 MARGIN_OCI_CYCLIC = 1.0       # Cyclic OCI warning threshold
 MARGIN_OCI_PEDAL = 0.8        # Pedals OCI warning threshold
 MARGIN_OCI_COLLECTIVE = 0.8   # Collective OCI warning threshold
