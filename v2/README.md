@@ -55,14 +55,25 @@ This plugin is designed to run in X-Plane 12 via the **X-PPython3** (Python 3 In
         ├── __init__.py
         ├── audio.py
         ├── config.py
+        ├── envelope_limits.py
         ├── graphics.py
         ├── hud.py
+        ├── metrics.py
         ├── ui.py
         ├── virtual_instructor.py
         ├── assets/
+        │   ├── Correct the drift.wav
         │   ├── Get ready to take control.wav
+        │   ├── Great pedals.wav
         │   ├── I have control.wav
+        │   ├── Nice recovery.wav
         │   ├── Perfect.wav
+        │   ├── Relax cyclic.wav
+        │   ├── Smooth collective.wav
+        │   ├── Smooth cyclic.wav
+        │   ├── Steady pedals.wav
+        │   ├── We are too high.wav
+        │   ├── We are too low.wav
         │   ├── You have all controls.wav
         │   ├── You have the collective and the pedals.wav
         │   ├── You have the collective.wav
@@ -73,7 +84,7 @@ This plugin is designed to run in X-Plane 12 via the **X-PPython3** (Python 3 In
             ├── __init__.py
             ├── helicopter_control.py
             └── autopilot_gains_Robinson_R22_Beta_II.json
-    ```
+   ```
 
 ---
 

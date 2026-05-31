@@ -51,6 +51,7 @@ To prevent over-penalizing high-precision station-keeping, errors within the **E
 - **Drift component**: 100% if $d_{\text{horiz}} \le 15.0\text{m}$; ramps down to 0% at $45.0\text{m}$ error.
 - **Drift Speed component**: 100% if $v_{\text{drift}} \le 0.5\text{ m/s}$; ramps down to 0% at $2.0\text{ m/s}$ ground speed.
 - **Vertical Speed component**: 100% if $|v_y| \le 0.2\text{ m/s}$; ramps down to 0% at $0.8\text{ m/s}$ climb/descent rate.
+- **Yaw Speed component**: 100% if $|R| \le 2.0^\circ/\text{s}$; ramps down to 0% at $10.0^\circ/\text{s}$ yaw rate.
 
 ### Dimension 2: Smoothness (Control Quality)
 A primary challenge for student pilots is **over-controlling** (chasing the helicopter's attitude, leading to Pilot-Induced Oscillations). We measure the rate of change of the student's hardware inputs to determine control smoothness.
@@ -59,7 +60,7 @@ A primary challenge for student pilots is **over-controlling** (chasing the heli
   $$v_i(t) = \frac{|u_i(t) - u_i(t - \Delta t)|}{\Delta t}$$
   Where $u_i(t) \in [-1, 1]$ is the raw hardware stick/pedal deflection.
 - **Over-Controlling Index (OCI)**:
-  An Exponential Moving Average (EMA) of $v_i(t)$ provides a smooth, real-time measure of how "busy" the student is on the controls:
+  An Exponential Moving Average (EMA) of $v_i(t)$ provides a real-time measure of how "busy" the student is on the controls:
   $$\text{OCI}_i(t) = \alpha \cdot v_i(t) + (1 - \alpha) \cdot \text{OCI}_i(t - \Delta t)$$
   *Setting $\alpha \approx 0.05$ (equivalent to a $\sim 0.4$-second time constant) reacts quickly to sudden jerky inputs while smoothing out normal movement.*
 
@@ -73,17 +74,41 @@ This measures how close the student is to triggering a VFI safety override.
   - **$50\% - 85\%$**: Yellow Zone (Caution, soft blending begins).
   - **$> 85\%$**: Orange/Red Zone (High takeover risk).
 
+### Dimension 4: Composite Scaling & Honest Control Feedback
+To ensure poor stationkeeping (position hold) precision drags overall performance
+scores to 0% at takeover boundaries while keeping individual live control
+indicators honest:
+1. **Unscaled Live Feedback**: Raw physical metrics like OCI (smoothness) and
+   speed/rate scores are displayed unscaled to provide accurate feedback (e.g.
+   a pilot keeping controls perfectly still sees 100% smoothness).
+2. **Stationkeeping Score**: Calculated as the average deviation score across
+   all student-controlled axes:
+   - Phase 1: $S_{\text{dev}} = \text{comp\_hdg}$
+   - Phase 2: $S_{\text{dev}} = \text{comp\_alt}$
+   - Phase 3: $S_{\text{dev}} = \frac{\text{comp\_hdg} + \text{comp\_alt}}{2}$
+   - Phase 4: $S_{\text{dev}} = \text{comp\_drift}$
+   - Phase 5: $S_{\text{dev}} = \frac{\text{comp\_drift} + \text{comp\_hdg}}{2}$
+   - Phase 6: $S_{\text{dev}} = \frac{\text{comp\_hdg} + \text{comp\_alt} + \text{comp\_drift}}{3}$
+3. **Scaled Composites**: The final Precision Score and Overall Weighted Score
+   are scaled by $\frac{S_{\text{dev}}}{100.0}$ so that they correctly converge
+   to 0% when the safety margins are violated.
+
 ---
 
 ## 2. Dynamic Performance Envelopes (60s Window)
 
-Following the initial development roadmap, we define three levels of hovering proficiency over a 60-second moving window. To calculate perfect and mathematically precise sliding window averages (e.g., mean and standard deviation), we will store raw 50Hz telemetry frames in a thread-safe circular buffer. At 50Hz, a 60-second window requires exactly 3,000 samples, which is extremely lightweight and easily fits in the available plugin memory.
+Following the initial development roadmap, we define three levels of hovering
+proficiency over a 60-second moving window. To calculate perfect and
+mathematically precise sliding window averages (e.g., mean and standard
+deviation), we will store raw 50Hz telemetry frames in a thread-safe circular
+buffer. At 50Hz, a 60-second window requires exactly 3,000 samples, which is
+extremely lightweight and easily fits in the available plugin memory.
 
 | Envelope | Precision Requirements | Smoothness Requirements | Safety Margin |
 | :--- | :--- | :--- | :--- |
-| **Excellent** | Drift $< 15.0$m<br>Alt Err $< 2.0$m<br>Hdg Err $< 30.0^{\circ}$<br>Drift Speed $< 0.5$ m/s<br>Vert Speed $< 0.2$ m/s | Cyclic OCI $< 0.3$<br>Pedal OCI $< 0.2$ | Always $< 40\%$ EPS (Green) |
+| **Excellent** | Drift $< 15.0$m<br>Alt Err $< 2.0$m<br>Hdg Err $< 30.0^{\circ}$<br>Drift Speed $< 0.5$ m/s<br>Vert Speed $< 0.2$ m/s<br>Yaw Speed $< 2.0^{\circ}$/s | Cyclic OCI $< 0.3$<br>Pedal OCI $< 0.2$ | Always $< 40\%$ EPS (Green) |
 | **Good** | Drift, Drift Speed, and Vert Speed between Excellent and Unstable limits | Cyclic OCI $< 0.8$<br>Pedal OCI $< 0.5$ | Always $< 75\%$ EPS (Soft Blending OK) |
-| **Unstable** | Drift $> 45.0$m OR Alt Err $> 4.0$m OR Hdg Err $> 60.0^{\circ}$ OR Drift Speed $> 2.0$ m/s OR Vert Speed $> 0.8$ m/s | OCI $> 1.5$ (Wildly hammering cyclic/pedals) | EPS $\ge 100\%$ (Triggers takeover) |
+| **Unstable** | Drift $> 45.0$m OR Alt Err $> 4.0$m OR Hdg Err $> 60.0^{\circ}$ OR Drift Speed $> 2.0$ m/s OR Vert Speed $> 0.8$ m/s OR Yaw Speed $> 10.0^{\circ}$/s | OCI $> 1.5$ (Wildly hammering cyclic/pedals) | EPS $\ge 100\%$ (Triggers takeover) |
 
 ---
 

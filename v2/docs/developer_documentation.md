@@ -55,6 +55,8 @@ graph TD
     PI -->|Imports & Delegates to| HUD[helicopter_instructor/hud.py]
     PI -->|Instantiates & Directs| VI[helicopter_instructor/virtual_instructor.py]
     PI -->|Instantiates & Runs| HC[helicopter_instructor/autopilot/helicopter_control.py]
+    PI -->|Instantiates & Polls| Metrics[helicopter_instructor/metrics.py]
+    Metrics -->|Reads Limits From| Limits[helicopter_instructor/envelope_limits.py]
 ```
 
 ### 2.1 Subsystem Responsibilities
@@ -65,6 +67,8 @@ graph TD
 - **[hud.py](../plugin/helicopter_instructor/hud.py)**: Renders the OSD overlays, alt safety bar, and PyOpenGL scaled vector crosshairs.
 - **[virtual_instructor.py](../plugin/helicopter_instructor/virtual_instructor.py)**: Curricular state machine (6 phases), hardware interlocks, safety envelope polling, and linear soft blended interventions.
 - **[helicopter_control.py](../plugin/helicopter_instructor/autopilot/helicopter_control.py)**: Dual-mode cascaded PID control loop calculations (hover/cruise) and local coordinate translations.
+- **[metrics.py](../plugin/helicopter_instructor/metrics.py)**: Keeps sliding window telemetry history, computes pilot precision, smoothness (OCI), safety EPS, coaching tips, and caches verbal WAV files.
+- **[envelope_limits.py](../plugin/helicopter_instructor/envelope_limits.py)**: Central single source of truth for all warning, caution, green zone, and takeover thresholds.
 
 ### 2.2 Dependency Injection Pattern
 To maintain thread safety and seamless state sharing without complex callbacks, all modularized functions utilize a **dependency injection** pattern. They accept the main `PythonInterface` class instance (passed as `plugin` or `self`) as their first argument:

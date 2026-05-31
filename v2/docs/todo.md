@@ -31,7 +31,7 @@ Track tasks, progress, and upcoming features for the Helicopter Instructor (v2).
 
 ## Configuration & Performance Evaluation
 - [ ] Add config settings JSON file
-- [ ] Add performance evaluation: specify three envelopes using a 60-second moving window (with associated voice cues):
+- [x] Add performance evaluation: specify three envelopes using a 60-second moving window (with associated voice cues):
   - **Unstable**: Student cannot maintain the target.
   - **Good**: Student does not get close to the safety limits.
   - **Excellent**: Student stays well within limits and close to the target.
