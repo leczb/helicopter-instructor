@@ -199,9 +199,11 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
 
     def test_precision_scoring_ramped_penalties(self):
         """Verifies ramped precision penalties apply outside green zones."""
-        # 1. Heading and yaw speed components outside green zone (both at 50% -> 50% avg)
-        #    Heading err = 45 deg (halfway between 30 and 60 -> 50%)
-        #    Yaw speed = 6.0 deg/s (halfway between 2.0 and 10.0 -> 50%)
+        # 1. Heading and yaw speed components outside green zone.
+        #    Heading err = 45 deg (halfway between 30 and 60 -> 50% deviation)
+        #    Yaw speed = 6.0 deg/s (halfway -> 50% raw speed component)
+        #    Raw precision = (50% + 50%) / 2 = 50.0%
+        #    Scaled precision score = 50.0 * (50 / 100) = 25.0%
         telemetry = self.nominal_telemetry.copy()
         telemetry.update({
             'psi': 45.0,
@@ -211,32 +213,38 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.metrics.update(
             0.02, telemetry, self.nominal_inputs, True, 1
         )
-        self.assertAlmostEqual(self.metrics.precision_score, 50.0)
+        self.assertAlmostEqual(self.metrics.precision_score, 25.0)
 
-        # 2. Altitude and vert speed components outside green zone (both at 50% -> 50% avg)
-        #    Alt err = 3.0m (halfway between 2.0 and 4.0 -> 50%)
-        #    Vert speed = 0.5 m/s (halfway between 0.2 and 0.8 -> 50%)
+        # 2. Altitude and vert speed components outside green zone.
+        #    Alt err = 3.0m (halfway -> 50% deviation)
+        #    Vert speed = 0.5 m/s (halfway -> 50% raw speed component)
+        #    Raw precision = (50% + 50%) / 2 = 50.0%
+        #    Scaled precision score = 50.0 * (50 / 100) = 25.0%
         telemetry = self.nominal_telemetry.copy()
         telemetry.update({
-            'y_agl': 9.0, # 9.0m - 6.0m = 3.0m alt err -> 50% altitude component
-            'vy': 0.5,    # halfway between 0.2 and 0.8 m/s -> 50% vert speed component
+            'y_agl': 9.0,
+            'vy': 0.5,
         })
         self.metrics.update(
             0.02, telemetry, self.nominal_inputs, True, 2
         )
-        self.assertAlmostEqual(self.metrics.precision_score, 50.0)
+        self.assertAlmostEqual(self.metrics.precision_score, 25.0)
 
-        # 3. Drift component outside green zone (30.0m drift and 1.25 m/s speed -> halfway between limits -> 50% score)
+        # 3. Drift component outside green zone.
+        #    Drift = 30.0m (halfway -> 50% deviation)
+        #    Drift speed = 1.25 m/s (halfway -> 50% raw speed component)
+        #    Raw precision = (50% + 50%) / 2 = 50.0%
+        #    Scaled precision score = 50.0 * (50 / 100) = 25.0%
         telemetry = self.nominal_telemetry.copy()
         telemetry.update({
-            'x': 130.0, # 30.0m drift (target is 100.0)
+            'x': 130.0,
             'z': 200.0,
             'vx': 1.25,
         })
         self.metrics.update(
             0.02, telemetry, self.nominal_inputs, True, 4
         )
-        self.assertAlmostEqual(self.metrics.precision_score, 50.0)
+        self.assertAlmostEqual(self.metrics.precision_score, 25.0)
 
     def test_sliding_window_excellent_envelope(self):
         """Verifies Excellent grade when sliding window holds stable state."""
@@ -583,6 +591,42 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         # In Phase 6 (all axes under student control), the same frames must be Unstable
         self.metrics._evaluate_proficiency_envelope(6)
         self.assertEqual(self.metrics.envelope, "Unstable")
+
+    def test_gated_precision_speeds_and_scores_when_not_student_controlled(self):
+        """Verifies speeds and scores are forced to 0/100 when VFI-controlled."""
+        # Phase 1: only pedals/yaw is student-controlled.
+        # Set telemetry with massive drift speed (vx = 2.0) and vertical speed (vy = 1.0)
+        telemetry = self.nominal_telemetry.copy()
+        telemetry.update({
+            'vx': 2.0,
+            'vy': 1.0,
+        })
+        self.metrics.update(
+            0.02, telemetry, self.nominal_inputs, True, 1
+        )
+        # Drift speed and vertical speed must be forced to 0.0, and their scores to 100.0
+        self.assertEqual(self.metrics.drift_speed, 0.0)
+        self.assertEqual(self.metrics.drift_speed_score, 100.0)
+        self.assertEqual(self.metrics.vert_speed, 0.0)
+        self.assertEqual(self.metrics.vert_speed_score, 100.0)
+
+    def test_static_deviation_scales_down_rates_and_smoothness(self):
+        """Verifies large heading error in Phase 1 yields score near 0%."""
+        telemetry = self.nominal_telemetry.copy()
+        telemetry.update({
+            'psi': 59.0,        # Heading near 60.0 degree limit (3.3% score)
+            'target_psi': 0.0,
+            'R': 0.0,           # Perfect rate
+        })
+        # Hardware inputs are nominal and static (0 OCI)
+        self.metrics.update(
+            0.02, telemetry, self.nominal_inputs, True, 1
+        )
+        # Precision and overall scores are scaled down to near 0%.
+        # Smoothness remains unscaled and honest (100.0%).
+        self.assertAlmostEqual(self.metrics.precision_score, 1.7222222)
+        self.assertAlmostEqual(self.metrics.smoothness_score, 100.0)
+        self.assertAlmostEqual(self.metrics.overall_score, 2.3666667)
 
 
 if __name__ == '__main__':

@@ -276,93 +276,41 @@ class PerformanceMetricsEvaluator(object):
         """
         phase_config = PHASE_CONFIGS.get(phase, {})
 
-        # Compute drift speed in m/s and corresponding score component
-        vx = telemetry.get("vx", 0.0)
-        vz = telemetry.get("vz", 0.0)
-        self.drift_speed = math.sqrt(vx**2 + vz**2)
-        if self.drift_speed <= GREEN_ZONE_DRIFT_SPEED_M_S:
-            self.drift_speed_score = 100.0
-        else:
-            self.drift_speed_score = max(
-                0.0,
-                100.0 * (1.0 - (
-                    (self.drift_speed - GREEN_ZONE_DRIFT_SPEED_M_S) /
-                    (LIMIT_DRIFT_SPEED_M_S - GREEN_ZONE_DRIFT_SPEED_M_S)
-                ))
-            )
-
-        # Compute vertical speed in m/s and corresponding score component
-        self.vert_speed = abs(telemetry.get("vy", 0.0))
-        if self.vert_speed <= GREEN_ZONE_VERT_SPEED_M_S:
-            self.vert_speed_score = 100.0
-        else:
-            self.vert_speed_score = max(
-                0.0,
-                100.0 * (1.0 - (
-                    (self.vert_speed - GREEN_ZONE_VERT_SPEED_M_S) /
-                    (LIMIT_VERT_SPEED_M_S - GREEN_ZONE_VERT_SPEED_M_S)
-                ))
-            )
-
-        # Compute yaw rate in deg/s and corresponding score component
-        self.yaw_speed = abs(telemetry.get("R", 0.0))
-        if self.yaw_speed <= GREEN_ZONE_YAW_SPEED_DEG_S:
-            self.yaw_speed_score = 100.0
-        else:
-            self.yaw_speed_score = max(
-                0.0,
-                100.0 * (1.0 - (
-                    (self.yaw_speed - GREEN_ZONE_YAW_SPEED_DEG_S) /
-                    (LIMIT_YAW_SPEED_DEG_S - GREEN_ZONE_YAW_SPEED_DEG_S)
-                ))
-            )
-
-        # --- A. Precision Scoring ---
-        prec_components = []
-
-        # Heading component (Yaw)
+        # Compute individual deviation (stationkeeping) scores
+        comp_hdg = 100.0
         if phase_config.get("yaw") == "STUDENT":
             psi = telemetry.get("psi")
             t_psi = telemetry.get("target_psi")
             if psi is not None and t_psi is not None:
                 err = abs(((t_psi - psi + 180.0) % 360.0) - 180.0)
-                # Within green zone = 100% score (no penalty)
                 if err <= GREEN_ZONE_HDG_DEG:
-                    comp = 100.0
+                    comp_hdg = 100.0
                 else:
-                    # Ramps up penalty outside green zone to LIMIT_HDG_DEG
-                    comp = max(
+                    comp_hdg = max(
                         0.0,
                         100.0 * (1.0 - (
                             (err - GREEN_ZONE_HDG_DEG) /
                             (LIMIT_HDG_DEG - GREEN_ZONE_HDG_DEG)
                         ))
                     )
-                prec_components.append(comp)
 
-                # Yaw speed component (heading rate) — gated on yaw being student
-                prec_components.append(self.yaw_speed_score)
-
-        # Altitude component (Collective)
+        comp_alt = 100.0
         if phase_config.get("collective") == "STUDENT":
             y_agl = telemetry.get("y_agl")
             if y_agl is not None:
                 err = abs(y_agl - 6.0)
-                # Within green zone = 100% score (no penalty)
                 if err <= GREEN_ZONE_ALT_M:
-                    comp = 100.0
+                    comp_alt = 100.0
                 else:
-                    # Ramps up penalty outside green zone to LIMIT_ALT_M
-                    comp = max(
+                    comp_alt = max(
                         0.0,
                         100.0 * (1.0 - (
                             (err - GREEN_ZONE_ALT_M) /
                             (LIMIT_ALT_M - GREEN_ZONE_ALT_M)
                         ))
                     )
-                prec_components.append(comp)
 
-        # Drift component (Cyclic roll/pitch)
+        comp_drift = 100.0
         cyclic_active = (
             phase_config.get("roll") == "STUDENT"
             and phase_config.get("pitch") == "STUDENT"
@@ -378,26 +326,84 @@ class PerformanceMetricsEvaluator(object):
                 self.total_drift_sum += drift
                 self.drift_count += 1
 
-                # Within green zone = 100% score (no penalty)
                 if drift <= GREEN_ZONE_DRIFT_M:
-                    comp = 100.0
+                    comp_drift = 100.0
                 else:
-                    # Ramps up penalty outside green zone to LIMIT_DRIFT_M
-                    comp = max(
+                    comp_drift = max(
                         0.0,
                         100.0 * (1.0 - (
                             (drift - GREEN_ZONE_DRIFT_M) /
                             (LIMIT_DRIFT_M - GREEN_ZONE_DRIFT_M)
                         ))
                     )
-                prec_components.append(comp)
 
-                # Drift speed component (ground velocity)
-                prec_components.append(self.drift_speed_score)
+        # Compute drift speed in m/s and corresponding score component
+        if cyclic_active:
+            vx = telemetry.get("vx", 0.0)
+            vz = telemetry.get("vz", 0.0)
+            self.drift_speed = math.sqrt(vx**2 + vz**2)
+            if self.drift_speed <= GREEN_ZONE_DRIFT_SPEED_M_S:
+                self.drift_speed_score = 100.0
+            else:
+                num = self.drift_speed - GREEN_ZONE_DRIFT_SPEED_M_S
+                den = LIMIT_DRIFT_SPEED_M_S - GREEN_ZONE_DRIFT_SPEED_M_S
+                self.drift_speed_score = max(
+                    0.0,
+                    100.0 * (1.0 - (num / den))
+                )
+        else:
+            self.drift_speed = 0.0
+            self.drift_speed_score = 100.0
 
-        # Vertical speed component (climb/descent rate) — gated on collective
+        # Compute vertical speed in m/s and corresponding score component
         if phase_config.get("collective") == "STUDENT":
+            self.vert_speed = abs(telemetry.get("vy", 0.0))
+            if self.vert_speed <= GREEN_ZONE_VERT_SPEED_M_S:
+                self.vert_speed_score = 100.0
+            else:
+                num = self.vert_speed - GREEN_ZONE_VERT_SPEED_M_S
+                den = LIMIT_VERT_SPEED_M_S - GREEN_ZONE_VERT_SPEED_M_S
+                self.vert_speed_score = max(
+                    0.0,
+                    100.0 * (1.0 - (num / den))
+                )
+        else:
+            self.vert_speed = 0.0
+            self.vert_speed_score = 100.0
+
+        # Compute yaw rate in deg/s and corresponding score component
+        if phase_config.get("yaw") == "STUDENT":
+            self.yaw_speed = abs(telemetry.get("R", 0.0))
+            if self.yaw_speed <= GREEN_ZONE_YAW_SPEED_DEG_S:
+                self.yaw_speed_score = 100.0
+            else:
+                num = self.yaw_speed - GREEN_ZONE_YAW_SPEED_DEG_S
+                den = LIMIT_YAW_SPEED_DEG_S - GREEN_ZONE_YAW_SPEED_DEG_S
+                self.yaw_speed_score = max(
+                    0.0,
+                    100.0 * (1.0 - (num / den))
+                )
+        else:
+            self.yaw_speed = 0.0
+            self.yaw_speed_score = 100.0
+
+        # --- A. Precision Scoring ---
+        prec_components = []
+
+        # Heading component (Yaw)
+        if phase_config.get("yaw") == "STUDENT":
+            prec_components.append(comp_hdg)
+            prec_components.append(self.yaw_speed_score)
+
+        # Altitude component (Collective)
+        if phase_config.get("collective") == "STUDENT":
+            prec_components.append(comp_alt)
             prec_components.append(self.vert_speed_score)
+
+        # Drift component (Cyclic roll/pitch)
+        if cyclic_active:
+            prec_components.append(comp_drift)
+            prec_components.append(self.drift_speed_score)
 
         if prec_components:
             self.precision_score = sum(prec_components) / len(prec_components)
@@ -413,7 +419,9 @@ class PerformanceMetricsEvaluator(object):
                 smooth_components.append(score)
 
         if smooth_components:
-            self.smoothness_score = sum(smooth_components) / len(smooth_components)
+            self.smoothness_score = (
+                sum(smooth_components) / len(smooth_components)
+            )
         else:
             self.smoothness_score = 100.0
 
@@ -448,10 +456,31 @@ class PerformanceMetricsEvaluator(object):
             * 100.0
         )
 
+        # Compute stationkeeping precision factor
+        dev_components = []
+        if phase_config.get("yaw") == "STUDENT":
+            dev_components.append(comp_hdg)
+        if phase_config.get("collective") == "STUDENT":
+            dev_components.append(comp_alt)
+        if cyclic_active:
+            dev_components.append(comp_drift)
+
+        if dev_components:
+            stationkeeping_score = sum(dev_components) / len(dev_components)
+        else:
+            stationkeeping_score = 100.0
+
         # --- D. Overall Weighted Score ---
-        self.overall_score = (self.precision_score * 0.6) + (
-            self.smoothness_score * 0.4
+        # Calculate raw overall score first
+        raw_overall = (
+            (self.precision_score * 0.6) +
+            (self.smoothness_score * 0.4)
         )
+
+        # Scale precision and overall scores by stationkeeping precision
+        factor = stationkeeping_score / 100.0
+        self.precision_score *= factor
+        self.overall_score = raw_overall * factor
 
     def _evaluate_proficiency_envelope(self, phase):
         """Grades performance (Excellent/Good/Unstable) over sliding window."""
