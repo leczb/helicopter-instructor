@@ -26,26 +26,29 @@ SOUND_GREAT_PEDALS = "Great pedals.wav"
 SOUND_SMOOTH_CYCLIC = "Smooth cyclic.wav"
 SOUND_PERFECT = "Perfect.wav"
 
-# Safety and Performance warning margin constants
-MARGIN_ALT_LOW = 3.0          # Altitude lower warning limit (meters)
-MARGIN_ALT_HIGH = 9.0         # Altitude upper warning limit (meters)
-MARGIN_DRIFT_LIMIT = 25.0     # Horizontal drift warning limit (meters)
-MARGIN_OCI_CYCLIC = 1.0       # Cyclic OCI warning threshold
-MARGIN_OCI_PEDAL = 0.8        # Pedals OCI warning threshold
-MARGIN_OCI_COLLECTIVE = 0.8   # Collective OCI warning threshold
-
 from helicopter_instructor.envelope_limits import (
     LIMIT_HDG_GREEN_DEG,
     LIMIT_HDG_ORANGE_DEG,
     LIMIT_ALT_GREEN_M,
     LIMIT_ALT_ORANGE_M,
     LIMIT_DRIFT_GREEN_M,
+    LIMIT_DRIFT_ORANGE_M,
     LIMIT_DRIFT_RED_M,
     LIMIT_DRIFT_SPEED_GREEN_M_S,
     LIMIT_DRIFT_SPEED_ORANGE_M_S,
     LIMIT_VERT_SPEED_GREEN_M_S,
     LIMIT_VERT_SPEED_ORANGE_M_S,
 )
+
+# Safety and Performance warning margin constants
+# Warn as soon as the student exits the green zone (target 6.0m ± LIMIT_ALT_GREEN_M)
+MARGIN_ALT_LOW = 6.0 - LIMIT_ALT_GREEN_M   # Lower green edge: 4.0m AGL
+MARGIN_ALT_HIGH = 6.0 + LIMIT_ALT_GREEN_M  # Upper green edge: 8.0m AGL
+# Warn as soon as the student exits the green zone and enters the orange zone
+MARGIN_DRIFT_LIMIT = LIMIT_DRIFT_GREEN_M
+MARGIN_OCI_CYCLIC = 1.0       # Cyclic OCI warning threshold
+MARGIN_OCI_PEDAL = 0.8        # Pedals OCI warning threshold
+MARGIN_OCI_COLLECTIVE = 0.8   # Collective OCI warning threshold
 
 # Green Zone (Excellent) performance thresholds for precision scoring
 GREEN_ZONE_HDG_DEG = LIMIT_HDG_GREEN_DEG

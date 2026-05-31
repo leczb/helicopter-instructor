@@ -313,26 +313,27 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         """Verifies low vs high altitude cues trigger appropriately."""
         # 1. Test "We are too low.wav"
         low_alt_telem = self.nominal_telemetry.copy()
-        low_alt_telem['y_agl'] = 2.4  # < 3.0m
+        low_alt_telem['y_agl'] = 3.5  # < 4.0m (green zone lower edge)
 
         self.metrics.update(
             1.6, low_alt_telem, self.nominal_inputs, True, 6
         )
-        self.assertEqual(len(self.metrics.audio_queue), 1)
-        self.assertEqual(self.metrics.audio_queue[0], "We are too low.wav")
+        self.assertIn("We are too low.wav", self.metrics.audio_queue)
+        self.assertNotIn("We are too high.wav", self.metrics.audio_queue)
 
         self.metrics.audio_queue.clear()
         self.metrics.audio_cooldowns["We are too low.wav"] = 0.0
+        self.metrics.was_in_warning_zone = False
 
         # 2. Test "We are too high.wav"
         high_alt_telem = self.nominal_telemetry.copy()
-        high_alt_telem['y_agl'] = 9.6  # > 9.0m
+        high_alt_telem['y_agl'] = 8.5  # > 8.0m (green zone upper edge)
 
         self.metrics.update(
             1.6, high_alt_telem, self.nominal_inputs, True, 6
         )
-        self.assertEqual(len(self.metrics.audio_queue), 1)
-        self.assertEqual(self.metrics.audio_queue[0], "We are too high.wav")
+        self.assertIn("We are too high.wav", self.metrics.audio_queue)
+        self.assertNotIn("We are too low.wav", self.metrics.audio_queue)
 
     def test_praise_cues(self):
         """Verifies praise audio cues trigger on good metrics."""
