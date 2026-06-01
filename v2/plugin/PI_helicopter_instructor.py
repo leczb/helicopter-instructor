@@ -256,8 +256,10 @@ class PluginUIController(object):
         )
         self._plugin.instructor.drift_recovery_active = False
         self._plugin.instructor.original_target_x = None
+        self._plugin.instructor.original_target_y = None
         self._plugin.instructor.original_target_z = None
         self._plugin.instructor.override_target_x = None
+        self._plugin.instructor.override_target_y = None
         self._plugin.instructor.override_target_z = None
         self._plugin.instructor.set_hud_caption("HOVER TARGET RESET TO CURRENT POSITION")
 
@@ -267,7 +269,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.31"
+        self.version = "2.1.32"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "lecz.helicopter.instructor"
         self.Desc = (
@@ -930,8 +932,10 @@ class PythonInterface(object):
             'vz': state['vz'],
             'y_agl': y_agl,
             'x': state['x'],
+            'y': state['y'],
             'z': state['z'],
             'target_x': self.controller.target_x,
+            'target_y': self.controller.target_y,
             'target_z': self.controller.target_z,
             'target_psi': self.controller.target_psi
         }
@@ -1027,14 +1031,19 @@ class PythonInterface(object):
             # Apply target overrides from instructor if active
             if self.instructor.drift_recovery_active:
                 self.controller.target_x = self.instructor.override_target_x
+                if self.instructor.override_target_y is not None:
+                    self.controller.target_y = self.instructor.override_target_y
                 self.controller.target_z = self.instructor.override_target_z
             elif self.instructor.was_drift_recovery_active:
                 # Restore original target coordinates
                 self.controller.target_x = self.instructor.original_target_x
+                if self.instructor.original_target_y is not None:
+                    self.controller.target_y = self.instructor.original_target_y
                 self.controller.target_z = self.instructor.original_target_z
                 # Clear state flags in the instructor
                 self.instructor.was_drift_recovery_active = False
                 self.instructor.original_target_x = None
+                self.instructor.original_target_y = None
                 self.instructor.original_target_z = None
 
 
@@ -1365,11 +1374,15 @@ class PythonInterface(object):
         # Adjust original/override targets by the same delta if they exist
         if self.instructor.original_target_x is not None:
             self.instructor.original_target_x += delta_x
+        if self.instructor.original_target_y is not None:
+            self.instructor.original_target_y += up
         if self.instructor.original_target_z is not None:
             self.instructor.original_target_z += delta_z
             
         if self.instructor.override_target_x is not None:
             self.instructor.override_target_x += delta_x
+        if self.instructor.override_target_y is not None:
+            self.instructor.override_target_y += up
         if self.instructor.override_target_z is not None:
             self.instructor.override_target_z += delta_z
 

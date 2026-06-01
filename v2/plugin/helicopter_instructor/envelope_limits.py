@@ -21,3 +21,8 @@ LIMIT_DRIFT_SPEED_ORANGE_M_S = 2.0  # Orange zone speed limit (0% score and unst
 LIMIT_VERT_SPEED_GREEN_M_S = 0.2   # Green zone vertical speed (perfect hover score); dead-zone
 LIMIT_VERT_SPEED_ORANGE_M_S = 0.8  # Orange zone vertical speed (0% score and unstable); takeover warning bounds
 
+
+# --- 5. SAFETY TAKEOVER RECOVERY SEQUENCE CONSTANTS ---
+LIMIT_RECOVERY_ALT_RATE_M_S = 0.5  # Rate (m/s) to slowly change target hover height during settling
+LIMIT_RECOVERY_SPEED_M_S = 0.4     # Speed (m/s) to slowly translate hover target back to original
+

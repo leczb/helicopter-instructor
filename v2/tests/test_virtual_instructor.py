@@ -25,7 +25,6 @@ class TestVirtualInstructor(unittest.TestCase):
     
     def setUp(self):
         self.instructor = VirtualInstructor()
-        # Default nominal state where everything is safe
         self.nominal_telemetry = {
             'phi': 0.0,
             'theta': 0.0,
@@ -36,7 +35,9 @@ class TestVirtualInstructor(unittest.TestCase):
             'vx': 0.0,
             'vz': 0.0,
             'vy': 0.0,
-            'y_agl': 5.0
+            'y_agl': 5.0,
+            'y': 5.0,
+            'target_y': 5.0
         }
         # Hardware inputs (student)
         self.hardware = {
@@ -334,10 +335,13 @@ class TestVirtualInstructor(unittest.TestCase):
         self.assertEqual(weights["pitch"], 0.0)
 
     def test_safety_takeover_target_override_and_restore(self):
-        # 1. Student is flying and is at target coordinates target_x = 10, target_z = 20
+        # 1. Student is flying and is at target coordinates target_x = 10, target_y = 6.0, target_z = 20
         self.instructor.system_state = "STUDENT_FLIGHT"
         telem = self.nominal_telemetry.copy()
-        telem.update({'x': 10.0, 'z': 20.0, 'target_x': 10.0, 'target_z': 20.0})
+        telem.update({
+            'x': 10.0, 'y': 4.0, 'z': 20.0,
+            'target_x': 10.0, 'target_y': 6.0, 'target_z': 20.0
+        })
         
         # 2. Helicopter drifts past safety radius: current x = 57.0, z = 20.0 -> drift = 47.0m > 45.0m
         telem.update({'x': 57.0, 'phi': 5.0})
@@ -348,22 +352,45 @@ class TestVirtualInstructor(unittest.TestCase):
         self.assertEqual(self.instructor.system_state, "OVERRIDE")
         self.assertTrue(self.instructor.drift_recovery_active)
         self.assertEqual(self.instructor.original_target_x, 10.0)
+        self.assertEqual(self.instructor.original_target_y, 6.0)
         self.assertEqual(self.instructor.original_target_z, 20.0)
         self.assertEqual(self.instructor.override_target_x, 57.0)
+        self.assertAlmostEqual(self.instructor.override_target_y, 4.01)
         self.assertEqual(self.instructor.override_target_z, 20.0)
         
-        # 3. In the subsequent frames, the OSD coordinates and target are updated.
-        # Now telemetry comes in stable (phi=0, theta=0, vy=0, ground speed=0)
+        # 3. Stage 2: Target y slowly converges to original_target_y (6.0) at 0.5 m/s
+        # 1.0 second elapsed -> moves by 0.5m
+        self.instructor.update(1.0, telem, self.hardware, self.vfi)
+        self.assertEqual(self.instructor.system_state, "OVERRIDE")
+        self.assertTrue(self.instructor.drift_recovery_active)
+        self.assertAlmostEqual(self.instructor.override_target_y, 4.51)
+        
+        # Another 3.0 seconds elapsed -> converges to 6.0
+        # We pass stable telemetry so it transitions to RECOVERY_HOLD
         stable_telem = self.nominal_telemetry.copy()
-        stable_telem.update({'x': 57.0, 'z': 20.0, 'target_x': 57.0, 'target_z': 20.0})
+        stable_telem.update({
+            'x': 57.0, 'y': 6.0, 'z': 20.0,
+            'target_x': 57.0, 'target_y': 6.0, 'target_z': 20.0
+        })
+        self.instructor.update(3.0, stable_telem, self.hardware, self.vfi)
+        self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
+        self.assertTrue(self.instructor.drift_recovery_active)
+        self.assertEqual(self.instructor.override_target_y, 6.0)
         
-        self.instructor.update(0.02, stable_telem, self.hardware, self.vfi)
+        # 4. Stage 3: Target x slowly translates back to original target x (10.0) at 0.4 m/s
+        # 10.0 seconds elapsed -> moves by 4.0m to 53.0m
+        self.instructor.update(10.0, stable_telem, self.hardware, self.vfi)
+        self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
+        self.assertTrue(self.instructor.drift_recovery_active)
+        self.assertAlmostEqual(self.instructor.override_target_x, 53.0)
         
-        # It should transition to RECOVERY_HOLD, clear recovery active, and raise was_drift_recovery_active
+        # 110.0 seconds elapsed -> remaining distance fully covered (110 * 0.4 = 44.0m)
+        self.instructor.update(110.0, stable_telem, self.hardware, self.vfi)
         self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
         self.assertFalse(self.instructor.drift_recovery_active)
         self.assertTrue(self.instructor.was_drift_recovery_active)
         self.assertIsNone(self.instructor.override_target_x)
+        self.assertIsNone(self.instructor.override_target_y)
         self.assertIsNone(self.instructor.override_target_z)
 
     def test_heading_safety_limits(self):

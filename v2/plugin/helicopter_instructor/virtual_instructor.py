@@ -5,6 +5,8 @@ from helicopter_instructor.envelope_limits import (
     LIMIT_HDG_ORANGE_DEG,
     LIMIT_DRIFT_ORANGE_M,
     LIMIT_DRIFT_RED_M,
+    LIMIT_RECOVERY_ALT_RATE_M_S,
+    LIMIT_RECOVERY_SPEED_M_S,
 )
 
 # Conversion constants
@@ -81,8 +83,10 @@ class VirtualInstructor(object):
         self.drift_recovery_active = False
         self.was_drift_recovery_active = False
         self.original_target_x = None
+        self.original_target_y = None
         self.original_target_z = None
         self.override_target_x = None
+        self.override_target_y = None
         self.override_target_z = None
 
         # Heading Safety Zone Detection ("green", "orange", or "red")
@@ -154,8 +158,10 @@ class VirtualInstructor(object):
         # 1. RUN SAFETY AND ENVELOPE CHECKS IF STUDENT HAS OR IS TAKING CONTROLS
         if self.system_state in ["STUDENT_FLIGHT", "SYNCING"]:
             x = telemetry.get('x', None)
+            y = telemetry.get('y', None)
             z = telemetry.get('z', None)
             target_x = telemetry.get('target_x', None)
+            target_y = telemetry.get('target_y', None)
             target_z = telemetry.get('target_z', None)
 
             # Check if any safety limit is violated
@@ -166,14 +172,18 @@ class VirtualInstructor(object):
                 # target
                 if (
                     x is not None
+                    and y is not None
                     and z is not None
                     and target_x is not None
+                    and target_y is not None
                     and target_z is not None
                 ):
                     self.drift_recovery_active = True
                     self.original_target_x = target_x
+                    self.original_target_y = target_y
                     self.original_target_z = target_z
                     self.override_target_x = x
+                    self.override_target_y = y
                     self.override_target_z = z
                 self.trigger_hard_override()
                 self.set_hud_caption(
@@ -197,13 +207,50 @@ class VirtualInstructor(object):
             return self.process_recovery(dt, vfi_inputs, telemetry)
 
         elif self.system_state == "RECOVERY_HOLD":
-            # Holding stable hover for 3 seconds
-            self.recovery_timer -= dt
-            if self.recovery_timer <= 0.0:
-                self.set_hud_caption(
-                    "AIRCRAFT STABLE. PREPARE TO SYNC.", duration=4.0
-                )
-                self.initiate_handoff()
+            # Stage 3: slowly move the hover target back to the original (at 0.4 m/s)
+            if self.drift_recovery_active:
+                if (
+                    self.override_target_x is not None
+                    and self.original_target_x is not None
+                    and self.override_target_z is not None
+                    and self.original_target_z is not None
+                ):
+                    dx = self.original_target_x - self.override_target_x
+                    dz = self.original_target_z - self.override_target_z
+                    dist = math.sqrt(dx**2 + dz**2)
+                    step = LIMIT_RECOVERY_SPEED_M_S * dt
+                    if dist <= step:
+                        self.override_target_x = self.original_target_x
+                        self.override_target_z = self.original_target_z
+                        # Fully arrived! Target restored!
+                        self.was_drift_recovery_active = True
+                        self.drift_recovery_active = False
+                        self.override_target_x = None
+                        self.override_target_y = None
+                        self.override_target_z = None
+                        self.set_hud_caption(
+                            "AIRCRAFT STABLE. RESTORING HOVER TARGET.",
+                            duration=4.0,
+                        )
+                    else:
+                        ratio = step / dist
+                        self.override_target_x += dx * ratio
+                        self.override_target_z += dz * ratio
+                else:
+                    # Fallback if coordinates are None
+                    self.was_drift_recovery_active = True
+                    self.drift_recovery_active = False
+                    self.override_target_x = None
+                    self.override_target_y = None
+                    self.override_target_z = None
+            else:
+                # Timer only counts down after the target has fully returned
+                self.recovery_timer -= dt
+                if self.recovery_timer <= 0.0:
+                    self.set_hud_caption(
+                        "AIRCRAFT STABLE. PREPARE TO SYNC.", duration=4.0
+                    )
+                    self.initiate_handoff()
             return vfi_inputs
 
         return vfi_inputs
@@ -478,6 +525,19 @@ class VirtualInstructor(object):
         # to damp spin. This is already handled by VFI controller update loop
         # outputs!
 
+        # Stage 2: slowly change the hover height to the original value (6m) during settling
+        if (
+            self.drift_recovery_active
+            and self.override_target_y is not None
+            and self.original_target_y is not None
+        ):
+            diff_y = self.original_target_y - self.override_target_y
+            step_y = LIMIT_RECOVERY_ALT_RATE_M_S * dt
+            if abs(diff_y) <= step_y:
+                self.override_target_y = self.original_target_y
+            else:
+                self.override_target_y += math.copysign(step_y, diff_y)
+
         # Step 4: Check if aircraft is stable to begin the cool-down hold.
         # Definitions of stable: pitch & roll < 2 degrees, sinking rate
         # arrested (> -50 ft/min), ground speed < 1.0 knot, and altitude
@@ -493,19 +553,7 @@ class VirtualInstructor(object):
 
         if self.system_state == "OVERRIDE":
             if is_stable:
-                if self.drift_recovery_active:
-                    # Stabilized! Restore the original target coordinates via
-                    # was_drift_recovery_active flag
-                    self.was_drift_recovery_active = True
-                    self.drift_recovery_active = False
-                    self.override_target_x = None
-                    self.override_target_z = None
-                    self.set_hud_caption(
-                        "AIRCRAFT STABLE. RESTORING HOVER TARGET.",
-                        duration=4.0,
-                    )
-
-                # Transition to Step 4: Cool-down Hold for 3 seconds
+                # Transition to Step 4: Cool-down Hold for 3 seconds / Target Translation
                 self.system_state = "RECOVERY_HOLD"
                 self.recovery_timer = self.recovery_hold_duration
 
