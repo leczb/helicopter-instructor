@@ -70,14 +70,33 @@ graph TD
 - **[metrics.py](../plugin/helicopter_instructor/metrics.py)**: Keeps sliding window telemetry history, computes pilot precision, smoothness (OCI), safety EPS, coaching tips, and caches verbal WAV files.
 - **[envelope_limits.py](../plugin/helicopter_instructor/envelope_limits.py)**: Central single source of truth for all warning, caution, green zone, and takeover thresholds.
 
-### 2.2 Dependency Injection Pattern
-To maintain thread safety and seamless state sharing without complex callbacks, all modularized functions utilize a **dependency injection** pattern. They accept the main `PythonInterface` class instance (passed as `plugin` or `self`) as their first argument:
+### 2.2 Modular Design & State Delegation
+To maintain high decoupling, thread safety, and testability, the plugin uses a
+clean state delegation pattern instead of module-level mutable singletons.
+Core subsystems and utilities are isolated from the main `PythonInterface`
+class, receiving only the configuration parameters or state objects they
+require to execute:
+
+1. **Subsystem Instantiation**: Classes like `AudioSystem(plugin_dir)` or
+   `GraphicsManager(plugin_dir)` are instantiated once inside
+   `PythonInterface.__init__` with the local plugin path, allowing them to
+   load assets and files cleanly.
+2. **Decoupled Function Utilities**: Standalone utility modules (such as
+   `config.py` and `graphics.py`) accept explicit directories or configuration
+   objects as parameters, rather than holding internal state.
 
 ```python
-# Entry point delegates the call passing 'self'
+# Entry point delegates the call passing the required plugin directory
 def load_gains(self):
-    config.load_gains(self)
+    """Loads PID parameters from a local JSON file."""
+    gains = config.load_gains(self.plugin_dir)
+    if gains:
+        self.controller.set_gains(gains)
 ```
+
+This strict separation ensures that all sub-modules can be imported and
+executed under the automated unit test suite (`v2/tests/`) without requiring
+X-Plane's active C-APIs or graphics rendering loops.
 
 ---
 
