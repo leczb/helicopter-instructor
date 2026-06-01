@@ -3,7 +3,7 @@
 # --- 1. YAW / HEADING PARAMETERS (Degrees and deg/s) ---
 LIMIT_HDG_GREEN_DEG = 30.0   # Green visual arc & score dead-zone
 LIMIT_HDG_ORANGE_DEG = 60.0  # Outer caution arc limit; hard takeover beyond this
-LIMIT_YAW_SPEED_GREEN_DEG_S = 2.0   # Green zone yaw rate; dead-zone
+LIMIT_YAW_SPEED_GREEN_DEG_S = 4.0   # Green zone yaw rate; dead-zone
 LIMIT_YAW_SPEED_ORANGE_DEG_S = 10.0  # Orange zone yaw rate limit; unstable bounds
 
 # --- 2. ALTITUDE / COLLECTIVE PARAMETERS (Meters deviation from 6.0m target) ---

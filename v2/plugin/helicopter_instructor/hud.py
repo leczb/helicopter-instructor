@@ -5,7 +5,12 @@ import math
 import xp
 
 from helicopter_instructor import virtual_instructor
-from helicopter_instructor.envelope_limits import LIMIT_ALT_GREEN_M, LIMIT_ALT_ORANGE_M
+from helicopter_instructor.envelope_limits import (
+    LIMIT_ALT_GREEN_M,
+    LIMIT_ALT_ORANGE_M,
+    LIMIT_HDG_GREEN_DEG,
+    LIMIT_YAW_SPEED_GREEN_DEG_S,
+)
 
 # Try importing PyOpenGL once at the module level to avoid costly imports/searches on every frame
 try:
@@ -315,6 +320,79 @@ def draw_osd(view_model, window_id):
             tip_str = f"INSTRUCTOR TIP: {view_model.coaching_tips}"
             draw_string_scaled(
                 color_white, box_left + 20, y_cursor, tip_str,
+                font_id=xp.Font_Proportional
+            )
+
+        # --- Excellent Criteria Debug Panel ---
+        # Shown only when student controls yaw (Phase 1, 3, 5, 6) and the
+        # debug toggle is enabled in the UI panel.
+        from helicopter_instructor.virtual_instructor import PHASE_CONFIGS
+        phase_config = PHASE_CONFIGS.get(view_model.phase, {})
+        if view_model.show_envelope_debug and phase_config.get("yaw") == "STUDENT":
+            y_cursor -= 20
+            draw_string_scaled(
+                COLOR_DARK_GREY, box_left + 20, y_cursor,
+                "--- EXCELLENT CRITERIA DEBUG ---",
+                font_id=xp.Font_Proportional
+            )
+
+            # Heading error
+            psi = view_model.state.get("psi", 0.0)
+            t_psi = getattr(view_model, "target_psi", 0.0)
+            if psi is not None and t_psi is not None:
+                hdg_err = abs(
+                    ((t_psi - psi + 180.0) % 360.0) - 180.0
+                )
+            else:
+                hdg_err = 0.0
+            hdg_ok = hdg_err < LIMIT_HDG_GREEN_DEG
+            hdg_symbol = "OK" if hdg_ok else "!!"
+            hdg_color = color_green if hdg_ok else color_red
+            y_cursor -= 18
+            draw_string_scaled(
+                color_white, box_left + 20, y_cursor,
+                f"Hdg Err: {hdg_err:5.1f} deg  (lim {LIMIT_HDG_GREEN_DEG:.0f} deg)",
+                font_id=xp.Font_Proportional
+            )
+            draw_string_scaled(
+                hdg_color, box_left + 310, y_cursor,
+                hdg_symbol,
+                font_id=xp.Font_Proportional
+            )
+
+            # Yaw rate
+            yaw_speed = getattr(view_model, "yaw_speed", 0.0)
+            yaw_ok = yaw_speed < LIMIT_YAW_SPEED_GREEN_DEG_S
+            yaw_symbol = "OK" if yaw_ok else "!!"
+            yaw_color = color_green if yaw_ok else color_red
+            y_cursor -= 18
+            draw_string_scaled(
+                color_white, box_left + 20, y_cursor,
+                f"Yaw Rate: {yaw_speed:5.1f} d/s  (lim {LIMIT_YAW_SPEED_GREEN_DEG_S:.0f} d/s)",
+                font_id=xp.Font_Proportional
+            )
+            draw_string_scaled(
+                yaw_color, box_left + 310, y_cursor,
+                yaw_symbol,
+                font_id=xp.Font_Proportional
+            )
+
+            # Pedal OCI
+            oci = view_model.oci
+            yaw_oci = oci.get("yaw", 0.0)
+            oci_limit = 0.3
+            oci_ok = yaw_oci < oci_limit
+            oci_symbol = "OK" if oci_ok else "!!"
+            oci_color = color_green if oci_ok else color_red
+            y_cursor -= 18
+            draw_string_scaled(
+                color_white, box_left + 20, y_cursor,
+                f"Pedal OCI: {yaw_oci:5.3f}      (lim {oci_limit:.1f})",
+                font_id=xp.Font_Proportional
+            )
+            draw_string_scaled(
+                oci_color, box_left + 310, y_cursor,
+                oci_symbol,
                 font_id=xp.Font_Proportional
             )
 

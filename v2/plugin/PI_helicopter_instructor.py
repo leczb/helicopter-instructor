@@ -197,6 +197,14 @@ class PluginUIController(object):
         self._plugin.show_3d_arcs = value
 
     @property
+    def show_envelope_debug(self):
+        return self._plugin.show_envelope_debug
+
+    @show_envelope_debug.setter
+    def show_envelope_debug(self, value):
+        self._plugin.show_envelope_debug = value
+
+    @property
     def system_state(self):
         return self._plugin.instructor.system_state
 
@@ -277,7 +285,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.36"
+        self.version = "2.1.39"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "lecz.helicopter.instructor"
         self.Desc = (
@@ -309,6 +317,7 @@ class PythonInterface(object):
         self.show_3d_arcs = True
         self.show_osd = True
         self.show_alt_bar = True
+        self.show_envelope_debug = False
 
         # Configuration
         self.use_flaps_collective = True
@@ -1475,6 +1484,10 @@ class PythonInterface(object):
             envelope=self.metrics.envelope,
             coaching_tips=self.metrics.coaching_tips,
             oci=self.metrics.oci,
+            target_psi=self.controller.target_psi,
+            yaw_speed=self.metrics.yaw_speed,
+            yaw_speed_score=self.metrics.yaw_speed_score,
+            show_envelope_debug=self.show_envelope_debug,
         )
 
         success, new_show_osd = hud.draw_osd(view_model, window_id)

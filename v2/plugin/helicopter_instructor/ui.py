@@ -69,6 +69,16 @@ def draw_window(ui_controller, window_id, ref_con):
     if changed:
         ui_controller.show_osd = new_show_osd
 
+    if ui_controller.show_osd:
+        imgui.indent()
+        changed_dbg, new_show_dbg = imgui.checkbox(
+            "Show Excellent Criteria Debug Info",
+            ui_controller.show_envelope_debug
+        )
+        if changed_dbg:
+            ui_controller.show_envelope_debug = new_show_dbg
+        imgui.unindent()
+
     imgui.spacing()
     changed_alt, new_show_alt_bar = imgui.checkbox(
         "Show Standalone Altitude Safety Bar", ui_controller.show_alt_bar

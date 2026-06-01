@@ -79,8 +79,8 @@ class PerformanceMetricsEvaluator(object):
 
     def __init__(self):
         """Initializes the metrics evaluator instance."""
-        # raw 50Hz telemetry frame circular buffer (last 60s -> 3,000 samples)
-        self.history = collections.deque(maxlen=3000)
+        # raw 50Hz telemetry frame circular buffer (last 20s -> 1,000 samples)
+        self.history = collections.deque(maxlen=1000)
 
         # Smoothness Tracking (Exponential Moving Average of input velocities,
         # representing the Over-Controlling Index (OCI))
@@ -593,7 +593,7 @@ class PerformanceMetricsEvaluator(object):
                     if (
                         hdg_err >= GREEN_ZONE_HDG_DEG
                         or frame_yaw_speed >= GREEN_ZONE_YAW_SPEED_DEG_S
-                        or oci.get("yaw", 0.0) >= 0.2
+                        or oci.get("yaw", 0.0) >= 0.3
                     ):
                         is_excellent = False
 

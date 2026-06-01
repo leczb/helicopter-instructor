@@ -200,10 +200,12 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
     def test_precision_scoring_ramped_penalties(self):
         """Verifies ramped precision penalties apply outside green zones."""
         # 1. Heading and yaw speed components outside green zone.
-        #    Heading err = 45 deg (halfway between 30 and 60 -> 50% deviation)
-        #    Yaw speed = 6.0 deg/s (halfway -> 50% raw speed component)
-        #    Raw precision = (50% + 50%) / 2 = 50.0%
-        #    Scaled precision score = 50.0 * (50 / 100) = 25.0%
+        #    Heading err = 45 deg (halfway between 30 and 60 -> 50% comp_hdg)
+        #    Yaw speed = 6.0 deg/s (green=4.0, orange=10.0 -> (6-4)/(10-4)=33.3%
+        #    penalty -> 66.7% yaw_speed_score)
+        #    Raw precision = (50% + 66.7%) / 2 = 58.33%
+        #    Stationkeeping factor = comp_hdg / 100 = 0.5
+        #    Scaled precision score = 58.33 * 0.5 = 29.17%
         telemetry = self.nominal_telemetry.copy()
         telemetry.update({
             'psi': 45.0,
@@ -213,7 +215,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.metrics.update(
             0.02, telemetry, self.nominal_inputs, True, 1
         )
-        self.assertAlmostEqual(self.metrics.precision_score, 25.0)
+        self.assertAlmostEqual(self.metrics.precision_score, 29.1666667, places=4)
 
         # 2. Altitude and vert speed components outside green zone.
         #    Alt err = 3.0m (halfway -> 50% deviation)
@@ -517,12 +519,12 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.assertFalse(self.metrics.was_in_warning_zone)
 
     def test_perfect_praise_yaw_rate_limit(self):
-        """Verifies Perfect praise yaw rate limit of 2.0 deg/s in all phases."""
+        """Verifies Perfect praise yaw rate limit of 4.0 deg/s in all phases."""
         self.metrics.history.clear()
-        
-        # 1. Populate history with frames having high yaw rate (> 2.0 deg/s limit)
+
+        # 1. Populate history with frames having high yaw rate (> 4.0 deg/s limit)
         unstable_telemetry = self.nominal_telemetry.copy()
-        unstable_telemetry.update({'R': 2.5})
+        unstable_telemetry.update({'R': 4.5})
         for _ in range(10):
             frame = {
                 "telemetry": unstable_telemetry,
@@ -536,11 +538,11 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             }
             self.metrics.history.append(frame)
 
-        # Evaluate envelope -> should not be Excellent since yaw rate > 2.0 limit
+        # Evaluate envelope -> should not be Excellent since yaw rate > 4.0 limit
         self.metrics._evaluate_proficiency_envelope(6)
         self.assertNotEqual(self.metrics.envelope, "Excellent")
 
-        # 2. Populate history with frames having low yaw rate (< 2.0 deg/s limit)
+        # 2. Populate history with frames having low yaw rate (< 4.0 deg/s limit)
         self.metrics.history.clear()
         excellent_telemetry = self.nominal_telemetry.copy()
         excellent_telemetry.update({'R': 1.5})
