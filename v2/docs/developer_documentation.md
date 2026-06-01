@@ -139,3 +139,6 @@ To measure and analyze code coverage of the test suite, follow these steps from 
    python -m coverage html
    ```
    Open `htmlcov/index.html` in your web browser to browse line-by-line coverage for each file.
+## 4. Release Notes
+
+- **Always** update `release_notes.md` with a concise, user‑friendly description of each change (added features, bug fixes, improvements). This file should be maintained as part of the release process to keep users informed.

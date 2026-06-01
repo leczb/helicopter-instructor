@@ -207,6 +207,12 @@ python -m coverage report -m
 
 ---
 
+## 11. Release Notes
+
+- **Always** update `v2/docs/release_notes.md` with a concise, user‑friendly description of each change (what was added, fixed, or improved). This ensures downstream users and developers can quickly understand the impact of a release.
+
+---
+
 ## 10. What Not to Do
 
 - **Do not** duplicate limit constants outside `envelope_limits.py`.
