@@ -18,10 +18,9 @@ Mastering helicopter hovering is notoriously challenging due to highly coupled a
   5. *Cyclic & Pedals*: VFI controls the collective; student controls the cyclic and pedals. Gets the student used to countering drift caused by the tail rotor.
   6. *Full Integration (All Controls)*: Student receives total control authority.
 * **Anti-Jerk Control Synchronization**: Prevents violent "jumps" during handoffs on non-force-feedback physical controllers by requiring the student to match their physical stick/pedal inputs with the VFI's active virtual control positions within a small matching dead-zone before control is transferred.
-* **Dual-Concentric Safety Boundaries**:
-  * **Soft Intervention (Linear Blending)**: Dynamically blends stabilizing VFI inputs with the student's inputs when the aircraft drifts toward the safety limits.
+* **Emergency Safety Takeover**:
   * **Hard Emergency Override**: Automatically severs control authority, plays an audio takeover cue (*"I have control"*), and recovers the helicopter to a stable hover if any critical safety threshold (pitch, roll, yaw rate, sink rate, or drift) is breached or the helicopter drifts too far from the initial hover position.
-* **3D Boundaries**: The hover safety limits are rendered as floating rings around the hover target point (green, yellow, and red; yellow for the soft limits, red for the hard limits).
+* **3D Proximity Boundaries**: The hover safety limits are rendered as floating rings around the hover target point (green, orange, and red; orange/green for target proximity, red for the hard override limits).
 * **On-Screen Display (OSD)**: Includes a draggable OSD showing control synchronization crosshairs and status information.
 * **Aural Voice Cues**: High-quality, authoritative voice cues that guide the student through handoffs, safety warnings, and performance feedback.
 

@@ -71,43 +71,31 @@ This measures how close the student is to triggering a VFI safety override.
   $$\text{EPS} = \max \left( \frac{|\theta|}{15^{\circ}}, \frac{|\phi|}{15^{\circ}}, \frac{d_{\text{horiz}}}{45\text{m}}, \frac{|R|}{30^{\circ}/\text{s}}, \frac{|v_{\text{speed}}|}{300\text{ft/min}} \right) \times 100\%$$
 - **EPS Range Meanings**:
   - **$< 50\%$**: Green Zone (Safe, comfortable).
-  - **$50\% - 85\%$**: Yellow Zone (Caution, soft blending begins).
+  - **$50\% - 85\%$**: Yellow Zone (Caution, near safety limits).
   - **$> 85\%$**: Orange/Red Zone (High takeover risk).
 
 ### Dimension 4: Composite Scaling & Honest Control Feedback
-To ensure poor stationkeeping (position hold) precision drags overall performance
-scores to 0% at takeover boundaries while keeping individual live control
-indicators honest:
-1. **Unscaled Live Feedback**: Raw physical metrics like OCI (smoothness) and
-   speed/rate scores are displayed unscaled to provide accurate feedback (e.g.
-   a pilot keeping controls perfectly still sees 100% smoothness).
-2. **Stationkeeping Score**: Calculated as the average deviation score across
-   all student-controlled axes:
+To ensure poor stationkeeping (position hold) precision drags overall performance scores to 0% at takeover boundaries while keeping individual live control indicators honest:
+1. **Unscaled Live Feedback**: Raw physical metrics like OCI (smoothness) and speed/rate scores are displayed unscaled to provide accurate feedback (e.g. a pilot keeping controls perfectly still sees 100% smoothness).
+2. **Stationkeeping Score**: Calculated as the average deviation score across all student-controlled axes:
    - Phase 1: $S_{\text{dev}} = \text{comp\_hdg}$
    - Phase 2: $S_{\text{dev}} = \text{comp\_alt}$
    - Phase 3: $S_{\text{dev}} = \frac{\text{comp\_hdg} + \text{comp\_alt}}{2}$
    - Phase 4: $S_{\text{dev}} = \text{comp\_drift}$
    - Phase 5: $S_{\text{dev}} = \frac{\text{comp\_drift} + \text{comp\_hdg}}{2}$
    - Phase 6: $S_{\text{dev}} = \frac{\text{comp\_hdg} + \text{comp\_alt} + \text{comp\_drift}}{3}$
-3. **Scaled Composites**: The final Precision Score and Overall Weighted Score
-   are scaled by $\frac{S_{\text{dev}}}{100.0}$ so that they correctly converge
-   to 0% when the safety margins are violated.
+3. **Scaled Composites**: The final Precision Score and Overall Weighted Score are scaled by $\frac{S_{\text{dev}}}{100.0}$ so that they correctly converge to 0% when the safety margins are violated.
 
 ---
 
 ## 2. Dynamic Performance Envelopes (60s Window)
 
-Following the initial development roadmap, we define three levels of hovering
-proficiency over a 60-second moving window. To calculate perfect and
-mathematically precise sliding window averages (e.g., mean and standard
-deviation), we will store raw 50Hz telemetry frames in a thread-safe circular
-buffer. At 50Hz, a 60-second window requires exactly 3,000 samples, which is
-extremely lightweight and easily fits in the available plugin memory.
+Following the initial development roadmap, we define three levels of hovering proficiency over a 60-second moving window. To calculate perfect and mathematically precise sliding window averages (e.g., mean and standard deviation), we will store raw 50Hz telemetry frames in a thread-safe circular buffer. At 50Hz, a 60-second window requires exactly 3,000 samples, which is extremely lightweight and easily fits in the available plugin memory.
 
 | Envelope | Precision Requirements | Smoothness Requirements | Safety Margin |
 | :--- | :--- | :--- | :--- |
 | **Excellent** | Drift $< 15.0$m<br>Alt Err $< 2.0$m<br>Hdg Err $< 30.0^{\circ}$<br>Drift Speed $< 0.5$ m/s<br>Vert Speed $< 0.2$ m/s<br>Yaw Speed $< 2.0^{\circ}$/s | Cyclic OCI $< 0.3$<br>Pedal OCI $< 0.2$ | Always $< 40\%$ EPS (Green) |
-| **Good** | Drift, Drift Speed, and Vert Speed between Excellent and Unstable limits | Cyclic OCI $< 0.8$<br>Pedal OCI $< 0.5$ | Always $< 75\%$ EPS (Soft Blending OK) |
+| **Good** | Drift, Drift Speed, and Vert Speed between Excellent and Unstable limits | Cyclic OCI $< 0.8$<br>Pedal OCI $< 0.5$ | Always $< 75\%$ EPS (Caution boundaries OK) |
 | **Unstable** | Drift $> 45.0$m OR Alt Err $> 4.0$m OR Hdg Err $> 60.0^{\circ}$ OR Drift Speed $> 2.0$ m/s OR Vert Speed $> 0.8$ m/s OR Yaw Speed $> 10.0^{\circ}$/s | OCI $> 1.5$ (Wildly hammering cyclic/pedals) | EPS $\ge 100\%$ (Triggers takeover) |
 
 ---

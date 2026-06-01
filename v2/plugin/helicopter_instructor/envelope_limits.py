@@ -12,7 +12,7 @@ LIMIT_ALT_ORANGE_M = 4.0     # Outer safety limit (2.0m or 10.0m AGL); takeover 
 
 # --- 3. TRANSLATION / DRIFT PARAMETERS (Meters radius and speed from target) ---
 LIMIT_DRIFT_GREEN_M = 15.0   # 3D green ring (disk_15m.obj); score dead-zone
-LIMIT_DRIFT_ORANGE_M = 30.0  # 3D orange ring; soft blending VFI intervention starts
+LIMIT_DRIFT_ORANGE_M = 30.0  # 3D orange ring; caution zone boundary
 LIMIT_DRIFT_RED_M = 45.0     # 3D red ring; hard takeover override triggers
 LIMIT_DRIFT_SPEED_GREEN_M_S = 0.5   # Green zone speed limit (perfect hover score); dead-zone
 LIMIT_DRIFT_SPEED_ORANGE_M_S = 2.0  # Orange zone speed limit (0% score and unstable); takeover warning bounds

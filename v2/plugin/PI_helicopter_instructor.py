@@ -269,7 +269,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.33"
+        self.version = "2.1.34"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "lecz.helicopter.instructor"
         self.Desc = (
@@ -1049,47 +1049,32 @@ class PythonInterface(object):
 
 
             # --- STEP D: Perform Intelligent Control Routing ---
-            weights = self.instructor.get_blending_weights(telemetry)
-
             # 1. Roll
             if self.instructor.control_assignment["roll"] == "STUDENT":
-                if weights["roll"] > 0.0:
-                    xp.setDatai(self.dref_override_roll, 1)
-                    xp.setDataf(self.dref_yoke_roll, final_commands['roll'])
-                else:
-                    xp.setDatai(self.dref_override_roll, 0)
+                xp.setDatai(self.dref_override_roll, 0)
             else:
                 xp.setDatai(self.dref_override_roll, 1)
                 xp.setDataf(self.dref_yoke_roll, final_commands['roll'])
 
             # 2. Pitch
             if self.instructor.control_assignment["pitch"] == "STUDENT":
-                if weights["pitch"] > 0.0:
-                    xp.setDatai(self.dref_override_pitch, 1)
-                    xp.setDataf(self.dref_yoke_pitch, final_commands['pitch'])
-                else:
-                    xp.setDatai(self.dref_override_pitch, 0)
+                xp.setDatai(self.dref_override_pitch, 0)
             else:
                 xp.setDatai(self.dref_override_pitch, 1)
                 xp.setDataf(self.dref_yoke_pitch, final_commands['pitch'])
 
             # 3. Yaw
             if self.instructor.control_assignment["yaw"] == "STUDENT":
-                if weights["yaw"] > 0.0:
-                    xp.setDatai(self.dref_override_yaw, 1)
-                    xp.setDataf(self.dref_yoke_heading, final_commands['yaw'])
-                else:
-                    xp.setDatai(self.dref_override_yaw, 0)
+                xp.setDatai(self.dref_override_yaw, 0)
             else:
                 xp.setDatai(self.dref_override_yaw, 1)
                 xp.setDataf(self.dref_yoke_heading, final_commands['yaw'])
 
             # 4. Collective
             # Determine if collective injection is active (VFI is flying,
-            # soft blending is active, or flaps fallback is checked)
+            # or flaps fallback is checked)
             inject_collective = (
                 self.instructor.control_assignment["collective"] == "VFI" or
-                weights["collective"] > 0.0 or
                 self.use_flaps_collective
             )
 
@@ -1409,7 +1394,6 @@ class PythonInterface(object):
             'target_x': self.controller.target_x,
             'target_z': self.controller.target_z
         }
-        blending_weights = self.instructor.get_blending_weights(telemetry)
 
         view_model = hud.HUDViewModel(
             show_osd=self.show_osd,
@@ -1430,7 +1414,6 @@ class PythonInterface(object):
             target_z=self.controller.target_z,
             sync_locked=self.instructor.sync_locked,
             match_tolerance=self.instructor.match_tolerance,
-            blending_weights=blending_weights,
             recovery_timer=self.instructor.recovery_timer,
             precision_score=self.metrics.precision_score,
             smoothness_score=self.metrics.smoothness_score,

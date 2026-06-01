@@ -26,7 +26,6 @@ stateDiagram-v2
     STUDENT_FLIGHT --> OVERRIDE : Safety Limit Violated OR Drift > 45.0m
     note left of STUDENT_FLIGHT
         • Student has physical flight authority on assigned axes.
-        • Soft blending active if drift is 30m - 45m (omega 0.0 - 0.5).
     end note
 
     OVERRIDE --> RECOVERY_HOLD : Helicopter Stabilized (Attitude < 2°, Speed < 1 knot, vy > -50 ft/min)
@@ -62,9 +61,8 @@ stateDiagram-v2
 * **Description**: The instructor prepares to hand off control of the student's assigned axes (depending on the active curriculum phase). To prevent sudden control jumps (jerkiness), X-Plane's native hardware inputs remain overridden while the pilot is instructed to align their physical controls with the active autopilot command within a `±4%` matching window (`match_tolerance = 0.04`).
 * **Handoff Condition**: Once all active student axes are held within the matching window continuously for **500ms** (`sync_hold_duration`), the state transitions to `STUDENT_FLIGHT` and authority is hot-swapped to the student.
 
-### 3. `STUDENT_FLIGHT` (Student Flying with Soft Blending)
+### 3. `STUDENT_FLIGHT` (Student Flying)
 * **Description**: The student has direct physical control over the assigned axes for the active phase. The remaining axes are held by the VFI.
-* **Soft Blending Interventions**: If the student enters any boundary buffer zones (e.g. horizontal drift between 30.0m and 45.0m, or pitch/roll between 10° and 15°), the VFI smoothly blends its stabilization commands (up to `50%` authority) to gently guide the helicopter back.
 
 ### 5. `OVERRIDE` (Emergency Takeover & Local Stabilization)
 * **Description**: Triggered immediately if the student violates any safety envelope (attitude > 15°, climb/sink > 300 ft/min, AGL < 2.0m or > 10.0m, ground speed > 12 knots) or drifts past the **45.0 meters** safety radius.

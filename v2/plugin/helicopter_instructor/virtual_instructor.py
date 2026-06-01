@@ -38,8 +38,7 @@ class VirtualInstructor(object):
     """Core Virtual Flight Instructor (VFI) curriculum and safety logic.
 
     Implements a 6-phase building-block curriculum, anti-jerk synchronization,
-    linear weighted blending for soft intervention, AGL safety monitoring,
-    and a 5-step post-takeover recovery sequence.
+    AGL safety monitoring, and a post-takeover recovery sequence.
     """
 
     def __init__(self):
@@ -58,7 +57,7 @@ class VirtualInstructor(object):
         self.recovery_hold_duration = 3.0  # Stable hold for 3 seconds
 
         # Hovering safety distance configurations (bounding circle)
-        self.hover_soft_radius = LIMIT_DRIFT_ORANGE_M  # Soft blending intervention starts
+        self.hover_soft_radius = LIMIT_DRIFT_ORANGE_M  # Caution zone boundary starts
         self.hover_safety_radius = LIMIT_DRIFT_RED_M  # Hard override takeover starts
 
         # Active control assignments (starts all VFI-controlled)
@@ -200,7 +199,7 @@ class VirtualInstructor(object):
             return self.process_synchronization(dt, hardware, vfi_inputs)
 
         elif self.system_state == "STUDENT_FLIGHT":
-            return self.process_blended_inputs(telemetry, hardware, vfi_inputs)
+            return self.process_student_inputs(telemetry, hardware, vfi_inputs)
 
         elif self.system_state == "OVERRIDE":
             # Direct recovery execution
@@ -362,78 +361,8 @@ class VirtualInstructor(object):
         # Return VFI inputs during matching to prevent visual jumps
         return vfi_inputs
 
-    def get_blending_weights(self, telemetry):
-        """Calculates linear scaling factor omega (0.0 to 0.5) for active axes.
-
-        Args:
-            telemetry: Dict containing current flight states.
-
-        Returns:
-            Dict containing computed blending weights for each axis.
-        """
-        weights = {"roll": 0.0, "pitch": 0.0, "yaw": 0.0, "collective": 0.0}
-
-        # 1. Pitch & Roll Attitude Blending (10.0 to 15.0 deg)
-        phi = abs(telemetry.get('phi', 0.0))
-        theta = abs(telemetry.get('theta', 0.0))
-
-        omega_roll = 0.0
-        if 10.0 < phi <= 15.0:
-            omega_roll = ((phi - 10.0) / 5.0) * 0.5
-
-        omega_pitch = 0.0
-        if 10.0 < theta <= 15.0:
-            omega_pitch = ((theta - 10.0) / 5.0) * 0.5
-
-        # 2. Ground Speed Drift Blending (8.0 to 12.0 knots) -> affects cyclic
-        vx = telemetry.get('vx', 0.0)
-        vz = telemetry.get('vz', 0.0)
-        gs_knots = math.sqrt(vx**2 + vz**2) * M_S_TO_KNOTS
-
-        omega_drift = 0.0
-        if 8.0 < gs_knots <= 12.0:
-            omega_drift = ((gs_knots - 8.0) / 4.0) * 0.5
-
-        # 2b. Position Drift Blending (10.0 to 15.0 meters) -> affects cyclic
-        x = telemetry.get('x', None)
-        z = telemetry.get('z', None)
-        target_x = telemetry.get('target_x', None)
-        target_z = telemetry.get('target_z', None)
-
-        omega_pos_drift = 0.0
-        if (
-            x is not None
-            and z is not None
-            and target_x is not None
-            and target_z is not None
-        ):
-            dist = math.sqrt((x - target_x)**2 + (z - target_z)**2)
-            if self.hover_soft_radius < dist <= self.hover_safety_radius:
-                omega_pos_drift = (
-                    (dist - self.hover_soft_radius)
-                    / (self.hover_safety_radius - self.hover_soft_radius)
-                ) * 0.5
-
-        weights["roll"] = max(omega_roll, omega_drift, omega_pos_drift)
-        weights["pitch"] = max(omega_pitch, omega_drift, omega_pos_drift)
-
-        # 3. Yaw Rate Blending (20.0 to 30.0 deg/sec)
-        yaw_rate = abs(telemetry.get('R', 0.0))
-        if 20.0 < yaw_rate <= 30.0:
-            weights["yaw"] = ((yaw_rate - 20.0) / 10.0) * 0.5
-
-        # 4. Vertical Speed Blending
-        # Sinking -200 to -300 ft/min, or Climbing +200 to +300 ft/min
-        vspeed_ft_min = telemetry.get('vy', 0.0) * M_S_TO_FT_MIN
-        if -300.0 < vspeed_ft_min <= -200.0:
-            weights["collective"] = ((abs(vspeed_ft_min) - 200.0) / 100.0) * 0.5
-        elif 200.0 <= vspeed_ft_min < 300.0:
-            weights["collective"] = ((vspeed_ft_min - 200.0) / 100.0) * 0.5
-
-        return weights
-
-    def process_blended_inputs(self, telemetry, hardware, vfi_inputs):
-        """Processes combined flight inputs based on soft intervention zones.
+    def process_student_inputs(self, telemetry, hardware, vfi_inputs):
+        """Processes flight inputs without blending, routing full authority to student on active axes.
 
         Args:
             telemetry: Dict containing current flight states.
@@ -441,22 +370,14 @@ class VirtualInstructor(object):
             vfi_inputs: Dict containing calculated VFI commands.
 
         Returns:
-            Dict containing blended control commands.
+            Dict containing final control commands.
         """
-        weights = self.get_blending_weights(telemetry)
         output = {}
-
         for axis in ["roll", "pitch", "yaw", "collective"]:
             if self.control_assignment[axis] == "STUDENT":
-                omega = weights[axis]
-                # Linear blend formula
-                output[axis] = (omega * vfi_inputs[axis]) + (
-                    (1.0 - omega) * hardware[axis]
-                )
+                output[axis] = hardware[axis]
             else:
-                # VFI has 100% control of this axis
                 output[axis] = vfi_inputs[axis]
-
         return output
 
     def _update_recovery_targets(self, dt):

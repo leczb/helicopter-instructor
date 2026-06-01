@@ -280,14 +280,8 @@ def draw_osd(view_model, window_id):
         )
         state_label = f"ALIGNING CONTROLS... ({int(ratio * 100)}%)"
     elif state_str == "STUDENT_FLIGHT":
-        weights = view_model.blending_weights
-        any_blending = max(weights.values()) > 0.0
-        if any_blending:
-            state_color = color_orange
-            state_label = "STUDENT (SOFT INTERVENTION)"
-        else:
-            state_color = color_green
-            state_label = "STUDENT IN CONTROL"
+        state_color = color_green
+        state_label = "STUDENT IN CONTROL"
     elif state_str == "OVERRIDE":
         state_color = color_red
         state_label = "TAKEBACK TAKEOVER ACTIVE!"

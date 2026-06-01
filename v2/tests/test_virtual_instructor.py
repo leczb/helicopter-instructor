@@ -179,53 +179,19 @@ class TestVirtualInstructor(unittest.TestCase):
         self.assertEqual(self.instructor.system_state, "OVERRIDE")
         self.assertEqual(self.instructor.control_assignment["yaw"], "VFI")
 
-    def test_soft_intervention_blending_pitch(self):
+    def test_student_flight_direct_routing(self):
         # Phase 4: Cyclic is student
         self.instructor.phase = 4
         self.instructor.system_state = "STUDENT_FLIGHT"
         self.instructor.control_assignment["roll"] = "STUDENT"
         self.instructor.control_assignment["pitch"] = "STUDENT"
         
-        # Telemetry pitch is safe (5.0 deg <= 10.0 inner boundary) -> 0.0 blending weight
         telem = self.nominal_telemetry.copy()
-        telem['theta'] = 5.0
+        telem['theta'] = 12.0  # In caution zone
         
-        weights = self.instructor.get_blending_weights(telem)
-        self.assertEqual(weights["pitch"], 0.0)
-        
-        # Telemetry pitch is in buffer zone (12.0 deg).
-        # Proportional delta = (12 - 10) / 5 = 0.4.
-        # omega_pitch = 0.4 * 0.5 = 0.2.
-        telem['theta'] = 12.0
-        weights = self.instructor.get_blending_weights(telem)
-        self.assertAlmostEqual(weights["pitch"], 0.2)
-        
-        # Test blending output calculation:
-        # VFI pitch cmd = -0.03. Student hardware pitch cmd = 0.25.
-        # Blended = omega * VFI + (1 - omega) * Student = 0.2 * (-0.03) + 0.8 * 0.25 = -0.006 + 0.20 = 0.194
         self.hardware["pitch"] = 0.25
         out = self.instructor.update(0.02, telem, self.hardware, self.vfi)
-        self.assertAlmostEqual(out["pitch"], 0.194)
-
-    def test_ground_drift_affects_both_cyclic_axes(self):
-        # Phase 4: Cyclic is student
-        self.instructor.phase = 4
-        self.instructor.system_state = "STUDENT_FLIGHT"
-        self.instructor.control_assignment["roll"] = "STUDENT"
-        self.instructor.control_assignment["pitch"] = "STUDENT"
-        
-        # Ground speed is 10.0 knots (inner 8.0, outer 12.0)
-        # Delta = (10 - 8) / 4 = 0.5.
-        # omega = 0.5 * 0.5 = 0.25.
-        # Both roll and pitch blending weights should be 0.25!
-        telem = self.nominal_telemetry.copy()
-        # 10 knots in m/s = 10 / 1.94384 = 5.1444
-        telem['vx'] = 5.1444
-        telem['vz'] = 0.0
-        
-        weights = self.instructor.get_blending_weights(telem)
-        self.assertAlmostEqual(weights["roll"], 0.25, places=3)
-        self.assertAlmostEqual(weights["pitch"], 0.25, places=3)
+        self.assertAlmostEqual(out["pitch"], 0.25)
 
     def test_recovery_hold_and_reset_loop(self):
         # Trigger takeover
@@ -268,16 +234,6 @@ class TestVirtualInstructor(unittest.TestCase):
         telem['vy'] = 310.0 / M_S_TO_FT_MIN
         
         self.assertTrue(self.instructor.check_safety_limits(telem))
-        
-        # 2. Soft Blending: Climbing at 250 ft/min (within +200 to +300 range)
-        # Proportional delta = (250 - 200) / 100 = 0.5.
-        # omega_collective = 0.5 * 0.5 = 0.25.
-        telem_soft = self.nominal_telemetry.copy()
-        telem_soft['vy'] = 250.0 / M_S_TO_FT_MIN
-        
-        self.assertFalse(self.instructor.check_safety_limits(telem_soft))
-        weights = self.instructor.get_blending_weights(telem_soft)
-        self.assertAlmostEqual(weights["collective"], 0.25)
 
     def test_hover_safety_distance_takeover(self):
         # 1. Fallback case: lack of coordinates in telemetry does not trigger takeover
@@ -298,30 +254,6 @@ class TestVirtualInstructor(unittest.TestCase):
         telem.update({'x': 37.1, 'z': 56.0})
         self.assertTrue(self.instructor.check_safety_limits(telem))
 
-    def test_hover_soft_blending_drift(self):
-        # 1. Exactly at inner soft boundary (drift = 30m, using 18-24-30 right triangle)
-        telem = self.nominal_telemetry.copy()
-        telem.update({'x': 18.0, 'z': 24.0, 'target_x': 0.0, 'target_z': 0.0})
-        weights = self.instructor.get_blending_weights(telem)
-        self.assertEqual(weights["roll"], 0.0)
-        self.assertEqual(weights["pitch"], 0.0)
-        
-        # 2. Inside the soft blending zone (drift = 37.5m, moving straight on the x axis)
-        # dist = 37.5m
-        # omega = ((37.5 - 30.0) / 15.0) * 0.5 = 0.25
-        telem.update({'x': 37.5, 'z': 0.0})
-        weights = self.instructor.get_blending_weights(telem)
-        self.assertAlmostEqual(weights["roll"], 0.25)
-        self.assertAlmostEqual(weights["pitch"], 0.25)
-        
-        # 3. Exactly at the outer safety limit (drift = 45.0m, moving straight on the x axis)
-        # dist = 45.0m
-        # omega = ((45.0 - 30.0) / 15.0) * 0.5 = 0.50
-        telem.update({'x': 45.0, 'z': 0.0})
-        weights = self.instructor.get_blending_weights(telem)
-        self.assertAlmostEqual(weights["roll"], 0.50)
-        self.assertAlmostEqual(weights["pitch"], 0.50)
-
     def test_hover_fallback_robustness(self):
         # Verify that lacking coordinate keys in telemetry is handled gracefully
         telem = self.nominal_telemetry.copy()
@@ -330,9 +262,6 @@ class TestVirtualInstructor(unittest.TestCase):
         
         # Should not raise any KeyError exceptions
         self.assertFalse(self.instructor.check_safety_limits(telem))
-        weights = self.instructor.get_blending_weights(telem)
-        self.assertEqual(weights["roll"], 0.0)
-        self.assertEqual(weights["pitch"], 0.0)
 
     def test_safety_takeover_target_override_and_restore(self):
         # 1. Student is flying and is at target coordinates target_x = 10, target_y = 6.0, target_z = 20
