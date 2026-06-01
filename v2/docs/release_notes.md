@@ -1,5 +1,17 @@
 # Release Notes
 
+## v2.1.36 - 2026-06-01
+- **Added**: Automatic phase progression. The instructor now advances the
+  training curriculum automatically once the student has maintained an
+  "Excellent" proficiency envelope for 30 continuous seconds. The VFI takes
+  back full control, plays *Phase transition.wav*, plays the per-phase intro
+  audio (*Phase N intro.wav*), then hands the next phase back to the student.
+  After mastering all six phases the instructor plays *Now you know how to
+  hover.wav* and stops advancing.
+
+## v2.1.35 - 2026-06-01
+- **Added**: Safety takeover recovery with smooth parallel target translation.
+
 ## v2.1.34 - 2026-06-01
 - **Added**: Completely remove soft blending feature and update documentation.
 

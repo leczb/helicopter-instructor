@@ -61,6 +61,12 @@ SOUND_NICE_RECOVERY = "Nice recovery.wav"
 SOUND_GREAT_PEDALS = "Great pedals.wav"
 SOUND_SMOOTH_CYCLIC = "Smooth cyclic.wav"
 
+# Phase progression audio cues
+SOUND_PHASE_TRANSITION = "Phase transition.wav"
+# Template: format with phase number (e.g. "Phase 1 intro.wav")
+SOUND_PHASE_INTRO_TEMPLATE = "Phase {} intro.wav"
+SOUND_TRAINING_COMPLETE = "Now you know how to hover.wav"
+
 # Sound file lengths in seconds for sequential queue playback
 SOUND_LENGTHS = {
     SOUND_I_HAVE_CONTROL: 2.0,
@@ -81,6 +87,8 @@ SOUND_LENGTHS = {
     SOUND_NICE_RECOVERY: 2.0,
     SOUND_GREAT_PEDALS: 2.0,
     SOUND_SMOOTH_CYCLIC: 2.5,
+    SOUND_PHASE_TRANSITION: 5.0,
+    SOUND_TRAINING_COMPLETE: 5.0,
 }
 
 # X-Plane Plugin Message IDs
@@ -269,7 +277,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.35"
+        self.version = "2.1.36"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "lecz.helicopter.instructor"
         self.Desc = (
@@ -976,7 +984,13 @@ class PythonInterface(object):
 
             # --- STEP C2: Run Student Performance Metrics ---
             is_student_flying = (curr_state == "STUDENT_FLIGHT")
-            self.metrics.update(dt, telemetry, hardware_inputs, is_student_flying, curr_phase)
+            self.metrics.update(
+                dt, telemetry, hardware_inputs, is_student_flying, curr_phase
+            )
+
+            # Feed current envelope grade back to instructor so that
+            # maybe_advance_phase() can track Excellent duration.
+            self.instructor.last_envelope = self.metrics.envelope
 
             # --- STEP C3: Play Pending Spoken Metrics Cues ---
             while True:
@@ -991,38 +1005,78 @@ class PythonInterface(object):
             if not hasattr(self, 'last_phase'):
                 self.last_phase = curr_phase
 
-            # Detect state and phase transitions to play audio announcements
+            # --- STEP C4: Handle automatic phase progression ---
+            # transition_pending is set by VirtualInstructor.maybe_advance_phase()
+            # after the student holds an Excellent rating for 30 seconds.
+            auto_phase_transition = False
+            if self.instructor.transition_pending:
+                auto_phase_transition = True
+                self.instructor.transition_pending = False
+                next_phase = self.instructor.transition_target_phase
+                is_final = self.instructor.training_complete
+
+                # 1. Take back full VFI authority (clears student axis assignments).
+                self.instructor.system_state = "VFI_FLIGHT"
+                for axis in self.instructor.control_assignment:
+                    self.instructor.control_assignment[axis] = "VFI"
+                    self.instructor.sync_locked[axis] = False
+
+                # 2. Play "Phase transition.wav" (clears any pending cues).
+                self.play_sound(SOUND_PHASE_TRANSITION, clear_queue=True)
+
+                if is_final:
+                    # 3a. Training complete — play the completion cue and stop.
+                    self.play_sound(SOUND_TRAINING_COMPLETE)
+                else:
+                    # 3b. Advance to the next phase and queue its intro audio.
+                    self.instructor.phase = next_phase
+                    intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(next_phase)
+                    self.play_sound(intro_sound)
+
+                    # 4. Initiate the hand-off to the student for the new phase.
+                    #    This sets the state to SYNCING, which will eventually
+                    #    trigger the normal "Get ready" / "You have …" cues.
+                    self.instructor.initiate_handoff()
+
+
+            # Re-read state/phase after auto-transition may have changed them
+
+            curr_state = self.instructor.system_state
+            curr_phase = self.instructor.phase
+
+            # Detect state and phase transitions to play audio announcements.
+            # Skip if this was an automatic phase transition (audio already
+            # scheduled above).
             phase_changed = (curr_phase != self.last_phase)
             state_changed = (curr_state != self.last_system_state)
 
-            if phase_changed:
-                # Any phase transition while engaged means the instructor takes control back (resets sync/authority)
-                if curr_state in ["STUDENT_FLIGHT", "SYNCING"]:
-                    self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
-            elif state_changed:
-                if curr_state == "SYNCING":
-                    # If transitioning to SYNCING from STUDENT_FLIGHT, instructor takes control back.
-                    # Otherwise, instructor already had control and is preparing student to sync.
-                    if self.last_system_state == "STUDENT_FLIGHT":
+            if not auto_phase_transition:
+                if phase_changed:
+                    # Manual phase change: instructor takes control.
+                    if curr_state in ["STUDENT_FLIGHT", "SYNCING"]:
                         self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
-                    else:
-                        self.play_sound(SOUND_GET_READY)
-                elif curr_state == "STUDENT_FLIGHT":
-                    phase = self.instructor.phase
-                    if phase == PHASE_PEDALS_ONLY:
-                        self.play_sound(SOUND_YOU_HAVE_PEDALS)
-                    elif phase == PHASE_COLLECTIVE_ONLY:
-                        self.play_sound(SOUND_YOU_HAVE_COLLECTIVE)
-                    elif phase == PHASE_COLLECTIVE_PEDALS:
-                        self.play_sound(SOUND_YOU_HAVE_COLLECTIVE_PEDALS)
-                    elif phase == PHASE_CYCLIC_ONLY:
-                        self.play_sound(SOUND_YOU_HAVE_CYCLIC)
-                    elif phase == PHASE_CYCLIC_PEDALS:
-                        self.play_sound(SOUND_YOU_HAVE_CYCLIC_PEDALS)
-                    elif phase == PHASE_ALL_CONTROLS:
-                        self.play_sound(SOUND_YOU_HAVE_ALL)
-                elif curr_state == "OVERRIDE":
-                    self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                elif state_changed:
+                    if curr_state == "SYNCING":
+                        if self.last_system_state == "STUDENT_FLIGHT":
+                            self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                        else:
+                            self.play_sound(SOUND_GET_READY)
+                    elif curr_state == "STUDENT_FLIGHT":
+                        phase = self.instructor.phase
+                        if phase == PHASE_PEDALS_ONLY:
+                            self.play_sound(SOUND_YOU_HAVE_PEDALS)
+                        elif phase == PHASE_COLLECTIVE_ONLY:
+                            self.play_sound(SOUND_YOU_HAVE_COLLECTIVE)
+                        elif phase == PHASE_COLLECTIVE_PEDALS:
+                            self.play_sound(SOUND_YOU_HAVE_COLLECTIVE_PEDALS)
+                        elif phase == PHASE_CYCLIC_ONLY:
+                            self.play_sound(SOUND_YOU_HAVE_CYCLIC)
+                        elif phase == PHASE_CYCLIC_PEDALS:
+                            self.play_sound(SOUND_YOU_HAVE_CYCLIC_PEDALS)
+                        elif phase == PHASE_ALL_CONTROLS:
+                            self.play_sound(SOUND_YOU_HAVE_ALL)
+                    elif curr_state == "OVERRIDE":
+                        self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
 
             # Update persistent tracking state
             self.last_system_state = curr_state

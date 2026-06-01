@@ -13,6 +13,12 @@ from helicopter_instructor.envelope_limits import (
 M_S_TO_KNOTS = 1.94384
 M_S_TO_FT_MIN = 196.8504
 
+# Seconds of continuous Excellent rating required before phase advance
+PHASE_EXCELLENT_REQUIRED_S = 35.0
+
+# Total number of training phases
+MAX_PHASE = 6
+
 # Phase configs mapping (1 to 6)
 # Defines which axes are STUDENT-controlled vs VFI-controlled
 PHASE_CONFIGS = {
@@ -44,6 +50,16 @@ class VirtualInstructor(object):
     def __init__(self):
         """Initializes the virtual instructor state and configuration."""
         self.phase = 1
+        self.last_envelope = None
+        self.excellent_timer = 0.0
+        # Set by maybe_advance_phase() when the student has held Excellent
+        # for PHASE_EXCELLENT_REQUIRED_S seconds. The plugin flight loop reads
+        # this flag and orchestrates the audio/state transition sequence,
+        # then resets it.
+        self.transition_pending = False
+        self.transition_target_phase = None
+        # Set to True when phase 6 is mastered; prevents further advancement.
+        self.training_complete = False
         # States: VFI_FLIGHT, SYNCING, STUDENT_FLIGHT, OVERRIDE, RECOVERY_HOLD
         self.system_state = "VFI_FLIGHT"
 
@@ -199,6 +215,8 @@ class VirtualInstructor(object):
             return self.process_synchronization(dt, hardware, vfi_inputs)
 
         elif self.system_state == "STUDENT_FLIGHT":
+            # Check for automatic phase advancement before routing inputs.
+            self.maybe_advance_phase(dt)
             return self.process_student_inputs(telemetry, hardware, vfi_inputs)
 
         elif self.system_state == "OVERRIDE":
@@ -360,6 +378,36 @@ class VirtualInstructor(object):
 
         # Return VFI inputs during matching to prevent visual jumps
         return vfi_inputs
+
+    def maybe_advance_phase(self, dt):
+        """Tracks Excellent envelope duration and signals a phase transition.
+
+        Should be called every frame while in STUDENT_FLIGHT. When the student
+        has maintained an Excellent proficiency envelope for at least
+        PHASE_EXCELLENT_REQUIRED_S seconds, sets ``transition_pending = True``
+        and ``transition_target_phase`` to the next phase number (or to the
+        current phase if training is already complete) for the plugin to act on.
+
+        Args:
+            dt: Time step in seconds.
+        """
+        if self.training_complete or self.transition_pending:
+            return
+
+        if self.last_envelope == "Excellent":
+            self.excellent_timer += dt
+        else:
+            self.excellent_timer = 0.0
+
+        if self.excellent_timer >= PHASE_EXCELLENT_REQUIRED_S:
+            self.excellent_timer = 0.0
+            self.transition_pending = True
+            if self.phase < MAX_PHASE:
+                self.transition_target_phase = self.phase + 1
+            else:
+                # Already on the final phase; signal completion.
+                self.transition_target_phase = self.phase
+                self.training_complete = True
 
     def process_student_inputs(self, telemetry, hardware, vfi_inputs):
         """Processes flight inputs without blending, routing full authority to student on active axes.

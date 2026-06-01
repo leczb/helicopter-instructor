@@ -11,3 +11,5 @@ untracked/
 .coverage
 htmlcov/
 
+# macOS metadata
+.DS_Store

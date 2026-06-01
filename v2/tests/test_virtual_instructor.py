@@ -406,5 +406,84 @@ class TestVirtualInstructor(unittest.TestCase):
         self.assertFalse(self.instructor.sync_locked["pitch"])
         self.assertEqual(self.instructor.sync_timer, 0.0)
 
+
+class TestMaybeAdvancePhase(unittest.TestCase):
+    """Tests for automatic phase progression via maybe_advance_phase."""
+
+    def setUp(self):
+        self.instructor = VirtualInstructor()
+        self.instructor.system_state = "STUDENT_FLIGHT"
+
+    def test_excellent_timer_accumulates(self):
+        """Excellent envelope increments the timer without triggering transition."""
+        self.instructor.last_envelope = "Excellent"
+        self.instructor.maybe_advance_phase(10.0)
+        self.assertAlmostEqual(self.instructor.excellent_timer, 10.0)
+        self.assertFalse(self.instructor.transition_pending)
+
+    def test_non_excellent_resets_timer(self):
+        """Non-Excellent envelope resets the excellent timer."""
+        self.instructor.last_envelope = "Excellent"
+        self.instructor.maybe_advance_phase(15.0)
+        self.assertAlmostEqual(self.instructor.excellent_timer, 15.0)
+
+        self.instructor.last_envelope = "Good"
+        self.instructor.maybe_advance_phase(5.0)
+        self.assertAlmostEqual(self.instructor.excellent_timer, 0.0)
+        self.assertFalse(self.instructor.transition_pending)
+
+    def test_thirty_seconds_sets_transition_pending(self):
+        """30 s of Excellent sets transition_pending for a mid-course phase."""
+        self.instructor.phase = 3
+        self.instructor.last_envelope = "Excellent"
+
+        # Accumulate just under the threshold
+        self.instructor.maybe_advance_phase(34.9)
+        self.assertFalse(self.instructor.transition_pending)
+
+        # Cross the threshold
+        self.instructor.maybe_advance_phase(0.2)
+        self.assertTrue(self.instructor.transition_pending)
+        self.assertEqual(self.instructor.transition_target_phase, 4)
+        self.assertFalse(self.instructor.training_complete)
+        # Timer should be reset after firing
+        self.assertAlmostEqual(self.instructor.excellent_timer, 0.0)
+
+    def test_final_phase_sets_training_complete(self):
+        """Completing phase 6 sets training_complete instead of advancing."""
+        self.instructor.phase = 6
+        self.instructor.last_envelope = "Excellent"
+
+        self.instructor.maybe_advance_phase(35.1)
+        self.assertTrue(self.instructor.transition_pending)
+        self.assertTrue(self.instructor.training_complete)
+        # transition_target_phase stays at 6 (no phase 7)
+        self.assertEqual(self.instructor.transition_target_phase, 6)
+
+    def test_transition_does_not_fire_twice(self):
+        """Once transition_pending is set, further calls are no-ops."""
+        self.instructor.phase = 2
+        self.instructor.last_envelope = "Excellent"
+
+        self.instructor.maybe_advance_phase(36.0)
+        self.assertTrue(self.instructor.transition_pending)
+        target_before = self.instructor.transition_target_phase
+
+        # Further Excellent time should not change state
+        self.instructor.last_envelope = "Excellent"
+        self.instructor.maybe_advance_phase(60.0)
+        self.assertEqual(self.instructor.transition_target_phase, target_before)
+
+    def test_training_complete_blocks_further_transitions(self):
+        """After training_complete is set, maybe_advance_phase is a no-op."""
+        self.instructor.phase = 6
+        self.instructor.training_complete = True
+        self.instructor.last_envelope = "Excellent"
+
+        self.instructor.maybe_advance_phase(60.0)
+        self.assertFalse(self.instructor.transition_pending)
+        self.assertAlmostEqual(self.instructor.excellent_timer, 0.0)
+
+
 if __name__ == '__main__':
     unittest.main()
