@@ -346,7 +346,9 @@ class TestVirtualInstructor(unittest.TestCase):
         # 2. Helicopter drifts past safety radius: current x = 57.0, z = 20.0 -> drift = 47.0m > 45.0m
         telem.update({'x': 57.0, 'phi': 5.0})
         
-        # This should trigger emergency stabilization takeover
+        # This should trigger emergency takeover. The first frame (0.02s) immediately starts target movement.
+        # override_target_y: 4.0 + 1.0 * 0.02 = 4.02
+        # override_target_x: 57.0 - 2.0 * 0.02 = 56.96
         self.instructor.update(0.02, telem, self.hardware, self.vfi)
         
         self.assertEqual(self.instructor.system_state, "OVERRIDE")
@@ -354,38 +356,40 @@ class TestVirtualInstructor(unittest.TestCase):
         self.assertEqual(self.instructor.original_target_x, 10.0)
         self.assertEqual(self.instructor.original_target_y, 6.0)
         self.assertEqual(self.instructor.original_target_z, 20.0)
-        self.assertEqual(self.instructor.override_target_x, 57.0)
-        self.assertAlmostEqual(self.instructor.override_target_y, 4.01)
+        self.assertAlmostEqual(self.instructor.override_target_x, 56.96)
+        self.assertAlmostEqual(self.instructor.override_target_y, 4.02)
         self.assertEqual(self.instructor.override_target_z, 20.0)
         
-        # 3. Stage 2: Target y slowly converges to original_target_y (6.0) at 0.5 m/s
-        # 1.0 second elapsed -> moves by 0.5m
+        # 3. Stage 2 & 3 Settlement: Target y moves towards 6.0 at 1.0 m/s, target x moves towards 10.0 at 2.0 m/s
+        # 1.0 second elapsed -> moves y by 1.0m (4.02 -> 5.02), moves x by 2.0m (56.96 -> 54.96)
         self.instructor.update(1.0, telem, self.hardware, self.vfi)
         self.assertEqual(self.instructor.system_state, "OVERRIDE")
         self.assertTrue(self.instructor.drift_recovery_active)
-        self.assertAlmostEqual(self.instructor.override_target_y, 4.51)
+        self.assertAlmostEqual(self.instructor.override_target_x, 54.96)
+        self.assertAlmostEqual(self.instructor.override_target_y, 5.02)
         
-        # Another 3.0 seconds elapsed -> converges to 6.0
+        # Another 1.0 second elapsed -> moves y by 1.0m (5.02 -> 6.02 -> clamps to 6.0), moves x by 2.0m (54.96 -> 52.96)
         # We pass stable telemetry so it transitions to RECOVERY_HOLD
         stable_telem = self.nominal_telemetry.copy()
         stable_telem.update({
             'x': 57.0, 'y': 6.0, 'z': 20.0,
             'target_x': 57.0, 'target_y': 6.0, 'target_z': 20.0
         })
-        self.instructor.update(3.0, stable_telem, self.hardware, self.vfi)
+        self.instructor.update(1.0, stable_telem, self.hardware, self.vfi)
         self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
         self.assertTrue(self.instructor.drift_recovery_active)
+        self.assertAlmostEqual(self.instructor.override_target_x, 52.96)
         self.assertEqual(self.instructor.override_target_y, 6.0)
         
-        # 4. Stage 3: Target x slowly translates back to original target x (10.0) at 0.4 m/s
-        # 10.0 seconds elapsed -> moves by 4.0m to 53.0m
+        # 4. Target translation in RECOVERY_HOLD
+        # 10.0 seconds elapsed -> moves x by 20.0m (52.96 -> 32.96)
         self.instructor.update(10.0, stable_telem, self.hardware, self.vfi)
         self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
         self.assertTrue(self.instructor.drift_recovery_active)
-        self.assertAlmostEqual(self.instructor.override_target_x, 53.0)
+        self.assertAlmostEqual(self.instructor.override_target_x, 32.96)
         
-        # 110.0 seconds elapsed -> remaining distance fully covered (110 * 0.4 = 44.0m)
-        self.instructor.update(110.0, stable_telem, self.hardware, self.vfi)
+        # 22.0 seconds elapsed -> remaining distance fully covered (22 * 2 = 44.0m)
+        self.instructor.update(22.0, stable_telem, self.hardware, self.vfi)
         self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
         self.assertFalse(self.instructor.drift_recovery_active)
         self.assertTrue(self.instructor.was_drift_recovery_active)

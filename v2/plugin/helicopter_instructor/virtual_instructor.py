@@ -207,42 +207,9 @@ class VirtualInstructor(object):
             return self.process_recovery(dt, vfi_inputs, telemetry)
 
         elif self.system_state == "RECOVERY_HOLD":
-            # Stage 3: slowly move the hover target back to the original (at 0.4 m/s)
+            # Stage 3: slowly move recovery targets horizontally and vertically towards original
             if self.drift_recovery_active:
-                if (
-                    self.override_target_x is not None
-                    and self.original_target_x is not None
-                    and self.override_target_z is not None
-                    and self.original_target_z is not None
-                ):
-                    dx = self.original_target_x - self.override_target_x
-                    dz = self.original_target_z - self.override_target_z
-                    dist = math.sqrt(dx**2 + dz**2)
-                    step = LIMIT_RECOVERY_SPEED_M_S * dt
-                    if dist <= step:
-                        self.override_target_x = self.original_target_x
-                        self.override_target_z = self.original_target_z
-                        # Fully arrived! Target restored!
-                        self.was_drift_recovery_active = True
-                        self.drift_recovery_active = False
-                        self.override_target_x = None
-                        self.override_target_y = None
-                        self.override_target_z = None
-                        self.set_hud_caption(
-                            "AIRCRAFT STABLE. RESTORING HOVER TARGET.",
-                            duration=4.0,
-                        )
-                    else:
-                        ratio = step / dist
-                        self.override_target_x += dx * ratio
-                        self.override_target_z += dz * ratio
-                else:
-                    # Fallback if coordinates are None
-                    self.was_drift_recovery_active = True
-                    self.drift_recovery_active = False
-                    self.override_target_x = None
-                    self.override_target_y = None
-                    self.override_target_z = None
+                self._update_recovery_targets(dt)
             else:
                 # Timer only counts down after the target has fully returned
                 self.recovery_timer -= dt
@@ -492,6 +459,55 @@ class VirtualInstructor(object):
 
         return output
 
+    def _update_recovery_targets(self, dt):
+        """Updates recovery target interpolation horizontally and vertically."""
+        if not self.drift_recovery_active:
+            return
+
+        # 1. Update override_target_y (vertical)
+        y_arrived = True
+        if self.override_target_y is not None and self.original_target_y is not None:
+            diff_y = self.original_target_y - self.override_target_y
+            step_y = LIMIT_RECOVERY_ALT_RATE_M_S * dt
+            if abs(diff_y) <= step_y:
+                self.override_target_y = self.original_target_y
+            else:
+                self.override_target_y += math.copysign(step_y, diff_y)
+                y_arrived = False
+
+        # 2. Update override_target_x and override_target_z (horizontal)
+        xz_arrived = True
+        if (
+            self.override_target_x is not None
+            and self.original_target_x is not None
+            and self.override_target_z is not None
+            and self.original_target_z is not None
+        ):
+            dx = self.original_target_x - self.override_target_x
+            dz = self.original_target_z - self.override_target_z
+            dist = math.sqrt(dx**2 + dz**2)
+            step_xz = LIMIT_RECOVERY_SPEED_M_S * dt
+            if dist <= step_xz:
+                self.override_target_x = self.original_target_x
+                self.override_target_z = self.original_target_z
+            else:
+                ratio = step_xz / dist
+                self.override_target_x += dx * ratio
+                self.override_target_z += dz * ratio
+                xz_arrived = False
+
+        # 3. If completely arrived, clear the override states
+        if y_arrived and xz_arrived:
+            self.was_drift_recovery_active = True
+            self.drift_recovery_active = False
+            self.override_target_x = None
+            self.override_target_y = None
+            self.override_target_z = None
+            self.set_hud_caption(
+                "AIRCRAFT STABLE. RESTORING HOVER TARGET.",
+                duration=4.0,
+            )
+
     def trigger_hard_override(self):
         """Instantly severs user authority and starts the recovery state."""
         self.system_state = "OVERRIDE"
@@ -525,18 +541,9 @@ class VirtualInstructor(object):
         # to damp spin. This is already handled by VFI controller update loop
         # outputs!
 
-        # Stage 2: slowly change the hover height to the original value (6m) during settling
-        if (
-            self.drift_recovery_active
-            and self.override_target_y is not None
-            and self.original_target_y is not None
-        ):
-            diff_y = self.original_target_y - self.override_target_y
-            step_y = LIMIT_RECOVERY_ALT_RATE_M_S * dt
-            if abs(diff_y) <= step_y:
-                self.override_target_y = self.original_target_y
-            else:
-                self.override_target_y += math.copysign(step_y, diff_y)
+        # Stage 2 & 3: slowly move both vertical and horizontal hover targets back immediately
+        if self.drift_recovery_active:
+            self._update_recovery_targets(dt)
 
         # Step 4: Check if aircraft is stable to begin the cool-down hold.
         # Definitions of stable: pitch & roll < 2 degrees, sinking rate
