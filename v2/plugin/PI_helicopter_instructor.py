@@ -67,30 +67,6 @@ SOUND_PHASE_TRANSITION = "Phase transition.wav"
 SOUND_PHASE_INTRO_TEMPLATE = "Phase {} intro.wav"
 SOUND_TRAINING_COMPLETE = "Now you know how to hover.wav"
 
-# Sound file lengths in seconds for sequential queue playback
-SOUND_LENGTHS = {
-    SOUND_I_HAVE_CONTROL: 2.0,
-    SOUND_GET_READY: 3.0,
-    SOUND_YOU_HAVE_PEDALS: 2.0,
-    SOUND_YOU_HAVE_COLLECTIVE: 2.0,
-    SOUND_YOU_HAVE_COLLECTIVE_PEDALS: 3.0,
-    SOUND_YOU_HAVE_CYCLIC: 2.0,
-    SOUND_YOU_HAVE_CYCLIC_PEDALS: 3.0,
-    SOUND_YOU_HAVE_ALL: 2.0,
-    SOUND_PERFECT: 1.5,
-    SOUND_RELAX_CYCLIC: 2.5,
-    SOUND_STEADY_PEDALS: 2.5,
-    SOUND_SMOOTH_COLLECTIVE: 2.5,
-    SOUND_CORRECT_DRIFT: 2.0,
-    SOUND_WE_ARE_TOO_HIGH: 2.0,
-    SOUND_WE_ARE_TOO_LOW: 2.0,
-    SOUND_NICE_RECOVERY: 2.0,
-    SOUND_GREAT_PEDALS: 2.0,
-    SOUND_SMOOTH_CYCLIC: 2.5,
-    SOUND_PHASE_TRANSITION: 5.0,
-    SOUND_TRAINING_COMPLETE: 5.0,
-}
-
 # X-Plane Plugin Message IDs
 MSG_PLANE_LOADED = 102
 PLANE_USER_IDX = 0
@@ -285,7 +261,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.39"
+        self.version = "2.1.40"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "lecz.helicopter.instructor"
         self.Desc = (
@@ -1282,10 +1258,9 @@ class PythonInterface(object):
 
         if self.audio_playback_timer <= 0.0 and self.audio_queue:
             sound_to_play = self.audio_queue.pop(0)
-            self.audio.play_sound(sound_to_play)
+            duration_s = self.audio.play_sound(sound_to_play)
             self.last_played_sound = sound_to_play
-            duration = SOUND_LENGTHS.get(sound_to_play, 2.0)
-            self.audio_playback_timer = duration + 0.3
+            self.audio_playback_timer = duration_s + 0.3
 
         return 0.02
 

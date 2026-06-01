@@ -1,5 +1,6 @@
 """Audio manager submodule for Helicopter Flight Instructor."""
 
+from helicopter_instructor import graphics
 import os
 import wave
 
@@ -45,14 +46,24 @@ class AudioManager(object):
                     continue
                 try:
                     with wave.open(filepath, "rb") as wav:
-                        data = wav.readframes(wav.getnframes())
+                        num_frames = wav.getnframes()
+                        frame_rate = wav.getframerate()
+                        data = wav.readframes(num_frames)
+                        duration_s = (
+                            num_frames / frame_rate if frame_rate > 0 else 0.0
+                        )
                         self.sound_registry[filename] = {
                             "data": data,
                             "data_size": len(data),
                             "sample_width": wav.getsampwidth(),
-                            "frame_rate": wav.getframerate(),
+                            "frame_rate": frame_rate,
                             "num_channels": wav.getnchannels(),
+                            "duration_s": duration_s,
                         }
+                        xp.log(
+                            f"Helicopter Flight Instructor: Preloaded "
+                            f"{filename} ({duration_s:.2f} s)"
+                        )
                         preloaded_count += 1
                 except Exception as e:
                     xp.log(
@@ -68,6 +79,8 @@ class AudioManager(object):
     def play_sound(self, filename):
         """Plays a preloaded WAV file.
 
+        Returns the duration of the sound in seconds.
+
         Args:
             filename: A string filename of the sound to be played.
         """
@@ -80,7 +93,7 @@ class AudioManager(object):
                 "Helicopter Flight Instructor: Sound Error: Failed to play "
                 f"{filename}. Sound is not preloaded in memory."
             )
-            return
+            return 0.0
 
         try:
             # Keep buffers from being garbage-collected during playback
@@ -118,6 +131,8 @@ class AudioManager(object):
                 "Helicopter Flight Instructor: Sound Error: Failed to play "
                 f"{filename}. Exception: {str(e)}"
             )
+
+        return sound_info["duration_s"]
 
     def stop_sound(self):
         """Stops the currently playing audio channel if active."""
