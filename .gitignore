@@ -13,3 +13,6 @@ htmlcov/
 
 # macOS metadata
 .DS_Store
+
+# VSCode files
+.vscode/
