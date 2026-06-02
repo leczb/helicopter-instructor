@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up PythonPlugins directory structure
         run: |
@@ -31,7 +31,7 @@ jobs:
           zip -r ../HelicopterFlightInstructor_Plugin_${{ github.ref_name }}.zip PythonPlugins/
 
       - name: Create GitHub Release and Upload Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: HelicopterFlightInstructor_Plugin_${{ github.ref_name }}.zip
           generate_release_notes: true # Automatically generates a changelog based on commit history
