@@ -89,6 +89,7 @@ class TestAudio(unittest.TestCase):
             "sample_width": 2,
             "frame_rate": 22050,
             "num_channels": 2,
+            "duration_s": 0.1,
         }
 
         # Mock playPCMOnBus to return a channel ID
@@ -146,6 +147,7 @@ class TestAudio(unittest.TestCase):
             "sample_width": 2,
             "frame_rate": 22050,
             "num_channels": 2,
+            "duration_s": 0.1,
         }
 
         # Set currently active channel

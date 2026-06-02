@@ -1,5 +1,14 @@
 # Release Notes
 
+## v2.1.41 - 2026-06-02
+- **Fixed**: Phase 1 intro audio ("Phase 1 intro.wav") is now played when the
+  VFI first engages, so the student always hears an explanation of the current
+  phase before taking the controls. Re-engaging on any phase will play that
+  phase's intro.
+- **Fixed**: Two unit tests in `test_audio.py` that broke in v2.1.40 when the
+  audio registry gained a `duration_s` field — updated mock entries to include
+  the new key.
+
 ## v2.1.40 - 2026-06-01
 
 - **Fixed**: Fixed audio length management. Instead of hardcoding the length of audio samples,

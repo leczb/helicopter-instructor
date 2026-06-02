@@ -112,6 +112,14 @@ class PluginUIController(object):
                 self._plugin.instructor.set_hud_caption("VFI ENGAGED - AUTO HOVER")
                 self._plugin.ap_enabled = True
                 self._plugin.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                # Queue the intro for the current phase so the student learns
+                # what they are about to practice. This also ensures Phase 1
+                # intro is played on first engagement (there is no preceding
+                # phase to trigger it automatically).
+                phase = self._plugin.instructor.phase
+                self._plugin.play_sound(
+                    SOUND_PHASE_INTRO_TEMPLATE.format(phase)
+                )
             else:
                 self._plugin.ap_enabled = False
                 self._plugin.release_all_overrides()
@@ -261,7 +269,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.40"
+        self.version = "2.1.41"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "lecz.helicopter.instructor"
         self.Desc = (
