@@ -1,0 +1,39 @@
+name: Package and Publish Release
+
+on:
+  push:
+    tags:
+      - "v*" # Triggers the workflow only when you push a tag starting with 'v' (e.g., v1.0.0)
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allows GitHub Actions to create a release and upload assets
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Set up PythonPlugins directory structure
+        run: |
+          # 1. Create a temporary staging folder matching the X-Plane requirement
+          mkdir -p staging/PythonPlugins
+
+          # 2. Copy production files/folders into it
+          cp v2/plugin/PI_helicopter_instructor.py staging/PythonPlugins/
+          cp -r v2/plugin/helicopter_instructor staging/PythonPlugins/
+
+      - name: Zip the plugin
+        run: |
+          # Change directory to staging so 'PythonPlugins' is the top-level folder inside the zip
+          cd staging
+          zip -r ../HelicopterFlightInstructor_Plugin_${{ github.ref_name }}.zip PythonPlugins/
+
+      - name: Create GitHub Release and Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: HelicopterFlightInstructor_Plugin_${{ github.ref_name }}.zip
+          generate_release_notes: true # Automatically generates a changelog based on commit history
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
