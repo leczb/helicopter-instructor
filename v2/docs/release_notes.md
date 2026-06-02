@@ -1,5 +1,11 @@
 # Release Notes
 
+## v2.1.46 - 2026-06-02
+
+- **Docs**: Updated `AGENTS.md` test commands to use `python3` (the correct
+  interpreter on macOS) and replaced the `pytest` invocation with
+  `python3 -m unittest discover tests -v`.
+
 ## v2.1.45 - 2026-06-02
 
 - **Fixed**: "Phase transition.wav" is no longer played when the student

@@ -168,16 +168,14 @@ Follows the **Google Python Style Guide** throughout.
 Run the full suite from `v2/`:
 
 ```bash
-python -m pytest tests/ -v
-# or
-python -m unittest discover tests
+python3 -m unittest discover tests -v
 ```
 
 **All tests must pass before committing.** Coverage:
 
 ```bash
-python -m coverage run -m unittest discover tests
-python -m coverage report -m
+python3 -m coverage run -m unittest discover tests
+python3 -m coverage report -m
 ```
 
 ### Test conventions
