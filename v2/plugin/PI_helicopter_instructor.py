@@ -269,7 +269,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.44"
+        self.version = "2.1.45"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "lecz.helicopter.instructor"
         self.Desc = (
@@ -1042,21 +1042,28 @@ class PythonInterface(object):
                     self.instructor.control_assignment[axis] = "VFI"
                     self.instructor.sync_locked[axis] = False
 
-                # 2. Play "Phase transition.wav" (clears any pending cues).
-                self.play_sound(SOUND_PHASE_TRANSITION, clear_queue=True)
-
                 if is_final:
-                    # 3a. Training complete — play the completion cue and stop.
-                    self.play_sound(SOUND_TRAINING_COMPLETE)
+                    # 2a. Training complete — no next phase, so skip the
+                    # transition jingle and play only the completion cue.
+                    self.play_sound(
+                        SOUND_TRAINING_COMPLETE, clear_queue=True
+                    )
                 else:
-                    # 3b. Advance to the next phase and queue its intro audio.
+                    # 2b. Play "Phase transition.wav" then advance to the
+                    # next phase and queue its intro audio.
+                    self.play_sound(
+                        SOUND_PHASE_TRANSITION, clear_queue=True
+                    )
                     self.instructor.phase = next_phase
-                    intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(next_phase)
+                    intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(
+                        next_phase
+                    )
                     self.play_sound(intro_sound)
 
-                    # 4. Initiate the hand-off to the student for the new phase.
-                    #    This sets the state to SYNCING, which will eventually
-                    #    trigger the normal "Get ready" / "You have …" cues.
+                    # 3. Initiate the hand-off to the student for the new
+                    #    phase.  This sets the state to SYNCING, which will
+                    #    eventually trigger the normal "Get ready" /
+                    #    "You have …" cues.
                     self.instructor.initiate_handoff()
 
 

@@ -1,5 +1,12 @@
 # Release Notes
 
+## v2.1.45 - 2026-06-02
+
+- **Fixed**: "Phase transition.wav" is no longer played when the student
+  completes Phase 6 (the final phase). There is no next phase to transition
+  into, so the VFI now goes straight to the completion cue
+  ("Now you know how to hover.wav") without the preceding jingle.
+
 ## v2.1.44 - 2026-06-02
 
 - **Fixed**: Eliminated attitude jolts at every phase transition, not just
