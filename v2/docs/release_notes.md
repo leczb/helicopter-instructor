@@ -1,5 +1,28 @@
 # Release Notes
 
+## v2.1.43 - 2026-06-02
+
+- **Fixed**: Eliminated the violent attitude jolt that occurred when the VFI
+  took back cyclic control after a safety boundary violation (e.g. drifting
+  45 m from the hover target in Phase 4).
+
+  **Root cause:** The flight loop was applying the override (snapping the
+  hover target to the current position) *after* the autopilot had already
+  computed its commands for that frame. This meant the PID cascade saw a 45 m
+  position error on the first recovery frame and produced maximum cyclic
+  deflection. Additionally, the position/velocity/attitude PIDs had accumulated
+  large integrals during student flight (they run continuously to provide
+  stable reference outputs), which persisted into the first recovery frame and
+  compounded the jolt.
+
+  **Fix (two parts):**
+  1. The override target snap now runs *before* `controller.update()` on every
+     frame, so the autopilot always sees the correct hover position.
+  2. When an override first fires, the lateral and longitudinal position,
+     velocity, and attitude PIDs are explicitly reset — clearing wound-up
+     integrals and stale derivative state. Recovery from frame N+1 onwards
+     therefore produces calm, near-zero attitude commands.
+
 ## v2.1.42 - 2026-06-02
 - **Fixed**: Manually selecting a phase via the UI now plays that phase's
   intro audio. If the student was flying, "I have control" plays first;

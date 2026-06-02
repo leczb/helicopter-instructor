@@ -414,6 +414,23 @@ class HoverAutopilotController(object):
         # Base collective to hover, updated on engagement
         self.hover_feedforward = 0.5
 
+    def reset_position_hold_pids(self):
+        """Resets the cyclic position, velocity and attitude PID controllers.
+
+        Clears integral wind-up and stale derivative state for the lateral and
+        longitudinal cascade (pos → vel → attitude).  Call this immediately
+        after a safety override fires so that the first VFI-commanded frame
+        uses a clean starting point.  Yaw and collective PIDs are intentionally
+        left untouched because they were tracking correctly during student
+        cyclic flight.
+        """
+        self.pos_lat_pid.reset()
+        self.vel_lat_pid.reset()
+        self.att_roll_pid.reset()
+        self.pos_lon_pid.reset()
+        self.vel_lon_pid.reset()
+        self.att_pitch_pid.reset()
+
     def engage(self, x, y, z, psi, collective):
         """Engages the autopilot, capturing the current state as hover targets.
 

@@ -176,6 +176,107 @@ class TestHelicopterControl(unittest.TestCase):
         outputs = controller.update(dt=0.02, state=state)
         self.assertTrue(outputs['collective'] > 0.5, f"Expected collective to increase above 0.5, got {outputs['collective']}")
 
+    def test_reset_position_hold_pids_clears_cyclic_state(self):
+        """reset_position_hold_pids() zeros integral and last_error for all
+        six cyclic PIDs (pos/vel/att on both lateral and longitudinal axes).
+        """
+        controller = HoverAutopilotController()
+        controller.engage(x=0.0, y=0.0, z=0.0, psi=0.0, collective=0.5)
+        controller.roll_active = True
+        controller.pitch_active = True
+
+        # Use a small error (0.5 m) that stays well below the pos PID output
+        # saturation limit (±5 m/s) so the anti-windup does not undo the
+        # integral step and the integral can grow across frames.
+        state = {
+            'x': 0.0, 'y': 0.0, 'z': 0.5,
+            'vx': 0.0, 'vy': 0.0, 'vz': 0.0,
+            'phi': 0.0, 'theta': 0.0, 'psi': 0.0,
+            'P': 0.0, 'Q': 0.0, 'R': 0.0,
+        }
+        for _ in range(50):
+            controller.update(dt=0.02, state=state)
+
+        # Confirm integrals and last_errors are non-zero before the reset.
+        self.assertNotAlmostEqual(controller.pos_lon_pid.integral, 0.0)
+        self.assertNotAlmostEqual(controller.pos_lon_pid.last_error, 0.0)
+
+        controller.reset_position_hold_pids()
+
+        # All six cyclic PID integrals and last_errors must be zero.
+        for pid in (
+            controller.pos_lat_pid, controller.vel_lat_pid,
+            controller.att_roll_pid,
+            controller.pos_lon_pid, controller.vel_lon_pid,
+            controller.att_pitch_pid,
+        ):
+            self.assertAlmostEqual(
+                pid.integral, 0.0,
+                msg=f"{pid} integral not reset"
+            )
+            self.assertAlmostEqual(
+                pid.last_error, 0.0,
+                msg=f"{pid} last_error not reset"
+            )
+
+
+    def test_reset_position_hold_pids_leaves_yaw_and_altitude_intact(self):
+        """reset_position_hold_pids() must not disturb yaw or altitude PIDs.
+
+        In Phase 4 the VFI controls yaw and collective throughout; those PIDs
+        track the correct hover state and must survive the override reset.
+        """
+        controller = HoverAutopilotController()
+        controller.engage(x=0.0, y=0.0, z=0.0, psi=0.0, collective=0.5)
+        controller.yaw_active = True
+        controller.collective_active = True
+
+        # Accumulate some integral on yaw and altitude.
+        state = {
+            'x': 0.0, 'y': -2.0, 'z': 0.0,
+            'vx': 0.0, 'vy': 0.0, 'vz': 0.0,
+            'phi': 0.0, 'theta': 0.0, 'psi': 10.0,
+            'P': 0.0, 'Q': 0.0, 'R': 0.0,
+        }
+        for _ in range(20):
+            controller.update(dt=0.02, state=state)
+
+        yaw_integral_before = controller.yaw_pid.integral
+        alt_integral_before = controller.alt_pid.integral
+
+        # Confirm they actually accumulated something worth preserving.
+        self.assertNotAlmostEqual(yaw_integral_before, 0.0)
+        self.assertNotAlmostEqual(alt_integral_before, 0.0)
+
+        controller.reset_position_hold_pids()
+
+        self.assertAlmostEqual(
+            controller.yaw_pid.integral, yaw_integral_before,
+            msg="yaw_pid integral must not be touched by "
+                "reset_position_hold_pids()"
+        )
+        self.assertAlmostEqual(
+            controller.alt_pid.integral, alt_integral_before,
+            msg="alt_pid integral must not be touched by "
+                "reset_position_hold_pids()"
+        )
+
+    def test_reset_position_hold_pids_safe_on_fresh_controller(self):
+        """Calling reset_position_hold_pids() on a freshly constructed
+        controller (no prior update() calls) must be a no-op and not raise.
+        """
+        controller = HoverAutopilotController()
+        controller.reset_position_hold_pids()   # must not raise
+
+        for pid in (
+            controller.pos_lat_pid, controller.vel_lat_pid,
+            controller.att_roll_pid,
+            controller.pos_lon_pid, controller.vel_lon_pid,
+            controller.att_pitch_pid,
+        ):
+            self.assertAlmostEqual(pid.integral, 0.0)
+            self.assertAlmostEqual(pid.last_error, 0.0)
+
 
 class TestAutopilotPlugin(unittest.TestCase):
     def setUp(self):
@@ -570,7 +671,121 @@ class TestAutopilotPlugin(unittest.TestCase):
         self.assertAlmostEqual(hw["collective"], 0.9)
 
 
+    def _make_vfi_output(self):
+        """Returns a minimal valid controller.update() return value."""
+        return {
+            'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0, 'collective': 0.5,
+            'debug': {
+                'fwd_err': 0.0, 'lat_err': 0.0, 'alt_err': 0.0,
+                'yaw_err': 0.0, 'target_v_fwd': 0.0, 'target_v_lat': 0.0,
+                'target_v_vert': 0.0, 'target_pitch': 0.0,
+                'target_roll': 0.0, 'v_fwd': 0.0, 'v_lat': 0.0,
+            }
+        }
+
+    def test_override_snaps_target_before_controller_update(self):
+        """controller.update() receives the override target, not the old one.
+
+        When drift_recovery_active is True at frame start (set in a prior
+        frame), the PRE-STEP A block must write override_target_x/z into
+        controller.target_x/z before controller.update() is called.  This
+        prevents the PID cascade from seeing a stale large position error on
+        recovery frames.
+        """
+        # Place the original hover target 50 m away.
+        self.plugin.controller.target_x = 50.0
+        self.plugin.controller.target_z = 50.0
+
+        # Simulate instructor already in OVERRIDE with a live drift recovery.
+        self.plugin.instructor.system_state = "OVERRIDE"
+        self.plugin.instructor.drift_recovery_active = True
+        self.plugin.instructor.override_target_x = 1.0   # near current position
+        self.plugin.instructor.override_target_y = None
+        self.plugin.instructor.override_target_z = 2.0
+
+        # Record the target_x seen by each controller.update() call.
+        seen_targets = []
+        real_update = self.plugin.controller.update
+
+        def capturing_update(dt, state):
+            seen_targets.append(self.plugin.controller.target_x)
+            return self._make_vfi_output()
+
+        self.plugin.controller.update = capturing_update
+        self.plugin.get_hardware_inputs = MagicMock(
+            return_value={'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+                          'collective': 0.5}
+        )
+
+        self.plugin.flight_loop_callback(
+            last_call=0.02, elapsed_time=0.02, counter=1, ref_con=None
+        )
+
+        self.assertEqual(len(seen_targets), 1)
+        self.assertAlmostEqual(
+            seen_targets[0], 1.0,
+            msg="controller.update() must see the override target (1.0), "
+                "not the stale 50 m target."
+        )
+
+    def test_cyclic_pids_reset_on_first_override_frame_only(self):
+        """reset_position_hold_pids() fires exactly once on STUDENT→OVERRIDE.
+
+        On the frame an override first fires, wound-up cyclic PIDs must be
+        cleared.  On every subsequent OVERRIDE frame the reset must NOT fire
+        again (the PIDs are already clean and retrigggering would discard the
+        freshly accumulated recovery state).
+        """
+        self.plugin.controller.update = MagicMock(
+            return_value=self._make_vfi_output()
+        )
+        self.plugin.get_hardware_inputs = MagicMock(
+            return_value={'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+                          'collective': 0.5}
+        )
+        self.plugin.controller.reset_position_hold_pids = MagicMock()
+
+        # --- Frame 1: transition STUDENT_FLIGHT → OVERRIDE ---
+        self.plugin.last_system_state = "STUDENT_FLIGHT"
+        self.plugin.instructor.system_state = "STUDENT_FLIGHT"
+
+        # Force instructor to immediately flip to OVERRIDE inside update().
+        def override_on_first_call(dt, telemetry, hardware, vfi_inputs):
+            self.plugin.instructor.system_state = "OVERRIDE"
+            self.plugin.instructor.drift_recovery_active = True
+            self.plugin.instructor.override_target_x = 0.0
+            self.plugin.instructor.override_target_y = None
+            self.plugin.instructor.override_target_z = 0.0
+            return vfi_inputs
+
+        self.plugin.instructor.update = override_on_first_call
+
+        self.plugin.flight_loop_callback(
+            last_call=0.02, elapsed_time=0.02, counter=1, ref_con=None
+        )
+        self.assertEqual(
+            self.plugin.controller.reset_position_hold_pids.call_count, 1,
+            "Expected exactly one PID reset on the first override frame."
+        )
+
+        # --- Frame 2: already in OVERRIDE, no further reset ---
+        def stay_in_override(dt, telemetry, hardware, vfi_inputs):
+            return vfi_inputs
+
+        self.plugin.instructor.update = stay_in_override
+
+        self.plugin.flight_loop_callback(
+            last_call=0.02, elapsed_time=0.02, counter=2, ref_con=None
+        )
+        self.assertEqual(
+            self.plugin.controller.reset_position_hold_pids.call_count, 1,
+            "reset_position_hold_pids() must not fire again on subsequent "
+            "override frames."
+        )
+
+
 class TestHoverTargetAdjustment(unittest.TestCase):
+
     def setUp(self):
         mock_xp.reset_mock()
         mock_xp_imgui.reset_mock()

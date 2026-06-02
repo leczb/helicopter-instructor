@@ -269,7 +269,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.42"
+        self.version = "2.1.43"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "lecz.helicopter.instructor"
         self.Desc = (
@@ -945,6 +945,32 @@ class PythonInterface(object):
             # Sanitize dt to prevent integrator spikes during unpauses/reloads
             dt = last_call if (0.0 < last_call < 0.1) else 0.02
 
+            # --- PRE-STEP A: Snap autopilot target to override position ---
+            # This MUST run before controller.update() so that the PID cascade
+            # always sees the correct hover target.  Running it after Step A
+            # would mean the autopilot computes one full frame of commands
+            # against a stale position error the instant an override fires,
+            # producing a violent attitude jolt.
+            if self.instructor.drift_recovery_active:
+                self.controller.target_x = self.instructor.override_target_x
+                if self.instructor.override_target_y is not None:
+                    self.controller.target_y = (
+                        self.instructor.override_target_y
+                    )
+                self.controller.target_z = self.instructor.override_target_z
+            elif self.instructor.was_drift_recovery_active:
+                # Recovery interpolation has finished: restore original target.
+                self.controller.target_x = self.instructor.original_target_x
+                if self.instructor.original_target_y is not None:
+                    self.controller.target_y = (
+                        self.instructor.original_target_y
+                    )
+                self.controller.target_z = self.instructor.original_target_z
+                self.instructor.was_drift_recovery_active = False
+                self.instructor.original_target_x = None
+                self.instructor.original_target_y = None
+                self.instructor.original_target_z = None
+
             # --- STEP A: Calculate stable VFI autopilot commands ---
             # To ensure stable outputs are always calculated for all axes,
             # we temporarily force all controller active flags to True.
@@ -975,6 +1001,21 @@ class PythonInterface(object):
             curr_state = self.instructor.system_state
             curr_phase = self.instructor.phase
 
+            # Initialize tracking variables on first loop
+            if not hasattr(self, 'last_system_state'):
+                self.last_system_state = curr_state
+            if not hasattr(self, 'last_phase'):
+                self.last_phase = curr_phase
+
+            # --- POST STEP C: Reset cyclic PIDs on first override frame ---
+            # On the frame an override first fires, Step A already ran with the
+            # stale target and wound-up integrals.  Resetting the cyclic PID
+            # cascade here clears that state so frame N+1 (which now also gets
+            # the correct target via PRE-STEP A above) starts from zero and
+            # produces calm, near-zero attitude commands.
+            if curr_state == "OVERRIDE" and self.last_system_state != "OVERRIDE":
+                self.controller.reset_position_hold_pids()
+
             # --- STEP C2: Run Student Performance Metrics ---
             is_student_flying = (curr_state == "STUDENT_FLIGHT")
             self.metrics.update(
@@ -991,12 +1032,6 @@ class PythonInterface(object):
                 if sound_to_play is None:
                     break
                 self.play_sound(sound_to_play)
-
-            # Initialize tracking variables on first loop
-            if not hasattr(self, 'last_system_state'):
-                self.last_system_state = curr_state
-            if not hasattr(self, 'last_phase'):
-                self.last_phase = curr_phase
 
             # --- STEP C4: Handle automatic phase progression ---
             # transition_pending is set by VirtualInstructor.maybe_advance_phase()
@@ -1078,26 +1113,6 @@ class PythonInterface(object):
             # Update persistent tracking state
             self.last_system_state = curr_state
             self.last_phase = curr_phase
-
-            # Apply target overrides from instructor if active
-            if self.instructor.drift_recovery_active:
-                self.controller.target_x = self.instructor.override_target_x
-                if self.instructor.override_target_y is not None:
-                    self.controller.target_y = self.instructor.override_target_y
-                self.controller.target_z = self.instructor.override_target_z
-            elif self.instructor.was_drift_recovery_active:
-                # Restore original target coordinates
-                self.controller.target_x = self.instructor.original_target_x
-                if self.instructor.original_target_y is not None:
-                    self.controller.target_y = self.instructor.original_target_y
-                self.controller.target_z = self.instructor.original_target_z
-                # Clear state flags in the instructor
-                self.instructor.was_drift_recovery_active = False
-                self.instructor.original_target_x = None
-                self.instructor.original_target_y = None
-                self.instructor.original_target_z = None
-
-
 
             # --- STEP D: Perform Intelligent Control Routing ---
             # 1. Roll
