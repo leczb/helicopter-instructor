@@ -269,7 +269,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.41"
+        self.version = "2.1.42"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "lecz.helicopter.instructor"
         self.Desc = (
@@ -1045,9 +1045,13 @@ class PythonInterface(object):
 
             if not auto_phase_transition:
                 if phase_changed:
-                    # Manual phase change: instructor takes control.
+                    # Manual phase change: instructor takes control and
+                    # explains the new phase via its intro audio.
                     if curr_state in ["STUDENT_FLIGHT", "SYNCING"]:
                         self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                    self.play_sound(
+                        SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase)
+                    )
                 elif state_changed:
                     if curr_state == "SYNCING":
                         if self.last_system_state == "STUDENT_FLIGHT":

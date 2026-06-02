@@ -1,5 +1,10 @@
 # Release Notes
 
+## v2.1.42 - 2026-06-02
+- **Fixed**: Manually selecting a phase via the UI now plays that phase's
+  intro audio. If the student was flying, "I have control" plays first;
+  if the VFI already had control, only the intro is queued.
+
 ## v2.1.41 - 2026-06-02
 - **Fixed**: Phase 1 intro audio ("Phase 1 intro.wav") is now played when the
   VFI first engages, so the student always hears an explanation of the current
