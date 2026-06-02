@@ -23,19 +23,11 @@ def get_gains_filepath(plugin_dir):
         if filename:
             aircraft_name = os.path.splitext(filename)[0]
             aircraft_name = "".join(
-                [
-                    c if c.isalnum() or c == '_' else '_'
-                    for c in aircraft_name
-                ]
+                [c if c.isalnum() or c == "_" else "_" for c in aircraft_name]
             )
-            return os.path.join(
-                autopilot_dir, f"autopilot_gains_{aircraft_name}.json"
-            )
+            return os.path.join(autopilot_dir, f"autopilot_gains_{aircraft_name}.json")
     except Exception as e:
-        xp.log(
-            "Helicopter Flight Instructor: "
-            f"Error getting aircraft filename: {e}"
-        )
+        xp.log("Helicopter Flight Instructor: " f"Error getting aircraft filename: {e}")
     return os.path.join(autopilot_dir, "autopilot_gains.json")
 
 
@@ -52,7 +44,7 @@ def save_gains(plugin_dir, gains):
         filepath = get_gains_filepath(plugin_dir)
         # Ensure the directory exists before saving
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             json.dump(gains.to_dict(), f, indent=4)
         xp.log(
             "Helicopter Flight Instructor: Saved PID gains to "
@@ -73,15 +65,13 @@ def load_gains(plugin_dir):
     """
     filepath = get_gains_filepath(plugin_dir)
     if not os.path.exists(filepath):
-        generic_filepath = os.path.join(
-            plugin_dir, "autopilot", "autopilot_gains.json"
-        )
+        generic_filepath = os.path.join(plugin_dir, "autopilot", "autopilot_gains.json")
         if os.path.exists(generic_filepath):
             filepath = generic_filepath
         else:
             return None
     try:
-        with open(filepath, 'r') as f:
+        with open(filepath, "r") as f:
             data = json.load(f)
 
         gains = AutopilotGains.from_dict(data)

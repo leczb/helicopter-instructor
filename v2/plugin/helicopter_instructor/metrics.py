@@ -43,13 +43,13 @@ from helicopter_instructor.envelope_limits import (
 
 # Safety and Performance warning margin constants
 # Warn as soon as the student exits the green zone (target 6.0m ± LIMIT_ALT_GREEN_M)
-MARGIN_ALT_LOW = 6.0 - LIMIT_ALT_GREEN_M   # Lower green edge: 4.0m AGL
+MARGIN_ALT_LOW = 6.0 - LIMIT_ALT_GREEN_M  # Lower green edge: 4.0m AGL
 MARGIN_ALT_HIGH = 6.0 + LIMIT_ALT_GREEN_M  # Upper green edge: 8.0m AGL
 # Warn as soon as the student gets near the edge of the green zone
 MARGIN_DRIFT_LIMIT = LIMIT_DRIFT_GREEN_M - 8.0
-MARGIN_OCI_CYCLIC = 1.0       # Cyclic OCI warning threshold
-MARGIN_OCI_PEDAL = 0.8        # Pedals OCI warning threshold
-MARGIN_OCI_COLLECTIVE = 0.8   # Collective OCI warning threshold
+MARGIN_OCI_CYCLIC = 1.0  # Cyclic OCI warning threshold
+MARGIN_OCI_PEDAL = 0.8  # Pedals OCI warning threshold
+MARGIN_OCI_COLLECTIVE = 0.8  # Collective OCI warning threshold
 
 # Green Zone (Excellent) performance thresholds for precision scoring
 GREEN_ZONE_HDG_DEG = LIMIT_HDG_GREEN_DEG
@@ -66,7 +66,6 @@ LIMIT_DRIFT_M = LIMIT_DRIFT_RED_M
 LIMIT_DRIFT_SPEED_M_S = LIMIT_DRIFT_SPEED_ORANGE_M_S
 LIMIT_VERT_SPEED_M_S = LIMIT_VERT_SPEED_ORANGE_M_S
 LIMIT_YAW_SPEED_DEG_S = LIMIT_YAW_SPEED_ORANGE_DEG_S
-
 
 
 class PerformanceMetricsEvaluator(object):
@@ -288,10 +287,14 @@ class PerformanceMetricsEvaluator(object):
                 else:
                     comp_hdg = max(
                         0.0,
-                        100.0 * (1.0 - (
-                            (err - GREEN_ZONE_HDG_DEG) /
-                            (LIMIT_HDG_DEG - GREEN_ZONE_HDG_DEG)
-                        ))
+                        100.0
+                        * (
+                            1.0
+                            - (
+                                (err - GREEN_ZONE_HDG_DEG)
+                                / (LIMIT_HDG_DEG - GREEN_ZONE_HDG_DEG)
+                            )
+                        ),
                     )
 
         comp_alt = 100.0
@@ -304,10 +307,14 @@ class PerformanceMetricsEvaluator(object):
                 else:
                     comp_alt = max(
                         0.0,
-                        100.0 * (1.0 - (
-                            (err - GREEN_ZONE_ALT_M) /
-                            (LIMIT_ALT_M - GREEN_ZONE_ALT_M)
-                        ))
+                        100.0
+                        * (
+                            1.0
+                            - (
+                                (err - GREEN_ZONE_ALT_M)
+                                / (LIMIT_ALT_M - GREEN_ZONE_ALT_M)
+                            )
+                        ),
                     )
 
         comp_drift = 100.0
@@ -321,7 +328,7 @@ class PerformanceMetricsEvaluator(object):
             tx = telemetry.get("target_x")
             tz = telemetry.get("target_z")
             if x is not None and z is not None and tx is not None and tz is not None:
-                drift = math.sqrt((x - tx)**2 + (z - tz)**2)
+                drift = math.sqrt((x - tx) ** 2 + (z - tz) ** 2)
                 # Track drift stats
                 self.total_drift_sum += drift
                 self.drift_count += 1
@@ -331,10 +338,14 @@ class PerformanceMetricsEvaluator(object):
                 else:
                     comp_drift = max(
                         0.0,
-                        100.0 * (1.0 - (
-                            (drift - GREEN_ZONE_DRIFT_M) /
-                            (LIMIT_DRIFT_M - GREEN_ZONE_DRIFT_M)
-                        ))
+                        100.0
+                        * (
+                            1.0
+                            - (
+                                (drift - GREEN_ZONE_DRIFT_M)
+                                / (LIMIT_DRIFT_M - GREEN_ZONE_DRIFT_M)
+                            )
+                        ),
                     )
 
         # Compute drift speed in m/s and corresponding score component
@@ -347,10 +358,7 @@ class PerformanceMetricsEvaluator(object):
             else:
                 num = self.drift_speed - GREEN_ZONE_DRIFT_SPEED_M_S
                 den = LIMIT_DRIFT_SPEED_M_S - GREEN_ZONE_DRIFT_SPEED_M_S
-                self.drift_speed_score = max(
-                    0.0,
-                    100.0 * (1.0 - (num / den))
-                )
+                self.drift_speed_score = max(0.0, 100.0 * (1.0 - (num / den)))
         else:
             self.drift_speed = 0.0
             self.drift_speed_score = 100.0
@@ -363,10 +371,7 @@ class PerformanceMetricsEvaluator(object):
             else:
                 num = self.vert_speed - GREEN_ZONE_VERT_SPEED_M_S
                 den = LIMIT_VERT_SPEED_M_S - GREEN_ZONE_VERT_SPEED_M_S
-                self.vert_speed_score = max(
-                    0.0,
-                    100.0 * (1.0 - (num / den))
-                )
+                self.vert_speed_score = max(0.0, 100.0 * (1.0 - (num / den)))
         else:
             self.vert_speed = 0.0
             self.vert_speed_score = 100.0
@@ -379,10 +384,7 @@ class PerformanceMetricsEvaluator(object):
             else:
                 num = self.yaw_speed - GREEN_ZONE_YAW_SPEED_DEG_S
                 den = LIMIT_YAW_SPEED_DEG_S - GREEN_ZONE_YAW_SPEED_DEG_S
-                self.yaw_speed_score = max(
-                    0.0,
-                    100.0 * (1.0 - (num / den))
-                )
+                self.yaw_speed_score = max(0.0, 100.0 * (1.0 - (num / den)))
         else:
             self.yaw_speed = 0.0
             self.yaw_speed_score = 100.0
@@ -419,9 +421,7 @@ class PerformanceMetricsEvaluator(object):
                 smooth_components.append(score)
 
         if smooth_components:
-            self.smoothness_score = (
-                sum(smooth_components) / len(smooth_components)
-            )
+            self.smoothness_score = sum(smooth_components) / len(smooth_components)
         else:
             self.smoothness_score = 100.0
 
@@ -437,7 +437,7 @@ class PerformanceMetricsEvaluator(object):
         tz = telemetry.get("target_z")
         drift = 0.0
         if x is not None and z is not None and tx is not None and tz is not None:
-            drift = math.sqrt((x - tx)**2 + (z - tz)**2)
+            drift = math.sqrt((x - tx) ** 2 + (z - tz) ** 2)
 
         prox_pitch = theta / 15.0
         prox_roll = phi / 15.0
@@ -472,10 +472,7 @@ class PerformanceMetricsEvaluator(object):
 
         # --- D. Overall Weighted Score ---
         # Calculate raw overall score first
-        raw_overall = (
-            (self.precision_score * 0.6) +
-            (self.smoothness_score * 0.4)
-        )
+        raw_overall = (self.precision_score * 0.6) + (self.smoothness_score * 0.4)
 
         # Scale precision and overall scores by stationkeeping precision
         factor = stationkeeping_score / 100.0
@@ -504,7 +501,7 @@ class PerformanceMetricsEvaluator(object):
             tz = telemetry.get("target_z")
             drift = 0.0
             if x is not None and z is not None and tx is not None and tz is not None:
-                drift = math.sqrt((x - tx)**2 + (z - tz)**2)
+                drift = math.sqrt((x - tx) ** 2 + (z - tz) ** 2)
 
             y_agl = telemetry.get("y_agl", 6.0)
             alt_err = abs(y_agl - 6.0)
@@ -528,13 +525,10 @@ class PerformanceMetricsEvaluator(object):
 
             # Evaluate unstable criteria (gated by student-controlled axes)
             is_unstable = False
-            
+
             # Smoothness stability (OCI > 1.5) on active student axes
             for axis in ["roll", "pitch", "yaw", "collective"]:
-                if (
-                    phase_config.get(axis) == "STUDENT"
-                    and oci.get(axis, 0.0) > 1.5
-                ):
+                if phase_config.get(axis) == "STUDENT" and oci.get(axis, 0.0) > 1.5:
                     is_unstable = True
 
             # Drift stability (Cyclic STUDENT)
@@ -542,26 +536,17 @@ class PerformanceMetricsEvaluator(object):
                 phase_config.get("roll") == "STUDENT"
                 and phase_config.get("pitch") == "STUDENT"
             ):
-                if (
-                    drift > LIMIT_DRIFT_M
-                    or frame_drift_speed > LIMIT_DRIFT_SPEED_M_S
-                ):
+                if drift > LIMIT_DRIFT_M or frame_drift_speed > LIMIT_DRIFT_SPEED_M_S:
                     is_unstable = True
 
             # Altitude stability (Collective STUDENT)
             if phase_config.get("collective") == "STUDENT":
-                if (
-                    alt_err > LIMIT_ALT_M
-                    or frame_vert_speed > LIMIT_VERT_SPEED_M_S
-                ):
+                if alt_err > LIMIT_ALT_M or frame_vert_speed > LIMIT_VERT_SPEED_M_S:
                     is_unstable = True
 
             # Heading stability (Yaw STUDENT)
             if phase_config.get("yaw") == "STUDENT":
-                if (
-                    hdg_err > LIMIT_HDG_DEG
-                    or frame_yaw_speed > LIMIT_YAW_SPEED_DEG_S
-                ):
+                if hdg_err > LIMIT_HDG_DEG or frame_yaw_speed > LIMIT_YAW_SPEED_DEG_S:
                     is_unstable = True
 
             if is_unstable:
@@ -683,7 +668,7 @@ class PerformanceMetricsEvaluator(object):
             tx = telemetry.get("target_x")
             tz = telemetry.get("target_z")
             if x is not None and z is not None and tx is not None and tz is not None:
-                drift = math.sqrt((x - tx)**2 + (z - tz)**2)
+                drift = math.sqrt((x - tx) ** 2 + (z - tz) ** 2)
 
                 if drift > MARGIN_DRIFT_LIMIT:
                     self.drift_warning_timer += dt
@@ -763,7 +748,11 @@ class PerformanceMetricsEvaluator(object):
         # 2. "Smooth Hands" (Cyclic OCI steady, low drift speed)
         if cyclic_student:
             max_cyclic_oci = max(self.oci["roll"], self.oci["pitch"])
-            if max_cyclic_oci < 0.2 and self.precision_score >= 70.0 and self.drift_speed <= 1.0:
+            if (
+                max_cyclic_oci < 0.2
+                and self.precision_score >= 70.0
+                and self.drift_speed <= 1.0
+            ):
                 self.cyclic_praise_timer += dt
                 if (
                     self.cyclic_praise_timer >= 30.0
@@ -784,13 +773,8 @@ class PerformanceMetricsEvaluator(object):
             z = telemetry.get("z")
             tx = telemetry.get("target_x")
             tz = telemetry.get("target_z")
-            if (
-                x is not None
-                and z is not None
-                and tx is not None
-                and tz is not None
-            ):
-                drift = math.sqrt((x - tx)**2 + (z - tz)**2)
+            if x is not None and z is not None and tx is not None and tz is not None:
+                drift = math.sqrt((x - tx) ** 2 + (z - tz) ** 2)
                 if drift > MARGIN_DRIFT_LIMIT:
                     violating_warning = True
 
@@ -843,24 +827,34 @@ class PerformanceMetricsEvaluator(object):
         )
         if cyclic_student:
             if max(self.oci["roll"], self.oci["pitch"]) > 0.8:
-                tips.append("Cyclic inputs too large. Make tiny, 1-millimeter tweaks and wait for the aircraft response.")
+                tips.append(
+                    "Cyclic inputs too large. Make tiny, 1-millimeter tweaks and wait for the aircraft response."
+                )
 
         # 2. Pedal over-controlling advice
         if phase_config.get("yaw") == "STUDENT":
             if self.oci["yaw"] > 0.6:
-                tips.append("Avoid rapidly pumping pedals. Push gently and hold to damp yaw rotation.")
+                tips.append(
+                    "Avoid rapidly pumping pedals. Push gently and hold to damp yaw rotation."
+                )
 
         # 3. Collective altitude advice
         if phase_config.get("collective") == "STUDENT":
             if self.oci["collective"] > 0.6:
-                tips.append("Altitude corrections should be smooth. Collective changes require corresponding pedal compensation.")
+                tips.append(
+                    "Altitude corrections should be smooth. Collective changes require corresponding pedal compensation."
+                )
 
         # 4. Success tips
         if not tips:
             if self.precision_score >= 90.0:
-                tips.append("Excellent station-keeping. Keep looking ahead and hold this nominal attitude.")
+                tips.append(
+                    "Excellent station-keeping. Keep looking ahead and hold this nominal attitude."
+                )
             else:
-                tips.append("Steady, tiny adjustments. Anticipate drift rather than chasing it.")
+                tips.append(
+                    "Steady, tiny adjustments. Anticipate drift rather than chasing it."
+                )
 
         self.coaching_tips = tips[0] if tips else "Keep wings level."
 

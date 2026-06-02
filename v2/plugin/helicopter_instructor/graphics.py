@@ -59,8 +59,15 @@ def generate_solid_png(filepath, r, g, b, alpha):
 
 
 def write_flat_arc_obj_file(
-    filepath, filename_base, inner_radius, outer_radius, color,
-    start_angle_deg, end_angle_deg, num_segments=32, vertical_offset=0.03
+    filepath,
+    filename_base,
+    inner_radius,
+    outer_radius,
+    color,
+    start_angle_deg,
+    end_angle_deg,
+    num_segments=32,
+    vertical_offset=0.03,
 ):
     """Generates a native X-Plane OBJ8 file for a flat horizontal arc.
 
@@ -92,7 +99,7 @@ def write_flat_arc_obj_file(
         "GLOBAL_no_shadow",
         "",
         f"POINT_COUNTS {total_vertices} 0 0 {total_indices}",
-        ""
+        "",
     ]
 
     # Calculate angular step
@@ -101,9 +108,7 @@ def write_flat_arc_obj_file(
     # 1. Define Triangle Vertices (VT)
     # Heading is clockwise from North (+Z is South, +X is East)
     for i in range(num_segments + 1):
-        h_deg = start_angle_deg + (
-            angle_diff * float(i) / float(num_segments)
-        )
+        h_deg = start_angle_deg + (angle_diff * float(i) / float(num_segments))
         h_rad = math.radians(h_deg)
         sin_h = math.sin(h_rad)
         cos_h = math.cos(h_rad)
@@ -147,7 +152,7 @@ def write_flat_arc_obj_file(
 
     # Write indices as IDX10/IDX blocks
     for i in range(0, total_indices, 10):
-        chunk = indices[i:i + 10]
+        chunk = indices[i : i + 10]
         if len(chunk) == 10:
             chunk_str = " ".join(map(str, chunk))
             lines.append(f"IDX10 {chunk_str}")
@@ -167,8 +172,7 @@ def write_flat_arc_obj_file(
 
 
 def write_flat_disk_obj_file(
-    filepath, filename_base, inner_radius, outer_radius, color,
-    num_segments
+    filepath, filename_base, inner_radius, outer_radius, color, num_segments
 ):
     """Generates a native X-Plane OBJ8 file for a flat shaded disk/annulus.
 
@@ -197,7 +201,7 @@ def write_flat_disk_obj_file(
         "GLOBAL_no_shadow",
         "",
         f"POINT_COUNTS {total_vertices} 0 0 {total_indices}",
-        ""
+        "",
     ]
 
     # Float slightly above ground level to avoid z-fighting (meters above ground)
@@ -249,7 +253,7 @@ def write_flat_disk_obj_file(
 
     # Write indices as IDX10/IDX blocks
     for i in range(0, total_indices, 10):
-        chunk = indices[i:i + 10]
+        chunk = indices[i : i + 10]
         if len(chunk) == 10:
             chunk_str = " ".join(map(str, chunk))
             lines.append(f"IDX10 {chunk_str}")
@@ -304,7 +308,7 @@ def write_spokes_obj_file(
         "GLOBAL_no_shadow",
         "",
         f"POINT_COUNTS {total_vertices} 0 0 {total_indices}",
-        ""
+        "",
     ]
 
     vertical_offset = 0.04
@@ -372,7 +376,7 @@ def write_spokes_obj_file(
 
     # Write indices
     for i in range(0, total_indices, 10):
-        chunk = indices[i:i + 10]
+        chunk = indices[i : i + 10]
         if len(chunk) == 10:
             lines.append("IDX10 " + " ".join(map(str, chunk)))
         else:
@@ -388,7 +392,6 @@ def write_spokes_obj_file(
 
     with open(filepath, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
-
 
 
 class GraphicsAssetManager(object):
@@ -446,24 +449,21 @@ class GraphicsAssetManager(object):
                 os.path.join(gen_dir, "disk_15m_a15.png"), 0.0, 1.0, 0.3, 0.15
             )
             generate_solid_png(
-                os.path.join(gen_dir, "disk_15m_a15_LIT.png"),
-                0.0, 1.0, 0.3, 0.15
+                os.path.join(gen_dir, "disk_15m_a15_LIT.png"), 0.0, 1.0, 0.3, 0.15
             )
 
             generate_solid_png(
                 os.path.join(gen_dir, "disk_30m_a15.png"), 1.0, 0.6, 0.0, 0.15
             )
             generate_solid_png(
-                os.path.join(gen_dir, "disk_30m_a15_LIT.png"),
-                1.0, 0.6, 0.0, 0.15
+                os.path.join(gen_dir, "disk_30m_a15_LIT.png"), 1.0, 0.6, 0.0, 0.15
             )
 
             generate_solid_png(
                 os.path.join(gen_dir, "disk_45m_a15.png"), 1.0, 0.1, 0.1, 0.15
             )
             generate_solid_png(
-                os.path.join(gen_dir, "disk_45m_a15_LIT.png"),
-                1.0, 0.1, 0.1, 0.15
+                os.path.join(gen_dir, "disk_45m_a15_LIT.png"), 1.0, 0.1, 0.1, 0.15
             )
 
             # Generate solid white textures for spokes (0.8 alpha)
@@ -471,78 +471,107 @@ class GraphicsAssetManager(object):
                 os.path.join(gen_dir, "spokes_white.png"), 1.0, 1.0, 1.0, 0.8
             )
             generate_solid_png(
-                os.path.join(gen_dir, "spokes_white_LIT.png"),
-                1.0, 1.0, 1.0, 0.8
+                os.path.join(gen_dir, "spokes_white_LIT.png"), 1.0, 1.0, 1.0, 0.8
             )
 
             # Generate disk OBJ8 files
             write_flat_disk_obj_file(
-                os.path.join(gen_dir, "disk_15m.obj"), "disk_15m_a15",
-                inner_radius=0.0, outer_radius=LIMIT_DRIFT_GREEN_M, color=(0.0, 1.0, 0.3),
-                num_segments=64
+                os.path.join(gen_dir, "disk_15m.obj"),
+                "disk_15m_a15",
+                inner_radius=0.0,
+                outer_radius=LIMIT_DRIFT_GREEN_M,
+                color=(0.0, 1.0, 0.3),
+                num_segments=64,
             )
             write_flat_disk_obj_file(
-                os.path.join(gen_dir, "disk_30m.obj"), "disk_30m_a15",
-                inner_radius=LIMIT_DRIFT_GREEN_M, outer_radius=LIMIT_DRIFT_ORANGE_M, color=(1.0, 0.6, 0.0),
-                num_segments=64
+                os.path.join(gen_dir, "disk_30m.obj"),
+                "disk_30m_a15",
+                inner_radius=LIMIT_DRIFT_GREEN_M,
+                outer_radius=LIMIT_DRIFT_ORANGE_M,
+                color=(1.0, 0.6, 0.0),
+                num_segments=64,
             )
             write_flat_disk_obj_file(
-                os.path.join(gen_dir, "disk_45m.obj"), "disk_45m_a15",
-                inner_radius=LIMIT_DRIFT_ORANGE_M, outer_radius=LIMIT_DRIFT_RED_M, color=(1.0, 0.1, 0.1),
-                num_segments=64
+                os.path.join(gen_dir, "disk_45m.obj"),
+                "disk_45m_a15",
+                inner_radius=LIMIT_DRIFT_ORANGE_M,
+                outer_radius=LIMIT_DRIFT_RED_M,
+                color=(1.0, 0.1, 0.1),
+                num_segments=64,
             )
 
             # Generate spokes OBJ8 file
             write_spokes_obj_file(
-                os.path.join(gen_dir, "spokes.obj"), "spokes_white",
-                num_spokes=8, spoke_length=LIMIT_DRIFT_RED_M, spoke_width=0.1
+                os.path.join(gen_dir, "spokes.obj"),
+                "spokes_white",
+                num_spokes=8,
+                spoke_length=LIMIT_DRIFT_RED_M,
+                spoke_width=0.1,
             )
 
             # Generate target heading white arc (+/- 3 deg, color white, vertical_offset=0.04 to float on green arc)
             write_flat_arc_obj_file(
-                os.path.join(gen_dir, "arc_target.obj"), "spokes_white",
-                inner_radius=46.0, outer_radius=55.0, color=(1.0, 1.0, 1.0),
+                os.path.join(gen_dir, "arc_target.obj"),
+                "spokes_white",
+                inner_radius=46.0,
+                outer_radius=55.0,
+                color=(1.0, 1.0, 1.0),
                 start_angle_deg=-3.0,
                 end_angle_deg=3.0,
                 num_segments=8,
-                vertical_offset=0.04
+                vertical_offset=0.04,
             )
 
             # Generate flat arc OBJ8 files for heading limits
             write_flat_arc_obj_file(
-                os.path.join(gen_dir, "arc_green.obj"), "disk_15m_a15",
-                inner_radius=46.0, outer_radius=55.0, color=(0.0, 1.0, 0.3),
+                os.path.join(gen_dir, "arc_green.obj"),
+                "disk_15m_a15",
+                inner_radius=46.0,
+                outer_radius=55.0,
+                color=(0.0, 1.0, 0.3),
                 start_angle_deg=-green_limit,
                 end_angle_deg=green_limit,
-                num_segments=32
+                num_segments=32,
             )
             write_flat_arc_obj_file(
-                os.path.join(gen_dir, "arc_orange_l.obj"), "disk_30m_a15",
-                inner_radius=46.0, outer_radius=55.0, color=(1.0, 0.6, 0.0),
+                os.path.join(gen_dir, "arc_orange_l.obj"),
+                "disk_30m_a15",
+                inner_radius=46.0,
+                outer_radius=55.0,
+                color=(1.0, 0.6, 0.0),
                 start_angle_deg=-orange_limit,
                 end_angle_deg=-green_limit,
-                num_segments=16
+                num_segments=16,
             )
             write_flat_arc_obj_file(
-                os.path.join(gen_dir, "arc_orange_r.obj"), "disk_30m_a15",
-                inner_radius=46.0, outer_radius=55.0, color=(1.0, 0.6, 0.0),
+                os.path.join(gen_dir, "arc_orange_r.obj"),
+                "disk_30m_a15",
+                inner_radius=46.0,
+                outer_radius=55.0,
+                color=(1.0, 0.6, 0.0),
                 start_angle_deg=green_limit,
                 end_angle_deg=orange_limit,
-                num_segments=16
+                num_segments=16,
             )
             write_flat_arc_obj_file(
-                os.path.join(gen_dir, "arc_red_l.obj"), "disk_45m_a15",
-                inner_radius=46.0, outer_radius=55.0, color=(1.0, 0.1, 0.1),
+                os.path.join(gen_dir, "arc_red_l.obj"),
+                "disk_45m_a15",
+                inner_radius=46.0,
+                outer_radius=55.0,
+                color=(1.0, 0.1, 0.1),
                 start_angle_deg=-180.0,
                 end_angle_deg=-orange_limit,
-                num_segments=64
+                num_segments=64,
             )
             write_flat_arc_obj_file(
-                os.path.join(gen_dir, "arc_red_r.obj"), "disk_45m_a15",
-                inner_radius=46.0, outer_radius=55.0, color=(1.0, 0.1, 0.1),
+                os.path.join(gen_dir, "arc_red_r.obj"),
+                "disk_45m_a15",
+                inner_radius=46.0,
+                outer_radius=55.0,
+                color=(1.0, 0.1, 0.1),
                 start_angle_deg=orange_limit,
                 end_angle_deg=180.0,
-                num_segments=64
+                num_segments=64,
             )
 
             xp.log(
@@ -573,13 +602,25 @@ class GraphicsAssetManager(object):
             self.obj_30m = xp.loadObject(f"{rel_dir}/assets/generated/disk_30m.obj")
             self.obj_45m = xp.loadObject(f"{rel_dir}/assets/generated/disk_45m.obj")
             self.obj_spokes = xp.loadObject(f"{rel_dir}/assets/generated/spokes.obj")
-            self.obj_arc_target = xp.loadObject(f"{rel_dir}/assets/generated/arc_target.obj")
+            self.obj_arc_target = xp.loadObject(
+                f"{rel_dir}/assets/generated/arc_target.obj"
+            )
 
-            self.obj_arc_green = xp.loadObject(f"{rel_dir}/assets/generated/arc_green.obj")
-            self.obj_arc_orange_l = xp.loadObject(f"{rel_dir}/assets/generated/arc_orange_l.obj")
-            self.obj_arc_orange_r = xp.loadObject(f"{rel_dir}/assets/generated/arc_orange_r.obj")
-            self.obj_arc_red_l = xp.loadObject(f"{rel_dir}/assets/generated/arc_red_l.obj")
-            self.obj_arc_red_r = xp.loadObject(f"{rel_dir}/assets/generated/arc_red_r.obj")
+            self.obj_arc_green = xp.loadObject(
+                f"{rel_dir}/assets/generated/arc_green.obj"
+            )
+            self.obj_arc_orange_l = xp.loadObject(
+                f"{rel_dir}/assets/generated/arc_orange_l.obj"
+            )
+            self.obj_arc_orange_r = xp.loadObject(
+                f"{rel_dir}/assets/generated/arc_orange_r.obj"
+            )
+            self.obj_arc_red_l = xp.loadObject(
+                f"{rel_dir}/assets/generated/arc_red_l.obj"
+            )
+            self.obj_arc_red_r = xp.loadObject(
+                f"{rel_dir}/assets/generated/arc_red_r.obj"
+            )
 
             if self.obj_15m:
                 self.inst_15m = xp.createInstance(self.obj_15m)
@@ -634,21 +675,31 @@ class GraphicsAssetManager(object):
         ax, ay, az = (tx, ty, tz) if draw_arcs else (0.0, -9999.0, 0.0)
         ah = t_heading if draw_arcs else 0.0
         if self.inst_arc_green:
-            xp.instanceSetPosition(self.inst_arc_green, (ax, ay, az, 0.0, ah, 0.0), None)
+            xp.instanceSetPosition(
+                self.inst_arc_green, (ax, ay, az, 0.0, ah, 0.0), None
+            )
         if self.inst_arc_orange_l:
-            xp.instanceSetPosition(self.inst_arc_orange_l, (ax, ay, az, 0.0, ah, 0.0), None)
+            xp.instanceSetPosition(
+                self.inst_arc_orange_l, (ax, ay, az, 0.0, ah, 0.0), None
+            )
         if self.inst_arc_orange_r:
-            xp.instanceSetPosition(self.inst_arc_orange_r, (ax, ay, az, 0.0, ah, 0.0), None)
+            xp.instanceSetPosition(
+                self.inst_arc_orange_r, (ax, ay, az, 0.0, ah, 0.0), None
+            )
         if self.inst_arc_red_l:
-            xp.instanceSetPosition(self.inst_arc_red_l, (ax, ay, az, 0.0, ah, 0.0), None)
+            xp.instanceSetPosition(
+                self.inst_arc_red_l, (ax, ay, az, 0.0, ah, 0.0), None
+            )
         if self.inst_arc_red_r:
-            xp.instanceSetPosition(self.inst_arc_red_r, (ax, ay, az, 0.0, ah, 0.0), None)
+            xp.instanceSetPosition(
+                self.inst_arc_red_r, (ax, ay, az, 0.0, ah, 0.0), None
+            )
 
         # Position target heading arc (pointing straight forward, sharing visibility with arcs)
         if self.inst_arc_target:
-            xp.instanceSetPosition(self.inst_arc_target, (ax, ay, az, 0.0, ah, 0.0), None)
-
-
+            xp.instanceSetPosition(
+                self.inst_arc_target, (ax, ay, az, 0.0, ah, 0.0), None
+            )
 
     def unload_objects(self):
         """Destroys rendering instances and unloads OBJ8 files cleanly."""

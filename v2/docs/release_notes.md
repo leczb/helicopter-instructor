@@ -1,6 +1,12 @@
 # Release Notes
 
-## v2.1.47 - 2026-06-03
+## v2.1.48 - 2026-06-02
+
+- **Chore**: Formatted all .py files with Black
+
+- **Chore**: Removed unnecessary prefix "Helicopter Flight Instructor: " from log messages
+
+## v2.1.47 - 2026-06-02
 
 - **Fixed**: Updated the plugin signature and description to be consistent
   with X-Plane community practices.

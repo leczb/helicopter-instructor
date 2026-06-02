@@ -98,16 +98,21 @@ class PluginUIController(object):
                 state = self._plugin.get_current_state()
                 curr_collective = xp.getDataf(self._plugin.dref_prop_ratio_all)
                 # Set initial hover height setpoint to exactly 6.0m AGL
-                y_agl = xp.getDataf(self._plugin.dref_y_agl) if self._plugin.dref_y_agl else 10.0
-                target_alt = state['y'] - y_agl + 6.0
+                y_agl = (
+                    xp.getDataf(self._plugin.dref_y_agl)
+                    if self._plugin.dref_y_agl
+                    else 10.0
+                )
+                target_alt = state["y"] - y_agl + 6.0
                 self._plugin.controller.engage(
-                    state['x'], target_alt, state['z'], state['psi'],
-                    curr_collective
+                    state["x"], target_alt, state["z"], state["psi"], curr_collective
                 )
                 self._plugin.instructor.system_state = "VFI_FLIGHT"
                 self._plugin.instructor.control_assignment = {
-                    "roll": "VFI", "pitch": "VFI", "yaw": "VFI",
-                    "collective": "VFI"
+                    "roll": "VFI",
+                    "pitch": "VFI",
+                    "yaw": "VFI",
+                    "collective": "VFI",
                 }
                 self._plugin.instructor.set_hud_caption("VFI ENGAGED - AUTO HOVER")
                 self._plugin.ap_enabled = True
@@ -117,9 +122,7 @@ class PluginUIController(object):
                 # intro is played on first engagement (there is no preceding
                 # phase to trigger it automatically).
                 phase = self._plugin.instructor.phase
-                self._plugin.play_sound(
-                    SOUND_PHASE_INTRO_TEMPLATE.format(phase)
-                )
+                self._plugin.play_sound(SOUND_PHASE_INTRO_TEMPLATE.format(phase))
             else:
                 self._plugin.ap_enabled = False
                 self._plugin.release_all_overrides()
@@ -201,8 +204,8 @@ class PluginUIController(object):
     def get_drift_m(self):
         state = self._plugin.get_current_state()
         return math.sqrt(
-            (state['x'] - self._plugin.controller.target_x)**2
-            + (state['z'] - self._plugin.controller.target_z)**2
+            (state["x"] - self._plugin.controller.target_x) ** 2
+            + (state["z"] - self._plugin.controller.target_z) ** 2
         )
 
     @property
@@ -251,8 +254,7 @@ class PluginUIController(object):
         state = self._plugin.get_current_state()
         curr_collective = xp.getDataf(self._plugin.dref_prop_ratio_all)
         self._plugin.controller.engage(
-            state['x'], state['y'], state['z'], state['psi'],
-            curr_collective
+            state["x"], state["y"], state["z"], state["psi"], curr_collective
         )
         self._plugin.instructor.drift_recovery_active = False
         self._plugin.instructor.original_target_x = None
@@ -261,7 +263,9 @@ class PluginUIController(object):
         self._plugin.instructor.override_target_x = None
         self._plugin.instructor.override_target_y = None
         self._plugin.instructor.override_target_z = None
-        self._plugin.instructor.set_hud_caption("HOVER TARGET RESET TO CURRENT POSITION")
+        self._plugin.instructor.set_hud_caption(
+            "HOVER TARGET RESET TO CURRENT POSITION"
+        )
 
 
 class PythonInterface(object):
@@ -285,8 +289,7 @@ class PythonInterface(object):
 
         # Directories and Managers
         self.plugin_dir = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "helicopter_instructor"
+            os.path.dirname(os.path.abspath(__file__)), "helicopter_instructor"
         )
         self.audio = audio.AudioManager(self.plugin_dir)
         self.audio_queue = []
@@ -348,37 +351,37 @@ class PythonInterface(object):
 
         # Cache of last outputs for display
         self.last_commands = {
-            'roll': 0.0,
-            'pitch': 0.0,
-            'yaw': 0.0,
-            'collective': 0.5,
-            'debug': {
-                'fwd_err': 0.0,
-                'lat_err': 0.0,
-                'alt_err': 0.0,
-                'yaw_err': 0.0,
-                'target_v_fwd': 0.0,
-                'target_v_lat': 0.0,
-                'target_v_vert': 0.0,
-                'target_pitch': 0.0,
-                'target_roll': 0.0,
-                'v_fwd': 0.0,
-                'v_lat': 0.0
-            }
+            "roll": 0.0,
+            "pitch": 0.0,
+            "yaw": 0.0,
+            "collective": 0.5,
+            "debug": {
+                "fwd_err": 0.0,
+                "lat_err": 0.0,
+                "alt_err": 0.0,
+                "yaw_err": 0.0,
+                "target_v_fwd": 0.0,
+                "target_v_lat": 0.0,
+                "target_v_vert": 0.0,
+                "target_pitch": 0.0,
+                "target_roll": 0.0,
+                "v_fwd": 0.0,
+                "v_lat": 0.0,
+            },
         }
 
         self.last_hardware_inputs = {
-            'roll': 0.0,
-            'pitch': 0.0,
-            'yaw': 0.0,
-            'collective': 0.5
+            "roll": 0.0,
+            "pitch": 0.0,
+            "yaw": 0.0,
+            "collective": 0.5,
         }
 
         self.last_final_commands = {
-            'roll': 0.0,
-            'pitch': 0.0,
-            'yaw': 0.0,
-            'collective': 0.5
+            "roll": 0.0,
+            "pitch": 0.0,
+            "yaw": 0.0,
+            "collective": 0.5,
         }
 
         # Raw hardware scan diagnostics
@@ -410,15 +413,9 @@ class PythonInterface(object):
         self.dref_local_x = xp.findDataRef("sim/flightmodel/position/local_x")
         self.dref_local_y = xp.findDataRef("sim/flightmodel/position/local_y")
         self.dref_local_z = xp.findDataRef("sim/flightmodel/position/local_z")
-        self.dref_local_vx = xp.findDataRef(
-            "sim/flightmodel/position/local_vx"
-        )
-        self.dref_local_vy = xp.findDataRef(
-            "sim/flightmodel/position/local_vy"
-        )
-        self.dref_local_vz = xp.findDataRef(
-            "sim/flightmodel/position/local_vz"
-        )
+        self.dref_local_vx = xp.findDataRef("sim/flightmodel/position/local_vx")
+        self.dref_local_vy = xp.findDataRef("sim/flightmodel/position/local_vy")
+        self.dref_local_vz = xp.findDataRef("sim/flightmodel/position/local_vz")
         self.dref_phi = xp.findDataRef("sim/flightmodel/position/phi")
         self.dref_theta = xp.findDataRef("sim/flightmodel/position/theta")
         self.dref_psi = xp.findDataRef("sim/flightmodel/position/psi")
@@ -436,12 +433,8 @@ class PythonInterface(object):
         self.dref_override_yaw = xp.findDataRef(
             "sim/operation/override/override_joystick_heading"
         )
-        self.dref_yoke_pitch = xp.findDataRef(
-            "sim/cockpit2/controls/yoke_pitch_ratio"
-        )
-        self.dref_yoke_roll = xp.findDataRef(
-            "sim/cockpit2/controls/yoke_roll_ratio"
-        )
+        self.dref_yoke_pitch = xp.findDataRef("sim/cockpit2/controls/yoke_pitch_ratio")
+        self.dref_yoke_roll = xp.findDataRef("sim/cockpit2/controls/yoke_roll_ratio")
         self.dref_yoke_heading = xp.findDataRef(
             "sim/cockpit2/controls/yoke_heading_ratio"
         )
@@ -478,10 +471,13 @@ class PythonInterface(object):
         # 3. Create the ImGui control window
         # Positioning: left=150, top=750, right=650, bottom=250 (500x500 window)
         self.window = xp_imgui.Window(
-            left=150, top=750, right=650, bottom=250,
+            left=150,
+            top=750,
+            right=650,
+            bottom=250,
             visible=1,
             draw=self.draw_window,
-            refCon=self
+            refCon=self,
         )
         self.window.setTitle("Helicopter Flight Instructor")
 
@@ -525,22 +521,24 @@ class PythonInterface(object):
         def dummy_wheel_cb(window_id, x, y, wheel, clicks, refcon):
             return 0
 
-        self.osd_window = xp.createWindowEx([
-            init_left,                     # 1. Left coordinate (in boxels)
-            init_top,                      # 2. Top coordinate (in boxels)
-            init_right,                    # 3. Right coordinate (in boxels)
-            init_bottom,                   # 4. Bottom coordinate (in boxels)
-            1 if self.show_osd else 0,     # 5. Visibility state
-            draw_osd_cb,                   # 6. Window drawing callback
-            dummy_mouse_cb,                # 7. Mouse click callback
-            dummy_key_cb,                  # 8. Keyboard key callback
-            dummy_cursor_cb,               # 9. Mouse cursor callback
-            dummy_wheel_cb,                # 10. Mouse scroll callback
-            self,                          # 11. Refcon custom pointer
-            xp.WindowDecorationNone,       # 12. Completely borderless
-            xp.WindowLayerFloatingWindows, # 13. Floating window layer
-            None                           # 14. Right-click callback
-        ])
+        self.osd_window = xp.createWindowEx(
+            [
+                init_left,  # 1. Left coordinate (in boxels)
+                init_top,  # 2. Top coordinate (in boxels)
+                init_right,  # 3. Right coordinate (in boxels)
+                init_bottom,  # 4. Bottom coordinate (in boxels)
+                1 if self.show_osd else 0,  # 5. Visibility state
+                draw_osd_cb,  # 6. Window drawing callback
+                dummy_mouse_cb,  # 7. Mouse click callback
+                dummy_key_cb,  # 8. Keyboard key callback
+                dummy_cursor_cb,  # 9. Mouse cursor callback
+                dummy_wheel_cb,  # 10. Mouse scroll callback
+                self,  # 11. Refcon custom pointer
+                xp.WindowDecorationNone,  # 12. Completely borderless
+                xp.WindowLayerFloatingWindows,  # 13. Floating window layer
+                None,  # 14. Right-click callback
+            ]
+        )
 
         # 5c. Create standalone vertical altitude safety bar window
         init_alt_w = 80
@@ -554,95 +552,93 @@ class PythonInterface(object):
         def draw_alt_bar_cb(window_id, refcon):
             self.draw_alt_bar(window_id, refcon)
 
-        self.alt_bar_window = xp.createWindowEx([
-            init_alt_left,                 # 1. Left coordinate (in boxels)
-            init_alt_top,                  # 2. Top coordinate (in boxels)
-            init_alt_right,                # 3. Right coordinate (in boxels)
-            init_alt_bottom,               # 4. Bottom coordinate (in boxels)
-            1 if self.show_alt_bar else 0, # 5. Visibility state
-            draw_alt_bar_cb,               # 6. Window drawing callback
-            dummy_mouse_cb,                # 7. Mouse click callback
-            dummy_key_cb,                  # 8. Keyboard key callback
-            dummy_cursor_cb,               # 9. Mouse cursor callback
-            dummy_wheel_cb,                # 10. Mouse scroll callback
-            self,                          # 11. Refcon custom pointer
-            xp.WindowDecorationNone,       # 12. Completely borderless
-            xp.WindowLayerFloatingWindows, # 13. Floating window layer
-            None                           # 14. Right-click callback
-        ])
+        self.alt_bar_window = xp.createWindowEx(
+            [
+                init_alt_left,  # 1. Left coordinate (in boxels)
+                init_alt_top,  # 2. Top coordinate (in boxels)
+                init_alt_right,  # 3. Right coordinate (in boxels)
+                init_alt_bottom,  # 4. Bottom coordinate (in boxels)
+                1 if self.show_alt_bar else 0,  # 5. Visibility state
+                draw_alt_bar_cb,  # 6. Window drawing callback
+                dummy_mouse_cb,  # 7. Mouse click callback
+                dummy_key_cb,  # 8. Keyboard key callback
+                dummy_cursor_cb,  # 9. Mouse cursor callback
+                dummy_wheel_cb,  # 10. Mouse scroll callback
+                self,  # 11. Refcon custom pointer
+                xp.WindowDecorationNone,  # 12. Completely borderless
+                xp.WindowLayerFloatingWindows,  # 13. Floating window layer
+                None,  # 14. Right-click callback
+            ]
+        )
 
         # 6. Create custom commands for key/button mapping
         self.cmd_instructor_toggle = xp.createCommand(
             "helicopter_instructor/instructor_toggle",
-            "Helicopter Instructor: Toggle Master Engage"
+            "Helicopter Instructor: Toggle Master Engage",
         )
         self.cmd_osd_toggle = xp.createCommand(
-            "helicopter_instructor/hud_toggle",
-            "Helicopter Instructor: Toggle HUD"
+            "helicopter_instructor/hud_toggle", "Helicopter Instructor: Toggle HUD"
         )
         self.cmd_alt_bar_toggle = xp.createCommand(
             "helicopter_instructor/alt_bar_toggle",
-            "Helicopter Instructor: Toggle Altitude Bar"
+            "Helicopter Instructor: Toggle Altitude Bar",
         )
         self.cmd_next_phase = xp.createCommand(
             "helicopter_instructor/next_phase",
-            "Helicopter Instructor: Advance to Next Lesson Phase"
+            "Helicopter Instructor: Advance to Next Lesson Phase",
         )
         self.cmd_prev_phase = xp.createCommand(
             "helicopter_instructor/prev_phase",
-            "Helicopter Instructor: Return to Previous Lesson Phase"
+            "Helicopter Instructor: Return to Previous Lesson Phase",
         )
         self.cmd_handoff_trigger = xp.createCommand(
             "helicopter_instructor/handoff_trigger",
-            "Helicopter Instructor: Trigger Control Handoff"
+            "Helicopter Instructor: Trigger Control Handoff",
         )
         self.cmd_hover_forward = xp.createCommand(
             "helicopter_instructor/hover_forward",
-            "Helicopter Instructor: Shift Hover Target Forward 1m"
+            "Helicopter Instructor: Shift Hover Target Forward 1m",
         )
         self.cmd_hover_backward = xp.createCommand(
             "helicopter_instructor/hover_backward",
-            "Helicopter Instructor: Shift Hover Target Backward 1m"
+            "Helicopter Instructor: Shift Hover Target Backward 1m",
         )
         self.cmd_hover_left = xp.createCommand(
             "helicopter_instructor/hover_left",
-            "Helicopter Instructor: Shift Hover Target Left 1m"
+            "Helicopter Instructor: Shift Hover Target Left 1m",
         )
         self.cmd_hover_right = xp.createCommand(
             "helicopter_instructor/hover_right",
-            "Helicopter Instructor: Shift hover target right 1m"
+            "Helicopter Instructor: Shift hover target right 1m",
         )
         self.cmd_hover_up = xp.createCommand(
             "helicopter_instructor/hover_up",
-            "Helicopter Instructor: Increase hover target altitude 0.5m"
+            "Helicopter Instructor: Increase hover target altitude 0.5m",
         )
         self.cmd_hover_down = xp.createCommand(
             "helicopter_instructor/hover_down",
-            "Helicopter Instructor: Decrease hover target altitude 0.5m"
+            "Helicopter Instructor: Decrease hover target altitude 0.5m",
         )
         self.cmd_hover_heading_left = xp.createCommand(
             "helicopter_instructor/hover_heading_left",
-            "Helicopter Instructor: Adjust hover target heading left 5 deg"
+            "Helicopter Instructor: Adjust hover target heading left 5 deg",
         )
         self.cmd_hover_heading_right = xp.createCommand(
             "helicopter_instructor/hover_heading_right",
-            "Helicopter Instructor: Adjust hover target heading right 5 deg"
+            "Helicopter Instructor: Adjust hover target heading right 5 deg",
         )
         self.cmd_hover_reset_current = xp.createCommand(
             "helicopter_instructor/hover_set_current",
-            "Helicopter Instructor: Set the current location as the hover target"
+            "Helicopter Instructor: Set the current location as the hover target",
         )
 
         # Preload all audio assets into memory cache to prevent runtime disk stutters
         try:
             self.audio.preload_sounds()
         except Exception as preload_err:
-            xp.log(
-                "Helicopter Flight Instructor: Failed to preload audio assets: "
-                f"{str(preload_err)}"
-            )
+            xp.log(f"Failed to preload audio assets: {str(preload_err)}")
 
-        xp.log("Helicopter Flight Instructor: Plugin started successfully.")
+        xp.log("Plugin started successfully.")
         return self.Name, self.Sig, self.Desc
 
     def XPluginStop(self):
@@ -663,53 +659,35 @@ class PythonInterface(object):
         if self.menu_id:
             xp.destroyMenu(self.menu_id)
 
-        xp.log("Helicopter Flight Instructor: Plugin stopped.")
+        xp.log("Plugin stopped.")
 
     def XPluginEnable(self):
         """Called by X-Plane when the plugin is enabled."""
-        xp.log("Helicopter Flight Instructor: XPluginEnable called.")
+        xp.log("XPluginEnable called.")
         # Register command handlers
         if self.cmd_instructor_toggle:
             xp.registerCommandHandler(
-                self.cmd_instructor_toggle,
-                self.cmd_handler_instructor_toggle,
-                1,
-                None
+                self.cmd_instructor_toggle, self.cmd_handler_instructor_toggle, 1, None
             )
         if self.cmd_osd_toggle:
             xp.registerCommandHandler(
-                self.cmd_osd_toggle,
-                self.cmd_handler_osd_toggle,
-                1,
-                None
+                self.cmd_osd_toggle, self.cmd_handler_osd_toggle, 1, None
             )
         if self.cmd_alt_bar_toggle:
             xp.registerCommandHandler(
-                self.cmd_alt_bar_toggle,
-                self.cmd_handler_alt_bar_toggle,
-                1,
-                None
+                self.cmd_alt_bar_toggle, self.cmd_handler_alt_bar_toggle, 1, None
             )
         if self.cmd_next_phase:
             xp.registerCommandHandler(
-                self.cmd_next_phase,
-                self.cmd_handler_next_phase,
-                1,
-                None
+                self.cmd_next_phase, self.cmd_handler_next_phase, 1, None
             )
         if self.cmd_prev_phase:
             xp.registerCommandHandler(
-                self.cmd_prev_phase,
-                self.cmd_handler_prev_phase,
-                1,
-                None
+                self.cmd_prev_phase, self.cmd_handler_prev_phase, 1, None
             )
         if self.cmd_handoff_trigger:
             xp.registerCommandHandler(
-                self.cmd_handoff_trigger,
-                self.cmd_handler_handoff_trigger,
-                1,
-                None
+                self.cmd_handoff_trigger, self.cmd_handler_handoff_trigger, 1, None
             )
 
         def reg_cmd(cmd, handler):
@@ -733,7 +711,7 @@ class PythonInterface(object):
 
     def XPluginDisable(self):
         """Called by X-Plane when the plugin is disabled."""
-        xp.log("Helicopter Flight Instructor: XPluginDisable called.")
+        xp.log("XPluginDisable called.")
         # Release overrides when disabled
         self.release_all_overrides()
         self.ap_enabled = False
@@ -742,53 +720,32 @@ class PythonInterface(object):
         try:
             self.graphics.unload_objects()
         except Exception as err:
-            xp.log(
-                "Helicopter Flight Instructor: Failed to clean up 3D "
-                f"instances: {str(err)}"
-            )
+            xp.log(f"Failed to clean up 3D instances: {str(err)}")
 
         # Unregister command handlers
         if self.cmd_instructor_toggle:
             xp.unregisterCommandHandler(
-                self.cmd_instructor_toggle,
-                self.cmd_handler_instructor_toggle,
-                1,
-                None
+                self.cmd_instructor_toggle, self.cmd_handler_instructor_toggle, 1, None
             )
         if self.cmd_osd_toggle:
             xp.unregisterCommandHandler(
-                self.cmd_osd_toggle,
-                self.cmd_handler_osd_toggle,
-                1,
-                None
+                self.cmd_osd_toggle, self.cmd_handler_osd_toggle, 1, None
             )
         if self.cmd_alt_bar_toggle:
             xp.unregisterCommandHandler(
-                self.cmd_alt_bar_toggle,
-                self.cmd_handler_alt_bar_toggle,
-                1,
-                None
+                self.cmd_alt_bar_toggle, self.cmd_handler_alt_bar_toggle, 1, None
             )
         if self.cmd_next_phase:
             xp.unregisterCommandHandler(
-                self.cmd_next_phase,
-                self.cmd_handler_next_phase,
-                1,
-                None
+                self.cmd_next_phase, self.cmd_handler_next_phase, 1, None
             )
         if self.cmd_prev_phase:
             xp.unregisterCommandHandler(
-                self.cmd_prev_phase,
-                self.cmd_handler_prev_phase,
-                1,
-                None
+                self.cmd_prev_phase, self.cmd_handler_prev_phase, 1, None
             )
         if self.cmd_handoff_trigger:
             xp.unregisterCommandHandler(
-                self.cmd_handoff_trigger,
-                self.cmd_handler_handoff_trigger,
-                1,
-                None
+                self.cmd_handoff_trigger, self.cmd_handler_handoff_trigger, 1, None
             )
 
         def unreg_cmd(cmd, handler):
@@ -821,33 +778,29 @@ class PythonInterface(object):
         if self.dref_g_side:
             g_side_val = xp.getDataf(self.dref_g_side)
         return {
-            'x': xp.getDatad(self.dref_local_x),
-            'y': xp.getDatad(self.dref_local_y),
-            'z': xp.getDatad(self.dref_local_z),
-            'vx': xp.getDataf(self.dref_local_vx),
-            'vy': xp.getDataf(self.dref_local_vy),
-            'vz': xp.getDataf(self.dref_local_vz),
-            'phi': xp.getDataf(self.dref_phi),
-            'theta': xp.getDataf(self.dref_theta),
-            'psi': xp.getDataf(self.dref_psi),
-            'P': xp.getDataf(self.dref_P),
-            'Q': xp.getDataf(self.dref_Q),
-            'R': xp.getDataf(self.dref_R),
-            'g_side': g_side_val,
+            "x": xp.getDatad(self.dref_local_x),
+            "y": xp.getDatad(self.dref_local_y),
+            "z": xp.getDatad(self.dref_local_z),
+            "vx": xp.getDataf(self.dref_local_vx),
+            "vy": xp.getDataf(self.dref_local_vy),
+            "vz": xp.getDataf(self.dref_local_vz),
+            "phi": xp.getDataf(self.dref_phi),
+            "theta": xp.getDataf(self.dref_theta),
+            "psi": xp.getDataf(self.dref_psi),
+            "P": xp.getDataf(self.dref_P),
+            "Q": xp.getDataf(self.dref_Q),
+            "R": xp.getDataf(self.dref_R),
+            "g_side": g_side_val,
         }
 
     def get_hardware_inputs(self):
         """Reads raw physical hardware stick deflections."""
         assignments = []
-        count_assign = xp.getDatavi(
-            self.dref_joystick_axis_assignments, assignments
-        )
+        count_assign = xp.getDatavi(self.dref_joystick_axis_assignments, assignments)
         assignments = assignments[:count_assign]
 
         mapped_values = []
-        count_mapped = xp.getDatavf(
-            self.dref_joy_mapped_axis_value, mapped_values
-        )
+        count_mapped = xp.getDatavf(self.dref_joy_mapped_axis_value, mapped_values)
         mapped_values = mapped_values[:count_mapped]
 
         # Save raw values to self for OSD HUD dynamic engineering panel
@@ -858,13 +811,12 @@ class PythonInterface(object):
 
         # Log warning if no axes are detected (throttled)
         if count_assign == 0 or count_mapped == 0:
-            if not hasattr(self, '_log_throttle_counter'):
+            if not hasattr(self, "_log_throttle_counter"):
                 self._log_throttle_counter = 0
             self._log_throttle_counter += 1
             if self._log_throttle_counter % 250 == 1:
                 xp.log(
-                    "Helicopter Flight Instructor: Joystick Warning: "
-                    f"count_assign={count_assign}, "
+                    f"Joystick Warning: count_assign={count_assign}, "
                     f"count_mapped={count_mapped}. "
                     "Check X-Plane calibration."
                 )
@@ -920,23 +872,23 @@ class PythonInterface(object):
 
         # Parse telemetry package
         telemetry = {
-            'phi': state['phi'],
-            'theta': state['theta'],
-            'psi': state['psi'],
-            'P': state['P'],
-            'Q': state['Q'],
-            'R': state['R'],
-            'vx': state['vx'],
-            'vy': state['vy'],
-            'vz': state['vz'],
-            'y_agl': y_agl,
-            'x': state['x'],
-            'y': state['y'],
-            'z': state['z'],
-            'target_x': self.controller.target_x,
-            'target_y': self.controller.target_y,
-            'target_z': self.controller.target_z,
-            'target_psi': self.controller.target_psi
+            "phi": state["phi"],
+            "theta": state["theta"],
+            "psi": state["psi"],
+            "P": state["P"],
+            "Q": state["Q"],
+            "R": state["R"],
+            "vx": state["vx"],
+            "vy": state["vy"],
+            "vz": state["vz"],
+            "y_agl": y_agl,
+            "x": state["x"],
+            "y": state["y"],
+            "z": state["z"],
+            "target_x": self.controller.target_x,
+            "target_y": self.controller.target_y,
+            "target_z": self.controller.target_z,
+            "target_psi": self.controller.target_psi,
         }
 
         if self.ap_enabled:
@@ -952,17 +904,13 @@ class PythonInterface(object):
             if self.instructor.drift_recovery_active:
                 self.controller.target_x = self.instructor.override_target_x
                 if self.instructor.override_target_y is not None:
-                    self.controller.target_y = (
-                        self.instructor.override_target_y
-                    )
+                    self.controller.target_y = self.instructor.override_target_y
                 self.controller.target_z = self.instructor.override_target_z
             elif self.instructor.was_drift_recovery_active:
                 # Recovery interpolation has finished: restore original target.
                 self.controller.target_x = self.instructor.original_target_x
                 if self.instructor.original_target_y is not None:
-                    self.controller.target_y = (
-                        self.instructor.original_target_y
-                    )
+                    self.controller.target_y = self.instructor.original_target_y
                 self.controller.target_z = self.instructor.original_target_z
                 self.instructor.was_drift_recovery_active = False
                 self.instructor.original_target_x = None
@@ -979,10 +927,10 @@ class PythonInterface(object):
 
             vfi_outputs = self.controller.update(dt, state)
             vfi_inputs = {
-                'roll': vfi_outputs['roll'],
-                'pitch': vfi_outputs['pitch'],
-                'yaw': vfi_outputs['yaw'],
-                'collective': vfi_outputs['collective']
+                "roll": vfi_outputs["roll"],
+                "pitch": vfi_outputs["pitch"],
+                "yaw": vfi_outputs["yaw"],
+                "collective": vfi_outputs["collective"],
             }
             self.last_commands = vfi_outputs
 
@@ -1000,15 +948,15 @@ class PythonInterface(object):
             curr_phase = self.instructor.phase
 
             # Initialize tracking variables on first loop
-            if not hasattr(self, 'last_system_state'):
+            if not hasattr(self, "last_system_state"):
                 self.last_system_state = curr_state
-            if not hasattr(self, 'last_phase'):
+            if not hasattr(self, "last_phase"):
                 self.last_phase = curr_phase
 
             # (PID reset is handled below, after STEP C4 re-read.)
 
             # --- STEP C2: Run Student Performance Metrics ---
-            is_student_flying = (curr_state == "STUDENT_FLIGHT")
+            is_student_flying = curr_state == "STUDENT_FLIGHT"
             self.metrics.update(
                 dt, telemetry, hardware_inputs, is_student_flying, curr_phase
             )
@@ -1043,19 +991,13 @@ class PythonInterface(object):
                 if is_final:
                     # 2a. Training complete — no next phase, so skip the
                     # transition jingle and play only the completion cue.
-                    self.play_sound(
-                        SOUND_TRAINING_COMPLETE, clear_queue=True
-                    )
+                    self.play_sound(SOUND_TRAINING_COMPLETE, clear_queue=True)
                 else:
                     # 2b. Play "Phase transition.wav" then advance to the
                     # next phase and queue its intro audio.
-                    self.play_sound(
-                        SOUND_PHASE_TRANSITION, clear_queue=True
-                    )
+                    self.play_sound(SOUND_PHASE_TRANSITION, clear_queue=True)
                     self.instructor.phase = next_phase
-                    intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(
-                        next_phase
-                    )
+                    intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(next_phase)
                     self.play_sound(intro_sound)
 
                     # 3. Initiate the hand-off to the student for the new
@@ -1063,7 +1005,6 @@ class PythonInterface(object):
                     #    eventually trigger the normal "Get ready" /
                     #    "You have …" cues.
                     self.instructor.initiate_handoff()
-
 
             # Re-read state/phase after auto-transition may have changed them
 
@@ -1091,8 +1032,8 @@ class PythonInterface(object):
             # Detect state and phase transitions to play audio announcements.
             # Skip if this was an automatic phase transition (audio already
             # scheduled above).
-            phase_changed = (curr_phase != self.last_phase)
-            state_changed = (curr_state != self.last_system_state)
+            phase_changed = curr_phase != self.last_phase
+            state_changed = curr_state != self.last_system_state
 
             if not auto_phase_transition:
                 if phase_changed:
@@ -1100,9 +1041,7 @@ class PythonInterface(object):
                     # explains the new phase via its intro audio.
                     if curr_state in ["STUDENT_FLIGHT", "SYNCING"]:
                         self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
-                    self.play_sound(
-                        SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase)
-                    )
+                    self.play_sound(SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase))
                 elif state_changed:
                     if curr_state == "SYNCING":
                         if self.last_system_state == "STUDENT_FLIGHT":
@@ -1136,32 +1075,32 @@ class PythonInterface(object):
                 xp.setDatai(self.dref_override_roll, 0)
             else:
                 xp.setDatai(self.dref_override_roll, 1)
-                xp.setDataf(self.dref_yoke_roll, final_commands['roll'])
+                xp.setDataf(self.dref_yoke_roll, final_commands["roll"])
 
             # 2. Pitch
             if self.instructor.control_assignment["pitch"] == "STUDENT":
                 xp.setDatai(self.dref_override_pitch, 0)
             else:
                 xp.setDatai(self.dref_override_pitch, 1)
-                xp.setDataf(self.dref_yoke_pitch, final_commands['pitch'])
+                xp.setDataf(self.dref_yoke_pitch, final_commands["pitch"])
 
             # 3. Yaw
             if self.instructor.control_assignment["yaw"] == "STUDENT":
                 xp.setDatai(self.dref_override_yaw, 0)
             else:
                 xp.setDatai(self.dref_override_yaw, 1)
-                xp.setDataf(self.dref_yoke_heading, final_commands['yaw'])
+                xp.setDataf(self.dref_yoke_heading, final_commands["yaw"])
 
             # 4. Collective
             # Determine if collective injection is active (VFI is flying,
             # or flaps fallback is checked)
             inject_collective = (
-                self.instructor.control_assignment["collective"] == "VFI" or
-                self.use_flaps_collective
+                self.instructor.control_assignment["collective"] == "VFI"
+                or self.use_flaps_collective
             )
 
             if inject_collective:
-                coll_val = final_commands['collective']
+                coll_val = final_commands["collective"]
                 props = [coll_val] * 8
                 xp.setDatavf(self.dref_prop_ratio, props, 0, 8)
                 xp.setDataf(self.dref_prop_ratio_all, coll_val)
@@ -1179,53 +1118,49 @@ class PythonInterface(object):
             roll_val = (
                 xp.getDataf(self.dref_yoke_roll)
                 if self.dref_yoke_roll
-                else hardware_inputs['roll']
+                else hardware_inputs["roll"]
             )
             pitch_val = (
                 xp.getDataf(self.dref_yoke_pitch)
                 if self.dref_yoke_pitch
-                else hardware_inputs['pitch']
+                else hardware_inputs["pitch"]
             )
             yaw_val = (
                 xp.getDataf(self.dref_yoke_heading)
                 if self.dref_yoke_heading
-                else hardware_inputs['yaw']
+                else hardware_inputs["yaw"]
             )
             coll_val = (
                 xp.getDataf(self.dref_prop_ratio_all)
                 if self.dref_prop_ratio_all
-                else hardware_inputs['collective']
+                else hardware_inputs["collective"]
             )
 
             self.last_final_commands = {
-                'roll': roll_val,
-                'pitch': pitch_val,
-                'yaw': yaw_val,
-                'collective': coll_val,
+                "roll": roll_val,
+                "pitch": pitch_val,
+                "yaw": yaw_val,
+                "collective": coll_val,
             }
 
             self.last_commands = {
-                'roll': 0.0,
-                'pitch': 0.0,
-                'yaw': 0.0,
-                'collective': 0.5
+                "roll": 0.0,
+                "pitch": 0.0,
+                "yaw": 0.0,
+                "collective": 0.5,
             }
 
             self.release_all_overrides()
 
             # --- Reset Performance Metrics Evaluator ---
-            self.metrics.update(0.02, telemetry, hardware_inputs, False, self.instructor.phase)
-
-
+            self.metrics.update(
+                0.02, telemetry, hardware_inputs, False, self.instructor.phase
+            )
 
         # --- Update 3D Object Instances ---
         try:
             # 2. Update Disks and Arcs centered on the hover target
-            show_any = (
-                self.show_3d_boundaries
-                and self.ap_enabled
-                and self.controller
-            )
+            show_any = self.show_3d_boundaries and self.ap_enabled and self.controller
             if show_any:
                 tx = (
                     self.instructor.original_target_x
@@ -1237,7 +1172,7 @@ class PythonInterface(object):
                     if self.instructor.original_target_z is not None
                     else self.controller.target_z
                 )
-                ground_y = state['y'] - y_agl
+                ground_y = state["y"] - y_agl
                 ty = ground_y
                 t_heading = self.controller.target_psi
             else:
@@ -1253,7 +1188,8 @@ class PythonInterface(object):
                 show_any
                 and self.show_3d_arcs
                 and (
-                    self.instructor.phase in (
+                    self.instructor.phase
+                    in (
                         PHASE_PEDALS_ONLY,
                         PHASE_COLLECTIVE_PEDALS,
                         PHASE_CYCLIC_PEDALS,
@@ -1268,30 +1204,25 @@ class PythonInterface(object):
                 tz=tz,
                 t_heading=t_heading,
                 draw_disks=draw_disks,
-                draw_arcs=draw_arcs
+                draw_arcs=draw_arcs,
             )
 
             # Dynamic visibility for standalone altitude bar window
             # Only show the altitude box when user is in control of collective
             if self.alt_bar_window:
-                is_student_coll = (
-                    self.ap_enabled
-                    and (
-                        virtual_instructor.PHASE_CONFIGS[
-                            self.instructor.phase
-                        ]["collective"] == "STUDENT"
-                    )
+                is_student_coll = self.ap_enabled and (
+                    virtual_instructor.PHASE_CONFIGS[self.instructor.phase][
+                        "collective"
+                    ]
+                    == "STUDENT"
                 )
                 active_visible = 1 if (self.show_alt_bar and is_student_coll) else 0
                 if xp.getWindowIsVisible(self.alt_bar_window) != active_visible:
                     xp.setWindowIsVisible(self.alt_bar_window, active_visible)
         except Exception as inst_err:
-            if not hasattr(self, '_inst_update_failed_logged'):
+            if not hasattr(self, "_inst_update_failed_logged"):
                 self._inst_update_failed_logged = True
-                xp.log(
-                    "Helicopter Flight Instructor: Failed to update 3D "
-                    f"instances. Exception: {str(inst_err)}"
-                )
+                xp.log(f"Failed to update 3D instances. Exception: {str(inst_err)}")
 
         # --- Run Sequential Audio Playback Queue ---
         # Spaced out playbacks by tracking length of files and adding a 0.3s pause.
@@ -1436,7 +1367,7 @@ class PythonInterface(object):
         self.controller.target_x += delta_x
         self.controller.target_z += delta_z
         self.controller.target_y += up
-        
+
         # Adjust original/override targets by the same delta if they exist
         if self.instructor.original_target_x is not None:
             self.instructor.original_target_x += delta_x
@@ -1444,7 +1375,7 @@ class PythonInterface(object):
             self.instructor.original_target_y += up
         if self.instructor.original_target_z is not None:
             self.instructor.original_target_z += delta_z
-            
+
         if self.instructor.override_target_x is not None:
             self.instructor.override_target_x += delta_x
         if self.instructor.override_target_y is not None:
@@ -1460,20 +1391,20 @@ class PythonInterface(object):
         y_agl = xp.getDataf(self.dref_y_agl) if self.dref_y_agl else 10.0
 
         telemetry = {
-            'phi': state['phi'],
-            'theta': state['theta'],
-            'psi': state['psi'],
-            'P': state['P'],
-            'Q': state['Q'],
-            'R': state['R'],
-            'vx': state['vx'],
-            'vy': state['vy'],
-            'vz': state['vz'],
-            'y_agl': y_agl,
-            'x': state['x'],
-            'z': state['z'],
-            'target_x': self.controller.target_x,
-            'target_z': self.controller.target_z
+            "phi": state["phi"],
+            "theta": state["theta"],
+            "psi": state["psi"],
+            "P": state["P"],
+            "Q": state["Q"],
+            "R": state["R"],
+            "vx": state["vx"],
+            "vy": state["vy"],
+            "vz": state["vz"],
+            "y_agl": y_agl,
+            "x": state["x"],
+            "z": state["z"],
+            "target_x": self.controller.target_x,
+            "target_z": self.controller.target_z,
         }
 
         view_model = hud.HUDViewModel(
@@ -1542,10 +1473,7 @@ class PythonInterface(object):
               resets the playback timer to play the new sound immediately.
         """
         # If the requested sound is currently playing, ignore it to prevent repetition/glitching
-        if (
-            self.last_played_sound == filename
-            and self.audio_playback_timer > 0.3
-        ):
+        if self.last_played_sound == filename and self.audio_playback_timer > 0.3:
             return
 
         if clear_queue:
@@ -1560,5 +1488,5 @@ class PythonInterface(object):
         """Generates and loads the 3D OBJ8 objects and creates instances."""
         self.graphics.load_objects(
             green_limit=envelope_limits.LIMIT_HDG_GREEN_DEG,
-            orange_limit=envelope_limits.LIMIT_HDG_ORANGE_DEG
+            orange_limit=envelope_limits.LIMIT_HDG_ORANGE_DEG,
         )

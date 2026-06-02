@@ -5,23 +5,24 @@ from unittest import mock
 
 # Set up paths so we can import helicopter_instructor
 base_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(base_dir, '..', 'plugin', 'helicopter_instructor'))
-sys.path.insert(0, os.path.join(base_dir, '..', 'plugin'))
+sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor"))
+sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
 # Mock the modules before importing PI_helicopter_instructor or audio
 import sys
-if 'xp' not in sys.modules:
+
+if "xp" not in sys.modules:
     mock_xp = mock.MagicMock()
     mock_xp.AudioRadioPilot = 2
-    sys.modules['xp'] = mock_xp
+    sys.modules["xp"] = mock_xp
 else:
-    mock_xp = sys.modules['xp']
+    mock_xp = sys.modules["xp"]
     mock_xp.AudioRadioPilot = 2
 
-if 'xp_imgui' not in sys.modules:
-    sys.modules['xp_imgui'] = mock.MagicMock()
-if 'imgui' not in sys.modules:
-    sys.modules['imgui'] = mock.MagicMock()
+if "xp_imgui" not in sys.modules:
+    sys.modules["xp_imgui"] = mock.MagicMock()
+if "imgui" not in sys.modules:
+    sys.modules["imgui"] = mock.MagicMock()
 
 # Import the audio manager
 from helicopter_instructor import audio
@@ -33,7 +34,8 @@ class TestAudio(unittest.TestCase):
         # Dynamically align with the active mock in sys.modules to prevent importlib.reload caching mismatches
         global mock_xp
         import sys
-        mock_xp = sys.modules['xp']
+
+        mock_xp = sys.modules["xp"]
         mock_xp.AudioRadioPilot = 2
         mock_xp.reset_mock()
 
@@ -41,13 +43,17 @@ class TestAudio(unittest.TestCase):
         self.audio_manager = audio.AudioManager("/mock/plugin/dir")
         self.audio_manager.voice_volume = 0.85
 
-    @mock.patch('os.path.exists')
-    @mock.patch('os.listdir')
-    @mock.patch('wave.open')
+    @mock.patch("os.path.exists")
+    @mock.patch("os.listdir")
+    @mock.patch("wave.open")
     def test_preload_sounds(self, mock_wave_open, mock_listdir, mock_exists):
         # Configure file system mocks
         mock_exists.return_value = True
-        mock_listdir.return_value = ["Perfect.wav", "I have control.wav", "unrelated_file.txt"]
+        mock_listdir.return_value = [
+            "Perfect.wav",
+            "I have control.wav",
+            "unrelated_file.txt",
+        ]
 
         # Mock the wave file reading
         mock_wav = mock.MagicMock()
@@ -56,7 +62,7 @@ class TestAudio(unittest.TestCase):
         mock_wav.getsampwidth.return_value = 2
         mock_wav.getframerate.return_value = 44100
         mock_wav.getnchannels.return_value = 1
-        
+
         # wave.open context manager returns mock_wav
         mock_wave_open.return_value.__enter__.return_value = mock_wav
 
@@ -76,9 +82,7 @@ class TestAudio(unittest.TestCase):
         self.assertEqual(sound_info["num_channels"], 1)
 
         # Verify log output
-        mock_xp.log.assert_any_call(
-            "Helicopter Flight Instructor: Preloaded 2 audio assets into memory."
-        )
+        mock_xp.log.assert_any_call("Preloaded 2 audio assets into memory.")
 
     def test_play_sound_success(self):
         # Manually register a mock sound in sound_registry
@@ -103,13 +107,7 @@ class TestAudio(unittest.TestCase):
 
         # Verify xp.playPCMOnBus arguments
         mock_xp.playPCMOnBus.assert_called_once_with(
-            mock_data,
-            4,
-            2,
-            22050,
-            2,
-            0,
-            2  # AudioRadioPilot
+            mock_data, 4, 2, 22050, 2, 0, 2  # AudioRadioPilot
         )
 
         # Verify xp.setAudioVolume was called with volume setting
@@ -125,8 +123,7 @@ class TestAudio(unittest.TestCase):
 
         # Assert: Error log is written
         mock_xp.log.assert_called_once_with(
-            "Helicopter Flight Instructor: Sound Error: Failed to play "
-            "MissingSound.wav. Sound is not preloaded in memory."
+            "Sound Error: Failed to play MissingSound.wav. Sound is not preloaded in memory."
         )
 
     def test_stop_sound(self):
@@ -167,13 +164,14 @@ class TestPluginAudio(unittest.TestCase):
     def setUp(self):
         # Reset and configure mocks
         global mock_xp
-        mock_xp = sys.modules['xp']
+        mock_xp = sys.modules["xp"]
         mock_xp.reset_mock()
         mock_xp.getNthAircraftModel.return_value = (None, None)
         mock_xp.getScreenBoundsGlobal.return_value = (0, 1080, 1920, 0)
 
         # Import/instantiate PythonInterface
         import PI_helicopter_instructor
+
         self.plugin = PI_helicopter_instructor.PythonInterface()
         self.plugin.audio_queue = []
         self.plugin.audio_playback_timer = 0.0
@@ -227,5 +225,5 @@ class TestPluginAudio(unittest.TestCase):
         self.assertIsNone(self.plugin.audio.active_channel)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

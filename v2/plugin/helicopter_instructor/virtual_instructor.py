@@ -27,7 +27,12 @@ PHASE_CONFIGS = {
     3: {"roll": "VFI", "pitch": "VFI", "yaw": "STUDENT", "collective": "STUDENT"},
     4: {"roll": "STUDENT", "pitch": "STUDENT", "yaw": "VFI", "collective": "VFI"},
     5: {"roll": "STUDENT", "pitch": "STUDENT", "yaw": "STUDENT", "collective": "VFI"},
-    6: {"roll": "STUDENT", "pitch": "STUDENT", "yaw": "STUDENT", "collective": "STUDENT"}
+    6: {
+        "roll": "STUDENT",
+        "pitch": "STUDENT",
+        "yaw": "STUDENT",
+        "collective": "STUDENT",
+    },
 }
 
 # Human-readable phase names mapping (1 to 6)
@@ -37,8 +42,9 @@ PHASE_NAMES = {
     3: "COLLECTIVE + PEDALS",
     4: "CYCLIC ONLY (ROLL/PITCH)",
     5: "CYCLIC + PEDALS",
-    6: "ALL THREE CONTROLS (FULL HANDOVER)"
+    6: "ALL THREE CONTROLS (FULL HANDOVER)",
 }
+
 
 class VirtualInstructor(object):
     """Core Virtual Flight Instructor (VFI) curriculum and safety logic.
@@ -172,12 +178,12 @@ class VirtualInstructor(object):
 
         # 1. RUN SAFETY AND ENVELOPE CHECKS IF STUDENT HAS OR IS TAKING CONTROLS
         if self.system_state in ["STUDENT_FLIGHT", "SYNCING"]:
-            x = telemetry.get('x', None)
-            y = telemetry.get('y', None)
-            z = telemetry.get('z', None)
-            target_x = telemetry.get('target_x', None)
-            target_y = telemetry.get('target_y', None)
-            target_z = telemetry.get('target_z', None)
+            x = telemetry.get("x", None)
+            y = telemetry.get("y", None)
+            z = telemetry.get("z", None)
+            target_x = telemetry.get("target_x", None)
+            target_y = telemetry.get("target_y", None)
+            target_z = telemetry.get("target_z", None)
 
             # Check if any safety limit is violated
             is_unsafe = self.check_safety_limits(telemetry)
@@ -201,9 +207,7 @@ class VirtualInstructor(object):
                     self.override_target_y = y
                     self.override_target_z = z
                 self.trigger_hard_override()
-                self.set_hud_caption(
-                    "I HAVE THE CONTROLS - STABILIZING", duration=4.0
-                )
+                self.set_hud_caption("I HAVE THE CONTROLS - STABILIZING", duration=4.0)
                 return self.process_recovery(dt, vfi_inputs, telemetry)
 
         # 2. STATE MACHINE ROUTING
@@ -249,38 +253,38 @@ class VirtualInstructor(object):
             True if any safety limit is violated, False otherwise.
         """
         # Pitch limit (+-15 degrees)
-        if abs(telemetry.get('theta', 0.0)) > 15.0:
+        if abs(telemetry.get("theta", 0.0)) > 15.0:
             return True
         # Roll limit (+-15 degrees)
-        if abs(telemetry.get('phi', 0.0)) > 15.0:
+        if abs(telemetry.get("phi", 0.0)) > 15.0:
             return True
         # Yaw rate limit (+-30 deg/sec)
-        if abs(telemetry.get('R', 0.0)) > 30.0:
+        if abs(telemetry.get("R", 0.0)) > 30.0:
             return True
 
         # Vertical speed: sinking > 300 ft/min or climbing > 300 ft/min
-        vy_m_s = telemetry.get('vy', 0.0)
+        vy_m_s = telemetry.get("vy", 0.0)
         vspeed_ft_min = vy_m_s * M_S_TO_FT_MIN
         if vspeed_ft_min < -300.0 or vspeed_ft_min > 300.0:
             return True
 
         # Ground speed drift > 12 knots
-        vx = telemetry.get('vx', 0.0)
-        vz = telemetry.get('vz', 0.0)
+        vx = telemetry.get("vx", 0.0)
+        vz = telemetry.get("vz", 0.0)
         gs_m_s = math.sqrt(vx**2 + vz**2)
         gs_knots = gs_m_s * M_S_TO_KNOTS
         if gs_knots > 12.0:
             return True
 
         # Terrain height (AGL) < 2.0 meters or > 10.0 meters
-        y_agl = telemetry.get('y_agl', 10.0)
+        y_agl = telemetry.get("y_agl", 10.0)
         if y_agl < 2.0 or y_agl > 10.0:
             return True
 
         # Heading Safety Zone Detection
         # (+-0..green green, +-green..orange orange, outside orange red/unsafe)
-        psi = telemetry.get('psi', None)
-        target_psi = telemetry.get('target_psi', None)
+        psi = telemetry.get("psi", None)
+        target_psi = telemetry.get("target_psi", None)
         if psi is not None and target_psi is not None:
             err = (target_psi - psi + 180.0) % 360.0 - 180.0
             abs_err = abs(err)
@@ -295,17 +299,17 @@ class VirtualInstructor(object):
             self.heading_zone = "green"
 
         # Hovering safety distance from target (default: 45 meters)
-        x = telemetry.get('x', None)
-        z = telemetry.get('z', None)
-        target_x = telemetry.get('target_x', None)
-        target_z = telemetry.get('target_z', None)
+        x = telemetry.get("x", None)
+        z = telemetry.get("z", None)
+        target_x = telemetry.get("target_x", None)
+        target_z = telemetry.get("target_z", None)
         if (
             x is not None
             and z is not None
             and target_x is not None
             and target_z is not None
         ):
-            dist = math.sqrt((x - target_x)**2 + (z - target_z)**2)
+            dist = math.sqrt((x - target_x) ** 2 + (z - target_z) ** 2)
             if dist > self.hover_safety_radius:
                 return True
 
@@ -327,15 +331,14 @@ class VirtualInstructor(object):
 
         # Check if cyclic controls are student-controlled in this phase
         cyclic_student = (
-            phase_config["roll"] == "STUDENT"
-            and phase_config["pitch"] == "STUDENT"
+            phase_config["roll"] == "STUDENT" and phase_config["pitch"] == "STUDENT"
         )
 
         # Check cyclic as a circular 2D distance
         if cyclic_student:
             cyclic_dist = math.sqrt(
-                (hardware["roll"] - vfi_inputs["roll"])**2
-                + (hardware["pitch"] - vfi_inputs["pitch"])**2
+                (hardware["roll"] - vfi_inputs["roll"]) ** 2
+                + (hardware["pitch"] - vfi_inputs["pitch"]) ** 2
             )
             if cyclic_dist <= self.match_tolerance:
                 self.sync_locked["roll"] = True
@@ -518,14 +521,14 @@ class VirtualInstructor(object):
         # Definitions of stable: pitch & roll < 2 degrees, sinking rate
         # arrested (> -50 ft/min), ground speed < 1.0 knot, and altitude
         # error is small.
-        phi = abs(telemetry.get('phi', 0.0))
-        theta = abs(telemetry.get('theta', 0.0))
-        vy = telemetry.get('vy', 0.0) * M_S_TO_FT_MIN
-        vx = telemetry.get('vx', 0.0)
-        vz = telemetry.get('vz', 0.0)
+        phi = abs(telemetry.get("phi", 0.0))
+        theta = abs(telemetry.get("theta", 0.0))
+        vy = telemetry.get("vy", 0.0) * M_S_TO_FT_MIN
+        vx = telemetry.get("vx", 0.0)
+        vz = telemetry.get("vz", 0.0)
         gs_knots = math.sqrt(vx**2 + vz**2) * M_S_TO_KNOTS
 
-        is_stable = (phi < 2.0 and theta < 2.0 and vy > -50.0 and gs_knots < 1.0)
+        is_stable = phi < 2.0 and theta < 2.0 and vy > -50.0 and gs_knots < 1.0
 
         if self.system_state == "OVERRIDE":
             if is_stable:

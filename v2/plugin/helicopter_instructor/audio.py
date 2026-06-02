@@ -25,16 +25,13 @@ class AudioManager(object):
     def preload_sounds(self):
         """Eagerly loads all WAV files in the assets directory into the sound registry to avoid synchronous disk I/O stutters."""
         if not os.path.exists(self.assets_dir):
-            xp.log("Helicopter Flight Instructor: Assets directory not found. Preloading skipped.")
+            xp.log(f"Assets directory {self.assets_dir} not found. Preloading skipped.")
             return
 
         try:
             filenames = os.listdir(self.assets_dir)
         except Exception as list_err:
-            xp.log(
-                "Helicopter Flight Instructor: Failed to list assets directory. "
-                f"Exception: {str(list_err)}"
-            )
+            xp.log(f"Failed to list assets directory. Exception: {str(list_err)}")
             return
 
         preloaded_count = 0
@@ -49,9 +46,7 @@ class AudioManager(object):
                         num_frames = wav.getnframes()
                         frame_rate = wav.getframerate()
                         data = wav.readframes(num_frames)
-                        duration_s = (
-                            num_frames / frame_rate if frame_rate > 0 else 0.0
-                        )
+                        duration_s = num_frames / frame_rate if frame_rate > 0 else 0.0
                         self.sound_registry[filename] = {
                             "data": data,
                             "data_size": len(data),
@@ -60,21 +55,13 @@ class AudioManager(object):
                             "num_channels": wav.getnchannels(),
                             "duration_s": duration_s,
                         }
-                        xp.log(
-                            f"Helicopter Flight Instructor: Preloaded "
-                            f"{filename} ({duration_s:.2f} s)"
-                        )
+                        xp.log(f"Preloaded {filename} ({duration_s:.2f} s)")
                         preloaded_count += 1
                 except Exception as e:
-                    xp.log(
-                        "Helicopter Flight Instructor: Sound Error: Failed to preload "
-                        f"{filename}. Exception: {str(e)}"
-                    )
+                    xp.log(f"Failed to preload {filename}. Exception: {str(e)}")
 
         if preloaded_count > 0:
-            xp.log(
-                f"Helicopter Flight Instructor: Preloaded {preloaded_count} audio assets into memory."
-            )
+            xp.log(f"Preloaded {preloaded_count} audio assets into memory.")
 
     def play_sound(self, filename):
         """Plays a preloaded WAV file.
@@ -90,8 +77,7 @@ class AudioManager(object):
 
         if not sound_info:
             xp.log(
-                "Helicopter Flight Instructor: Sound Error: Failed to play "
-                f"{filename}. Sound is not preloaded in memory."
+                f"Sound Error: Failed to play {filename}. Sound is not preloaded in memory."
             )
             return 0.0
 
@@ -113,7 +99,7 @@ class AudioManager(object):
                 sound_info["frame_rate"],
                 sound_info["num_channels"],
                 0,  # loop = 0 (play once)
-                audio_type
+                audio_type,
             )
 
             if channel:
@@ -121,16 +107,9 @@ class AudioManager(object):
                 try:
                     xp.setAudioVolume(channel, self.voice_volume)
                 except Exception as volume_err:
-                    xp.log(
-                        "Helicopter Flight Instructor: Sound Warning: "
-                        "Failed to set audio volume. Exception: "
-                        f"{str(volume_err)}"
-                    )
+                    xp.log(f"Failed to set audio volume. Exception: {str(volume_err)}")
         except Exception as e:
-            xp.log(
-                "Helicopter Flight Instructor: Sound Error: Failed to play "
-                f"{filename}. Exception: {str(e)}"
-            )
+            xp.log(f"Sound Error: Failed to play {filename}. Exception: {str(e)}")
 
         return sound_info["duration_s"]
 
@@ -140,9 +119,5 @@ class AudioManager(object):
             try:
                 xp.stopAudio(self.active_channel)
             except Exception as stop_err:
-                xp.log(
-                    "Helicopter Flight Instructor: Sound Warning: "
-                    "Failed to stop audio channel. Exception: "
-                    f"{str(stop_err)}"
-                )
+                xp.log(f"Failed to stop audio channel. Exception: {str(stop_err)}")
             self.active_channel = None

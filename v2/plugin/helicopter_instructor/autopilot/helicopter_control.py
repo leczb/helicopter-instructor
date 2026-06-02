@@ -1,5 +1,6 @@
 import math
 
+
 def wrap_180(angle_deg):
     """Wraps an angle in degrees to the range [-180, 180]."""
     return (angle_deg + 180.0) % 360.0 - 180.0
@@ -119,6 +120,7 @@ class PIDGains(object):
             return cls(lst[0], lst[1], 0.0)
         return cls()
 
+
 # --- Default Autopilot Gain Coefficients and Limits ---
 # Hover Lateral (Roll) Axis
 DEFAULT_KP_POS_LAT = 0.4
@@ -205,12 +207,24 @@ class AutopilotGains(object):
     """A structured container for all helicopter autopilot gains."""
 
     def __init__(self):
-        self.pos_lat = PIDGains(DEFAULT_KP_POS_LAT, DEFAULT_KI_POS_LAT, DEFAULT_KD_POS_LAT)
-        self.vel_lat = PIDGains(DEFAULT_KP_VEL_LAT, DEFAULT_KI_VEL_LAT, DEFAULT_KD_VEL_LAT)
-        self.att_roll = PIDGains(DEFAULT_KP_ATT_ROLL, DEFAULT_KI_ATT_ROLL, DEFAULT_KD_ATT_ROLL)
-        self.pos_lon = PIDGains(DEFAULT_KP_POS_LON, DEFAULT_KI_POS_LON, DEFAULT_KD_POS_LON)
-        self.vel_lon = PIDGains(DEFAULT_KP_VEL_LON, DEFAULT_KI_VEL_LON, DEFAULT_KD_VEL_LON)
-        self.att_pitch = PIDGains(DEFAULT_KP_ATT_PITCH, DEFAULT_KI_ATT_PITCH, DEFAULT_KD_ATT_PITCH)
+        self.pos_lat = PIDGains(
+            DEFAULT_KP_POS_LAT, DEFAULT_KI_POS_LAT, DEFAULT_KD_POS_LAT
+        )
+        self.vel_lat = PIDGains(
+            DEFAULT_KP_VEL_LAT, DEFAULT_KI_VEL_LAT, DEFAULT_KD_VEL_LAT
+        )
+        self.att_roll = PIDGains(
+            DEFAULT_KP_ATT_ROLL, DEFAULT_KI_ATT_ROLL, DEFAULT_KD_ATT_ROLL
+        )
+        self.pos_lon = PIDGains(
+            DEFAULT_KP_POS_LON, DEFAULT_KI_POS_LON, DEFAULT_KD_POS_LON
+        )
+        self.vel_lon = PIDGains(
+            DEFAULT_KP_VEL_LON, DEFAULT_KI_VEL_LON, DEFAULT_KD_VEL_LON
+        )
+        self.att_pitch = PIDGains(
+            DEFAULT_KP_ATT_PITCH, DEFAULT_KI_ATT_PITCH, DEFAULT_KD_ATT_PITCH
+        )
         self.yaw = PIDGains(DEFAULT_KP_YAW, DEFAULT_KI_YAW, DEFAULT_KD_YAW)
         self.alt = PIDGains(DEFAULT_KP_ALT, DEFAULT_KI_ALT, DEFAULT_KD_ALT)
         self.vspeed = PIDGains(DEFAULT_KP_VSPEED, DEFAULT_KI_VSPEED, DEFAULT_KD_VSPEED)
@@ -319,6 +333,7 @@ class CoordinateTransformer(object):
 MODE_HOVER = 0
 MODE_CRUISE = 1
 
+
 class HoverAutopilotController(object):
     """Manages nested PID controllers to achieve stable hover.
 
@@ -333,71 +348,107 @@ class HoverAutopilotController(object):
         # --- Hover Lateral (Roll) Controllers ---
         # lateral pos error (m) -> target lateral velocity (m/s)
         self.pos_lat_pid = PID(
-            DEFAULT_KP_POS_LAT, DEFAULT_KI_POS_LAT, DEFAULT_KD_POS_LAT,
-            DEFAULT_MIN_POS_LAT, DEFAULT_MAX_POS_LAT
+            DEFAULT_KP_POS_LAT,
+            DEFAULT_KI_POS_LAT,
+            DEFAULT_KD_POS_LAT,
+            DEFAULT_MIN_POS_LAT,
+            DEFAULT_MAX_POS_LAT,
         )
         # lateral vel error (m/s) -> target roll angle (deg)
         self.vel_lat_pid = PID(
-            DEFAULT_KP_VEL_LAT, DEFAULT_KI_VEL_LAT, DEFAULT_KD_VEL_LAT,
-            DEFAULT_MIN_VEL_LAT, DEFAULT_MAX_VEL_LAT
+            DEFAULT_KP_VEL_LAT,
+            DEFAULT_KI_VEL_LAT,
+            DEFAULT_KD_VEL_LAT,
+            DEFAULT_MIN_VEL_LAT,
+            DEFAULT_MAX_VEL_LAT,
         )
         # roll error (deg) & roll rate (deg/s) -> cyclic deflection
         self.att_roll_pid = PID(
-            DEFAULT_KP_ATT_ROLL, DEFAULT_KI_ATT_ROLL, DEFAULT_KD_ATT_ROLL,
-            DEFAULT_MIN_ATT_ROLL, DEFAULT_MAX_ATT_ROLL
+            DEFAULT_KP_ATT_ROLL,
+            DEFAULT_KI_ATT_ROLL,
+            DEFAULT_KD_ATT_ROLL,
+            DEFAULT_MIN_ATT_ROLL,
+            DEFAULT_MAX_ATT_ROLL,
         )
 
         # --- Hover Longitudinal (Pitch) Controllers ---
         # longitudinal pos error (m) -> target forward velocity (m/s)
         self.pos_lon_pid = PID(
-            DEFAULT_KP_POS_LON, DEFAULT_KI_POS_LON, DEFAULT_KD_POS_LON,
-            DEFAULT_MIN_POS_LON, DEFAULT_MAX_POS_LON
+            DEFAULT_KP_POS_LON,
+            DEFAULT_KI_POS_LON,
+            DEFAULT_KD_POS_LON,
+            DEFAULT_MIN_POS_LON,
+            DEFAULT_MAX_POS_LON,
         )
         # longitudinal vel error (m/s) -> target pitch angle (deg)
         self.vel_lon_pid = PID(
-            DEFAULT_KP_VEL_LON, DEFAULT_KI_VEL_LON, DEFAULT_KD_VEL_LON,
-            DEFAULT_MIN_VEL_LON, DEFAULT_MAX_VEL_LON
+            DEFAULT_KP_VEL_LON,
+            DEFAULT_KI_VEL_LON,
+            DEFAULT_KD_VEL_LON,
+            DEFAULT_MIN_VEL_LON,
+            DEFAULT_MAX_VEL_LON,
         )
         # pitch error (deg) & pitch rate (deg/s) -> cyclic deflection
         self.att_pitch_pid = PID(
-            DEFAULT_KP_ATT_PITCH, DEFAULT_KI_ATT_PITCH, DEFAULT_KD_ATT_PITCH,
-            DEFAULT_MIN_ATT_PITCH, DEFAULT_MAX_ATT_PITCH
+            DEFAULT_KP_ATT_PITCH,
+            DEFAULT_KI_ATT_PITCH,
+            DEFAULT_KD_ATT_PITCH,
+            DEFAULT_MIN_ATT_PITCH,
+            DEFAULT_MAX_ATT_PITCH,
         )
 
         # --- Hover Heading (Yaw) Controller ---
         # heading error (deg) & yaw rate (deg/s) -> rudder deflection
         self.yaw_pid = PID(
-            DEFAULT_KP_YAW, DEFAULT_KI_YAW, DEFAULT_KD_YAW,
-            DEFAULT_MIN_YAW, DEFAULT_MAX_YAW
+            DEFAULT_KP_YAW,
+            DEFAULT_KI_YAW,
+            DEFAULT_KD_YAW,
+            DEFAULT_MIN_YAW,
+            DEFAULT_MAX_YAW,
         )
 
         # --- Hover/Cruise Altitude (Collective) Controllers ---
         # alt error (m) -> target vertical speed (m/s)
         self.alt_pid = PID(
-            DEFAULT_KP_ALT, DEFAULT_KI_ALT, DEFAULT_KD_ALT,
-            DEFAULT_MIN_ALT, DEFAULT_MAX_ALT
+            DEFAULT_KP_ALT,
+            DEFAULT_KI_ALT,
+            DEFAULT_KD_ALT,
+            DEFAULT_MIN_ALT,
+            DEFAULT_MAX_ALT,
         )
         # vspeed error (m/s) -> collective delta
         self.vspeed_pid = PID(
-            DEFAULT_KP_VSPEED, DEFAULT_KI_VSPEED, DEFAULT_KD_VSPEED,
-            DEFAULT_MIN_VSPEED, DEFAULT_MAX_VSPEED
+            DEFAULT_KP_VSPEED,
+            DEFAULT_KI_VSPEED,
+            DEFAULT_KD_VSPEED,
+            DEFAULT_MIN_VSPEED,
+            DEFAULT_MAX_VSPEED,
         )
 
         # --- Cruise Mode Controllers ---
         # heading error (deg) -> target bank angle (deg)
         self.cruise_hdg_pid = PID(
-            DEFAULT_KP_CRUISE_HDG, DEFAULT_KI_CRUISE_HDG, DEFAULT_KD_CRUISE_HDG,
-            DEFAULT_MIN_CRUISE_HDG, DEFAULT_MAX_CRUISE_HDG
+            DEFAULT_KP_CRUISE_HDG,
+            DEFAULT_KI_CRUISE_HDG,
+            DEFAULT_KD_CRUISE_HDG,
+            DEFAULT_MIN_CRUISE_HDG,
+            DEFAULT_MAX_CRUISE_HDG,
         )
         # vertical speed error (m/s) -> target pitch angle (deg)
         self.cruise_vspeed_pitch_pid = PID(
-            DEFAULT_KP_CRUISE_VSPEED_PITCH, DEFAULT_KI_CRUISE_VSPEED_PITCH, DEFAULT_KD_CRUISE_VSPEED_PITCH,
-            DEFAULT_MIN_CRUISE_VSPEED_PITCH, DEFAULT_MAX_CRUISE_VSPEED_PITCH
+            DEFAULT_KP_CRUISE_VSPEED_PITCH,
+            DEFAULT_KI_CRUISE_VSPEED_PITCH,
+            DEFAULT_KD_CRUISE_VSPEED_PITCH,
+            DEFAULT_MIN_CRUISE_VSPEED_PITCH,
+            DEFAULT_MAX_CRUISE_VSPEED_PITCH,
         )
         # lateral G-force (G) -> rudder pedal output (turn coordination)
         self.cruise_yaw_tc_pid = PID(
-            DEFAULT_KP_CRUISE_YAW_TC, DEFAULT_KI_CRUISE_YAW_TC, DEFAULT_KD_CRUISE_YAW_TC,
-            DEFAULT_MIN_CRUISE_YAW_TC, DEFAULT_MAX_CRUISE_YAW_TC
+            DEFAULT_KP_CRUISE_YAW_TC,
+            DEFAULT_KI_CRUISE_YAW_TC,
+            DEFAULT_KD_CRUISE_YAW_TC,
+            DEFAULT_MIN_CRUISE_YAW_TC,
+            DEFAULT_MAX_CRUISE_YAW_TC,
         )
 
         # Active state flags
@@ -469,15 +520,29 @@ class HoverAutopilotController(object):
     def get_gains(self):
         """Captures active PID coefficients into an AutopilotGains DTO."""
         gains = AutopilotGains()
-        gains.pos_lat = PIDGains(self.pos_lat_pid.kp, self.pos_lat_pid.ki, self.pos_lat_pid.kd)
-        gains.vel_lat = PIDGains(self.vel_lat_pid.kp, self.vel_lat_pid.ki, self.vel_lat_pid.kd)
-        gains.att_roll = PIDGains(self.att_roll_pid.kp, self.att_roll_pid.ki, self.att_roll_pid.kd)
-        gains.pos_lon = PIDGains(self.pos_lon_pid.kp, self.pos_lon_pid.ki, self.pos_lon_pid.kd)
-        gains.vel_lon = PIDGains(self.vel_lon_pid.kp, self.vel_lon_pid.ki, self.vel_lon_pid.kd)
-        gains.att_pitch = PIDGains(self.att_pitch_pid.kp, self.att_pitch_pid.ki, self.att_pitch_pid.kd)
+        gains.pos_lat = PIDGains(
+            self.pos_lat_pid.kp, self.pos_lat_pid.ki, self.pos_lat_pid.kd
+        )
+        gains.vel_lat = PIDGains(
+            self.vel_lat_pid.kp, self.vel_lat_pid.ki, self.vel_lat_pid.kd
+        )
+        gains.att_roll = PIDGains(
+            self.att_roll_pid.kp, self.att_roll_pid.ki, self.att_roll_pid.kd
+        )
+        gains.pos_lon = PIDGains(
+            self.pos_lon_pid.kp, self.pos_lon_pid.ki, self.pos_lon_pid.kd
+        )
+        gains.vel_lon = PIDGains(
+            self.vel_lon_pid.kp, self.vel_lon_pid.ki, self.vel_lon_pid.kd
+        )
+        gains.att_pitch = PIDGains(
+            self.att_pitch_pid.kp, self.att_pitch_pid.ki, self.att_pitch_pid.kd
+        )
         gains.yaw = PIDGains(self.yaw_pid.kp, self.yaw_pid.ki, self.yaw_pid.kd)
         gains.alt = PIDGains(self.alt_pid.kp, self.alt_pid.ki, self.alt_pid.kd)
-        gains.vspeed = PIDGains(self.vspeed_pid.kp, self.vspeed_pid.ki, self.vspeed_pid.kd)
+        gains.vspeed = PIDGains(
+            self.vspeed_pid.kp, self.vspeed_pid.ki, self.vspeed_pid.kd
+        )
         gains.hover_feedforward = self.hover_feedforward
         return gains
 
@@ -523,23 +588,23 @@ class HoverAutopilotController(object):
         # (prevents jumps on engagement)
         if not self.roll_active:
             if self.flight_mode == MODE_CRUISE:
-                self.target_psi = state['psi']
+                self.target_psi = state["psi"]
             else:
-                self.target_x = state['x']
+                self.target_x = state["x"]
         if not self.pitch_active:
             if self.flight_mode == MODE_CRUISE:
-                self.target_y = state['y']
+                self.target_y = state["y"]
             else:
-                self.target_z = state['z']
+                self.target_z = state["z"]
         if not self.yaw_active:
-            self.target_psi = state['psi']
+            self.target_psi = state["psi"]
         if not self.collective_active:
-            self.target_y = state['y']
+            self.target_y = state["y"]
 
         # Extract angular rates
-        roll_rate_deg_s = state['P']
-        pitch_rate_deg_s = state['Q']
-        yaw_rate_deg_s = state['R']
+        roll_rate_deg_s = state["P"]
+        pitch_rate_deg_s = state["Q"]
+        yaw_rate_deg_s = state["R"]
 
         if self.flight_mode == MODE_CRUISE:
             # ==========================================
@@ -547,37 +612,37 @@ class HoverAutopilotController(object):
             # ==========================================
 
             # --- Roll Axis: Heading Hold (using Roll Bank) ---
-            yaw_err = wrap_180(self.target_psi - state['psi'])
+            yaw_err = wrap_180(self.target_psi - state["psi"])
             if self.roll_active:
                 # Heading error -> target bank angle (degrees)
                 target_roll = self.cruise_hdg_pid.update(yaw_err, dt)
                 roll_cmd = self.att_roll_pid.update(
-                    target_roll - state['phi'], dt, rate=roll_rate_deg_s
+                    target_roll - state["phi"], dt, rate=roll_rate_deg_s
                 )
             else:
                 self.cruise_hdg_pid.reset()
                 self.att_roll_pid.reset()
-                target_roll = state['phi']
+                target_roll = state["phi"]
                 roll_cmd = 0.0
 
             # --- Pitch Axis: Altitude Hold (Alt on Pitch) ---
-            alt_err = self.target_y - state['y']
+            alt_err = self.target_y - state["y"]
             if self.pitch_active:
                 # Altitude error -> target vertical speed (m/s)
                 target_v_vert = self.alt_pid.update(alt_err, dt)
                 # Vertical speed error -> target pitch attitude (degrees)
                 target_pitch = self.cruise_vspeed_pitch_pid.update(
-                    target_v_vert - state['vy'], dt
+                    target_v_vert - state["vy"], dt
                 )
                 pitch_cmd = self.att_pitch_pid.update(
-                    target_pitch - state['theta'], dt, rate=pitch_rate_deg_s
+                    target_pitch - state["theta"], dt, rate=pitch_rate_deg_s
                 )
             else:
                 self.alt_pid.reset()
                 self.cruise_vspeed_pitch_pid.reset()
                 self.att_pitch_pid.reset()
                 target_v_vert = 0.0
-                target_pitch = state['theta']
+                target_pitch = state["theta"]
                 pitch_cmd = 0.0
 
             # --- Yaw Axis: Turn Coordination (Pedals) ---
@@ -585,7 +650,7 @@ class HoverAutopilotController(object):
                 # Nullify lateral force (keep slip-skid ball centered).
                 # Positive g_side is rightward acceleration (skidding right),
                 # countering requires left pedal (negative).
-                g_side_err = 0.0 - state.get('g_side', 0.0)
+                g_side_err = 0.0 - state.get("g_side", 0.0)
                 yaw_cmd = self.cruise_yaw_tc_pid.update(
                     g_side_err, dt, rate=yaw_rate_deg_s
                 )
@@ -610,55 +675,51 @@ class HoverAutopilotController(object):
             # ==========================================
 
             # Calculate coordinate differences in X-Plane OpenGL local system
-            delta_x = self.target_x - state['x']
-            delta_z = self.target_z - state['z']
+            delta_x = self.target_x - state["x"]
+            delta_z = self.target_z - state["z"]
 
             # 1. Transform position error to body-relative error (Forward/Right)
             fwd_err, lat_err = CoordinateTransformer.rotate_local_to_body_error(
-                delta_x, delta_z, state['psi']
+                delta_x, delta_z, state["psi"]
             )
 
             # 2. Transform velocities to body-relative velocities
             v_fwd, v_lat = CoordinateTransformer.rotate_local_to_body_velocity(
-                state['vx'], state['vz'], state['psi']
+                state["vx"], state["vz"], state["psi"]
             )
 
             # --- Lateral Control Loop (Roll) ---
             if self.roll_active:
                 target_v_lat = self.pos_lat_pid.update(lat_err, dt)
-                target_roll = self.vel_lat_pid.update(
-                    target_v_lat - v_lat, dt
-                )
+                target_roll = self.vel_lat_pid.update(target_v_lat - v_lat, dt)
                 roll_cmd = self.att_roll_pid.update(
-                    target_roll - state['phi'], dt, rate=roll_rate_deg_s
+                    target_roll - state["phi"], dt, rate=roll_rate_deg_s
                 )
             else:
                 self.pos_lat_pid.reset()
                 self.vel_lat_pid.reset()
                 self.att_roll_pid.reset()
                 target_v_lat = 0.0
-                target_roll = state['phi']
+                target_roll = state["phi"]
                 roll_cmd = 0.0
 
             # --- Longitudinal Control Loop (Pitch) ---
             if self.pitch_active:
                 target_v_fwd = self.pos_lon_pid.update(fwd_err, dt)
-                target_pitch = -self.vel_lon_pid.update(
-                    target_v_fwd - v_fwd, dt
-                )
+                target_pitch = -self.vel_lon_pid.update(target_v_fwd - v_fwd, dt)
                 pitch_cmd = self.att_pitch_pid.update(
-                    target_pitch - state['theta'], dt, rate=pitch_rate_deg_s
+                    target_pitch - state["theta"], dt, rate=pitch_rate_deg_s
                 )
             else:
                 self.pos_lon_pid.reset()
                 self.vel_lon_pid.reset()
                 self.att_pitch_pid.reset()
                 target_v_fwd = 0.0
-                target_pitch = state['theta']
+                target_pitch = state["theta"]
                 pitch_cmd = 0.0
 
             # --- Heading Control Loop (Yaw) ---
-            yaw_err = wrap_180(self.target_psi - state['psi'])
+            yaw_err = wrap_180(self.target_psi - state["psi"])
             if self.yaw_active:
                 yaw_cmd = self.yaw_pid.update(yaw_err, dt, rate=yaw_rate_deg_s)
             else:
@@ -666,11 +727,11 @@ class HoverAutopilotController(object):
                 yaw_cmd = 0.0
 
             # --- Altitude Control Loop (Collective) ---
-            alt_err = self.target_y - state['y']
+            alt_err = self.target_y - state["y"]
             if self.collective_active:
                 target_v_vert = self.alt_pid.update(alt_err, dt)
                 collective_delta = self.vspeed_pid.update(
-                    target_v_vert - state['vy'], dt
+                    target_v_vert - state["vy"], dt
                 )
                 collective_cmd = self.hover_feedforward + collective_delta
                 collective_cmd = max(0.0, min(1.0, collective_cmd))
@@ -681,34 +742,34 @@ class HoverAutopilotController(object):
                 collective_cmd = self.hover_feedforward
 
         return {
-            'roll': roll_cmd,
-            'pitch': pitch_cmd,
-            'yaw': yaw_cmd,
-            'collective': collective_cmd,
+            "roll": roll_cmd,
+            "pitch": pitch_cmd,
+            "yaw": yaw_cmd,
+            "collective": collective_cmd,
             # Intermediate targets for UI feedback
-            'debug': {
-                'fwd_err': fwd_err,
-                'lat_err': lat_err,
-                'alt_err': (
+            "debug": {
+                "fwd_err": fwd_err,
+                "lat_err": lat_err,
+                "alt_err": (
                     alt_err
                     if self.flight_mode == MODE_HOVER
-                    else (self.target_y - state['y'])
+                    else (self.target_y - state["y"])
                 ),
-                'yaw_err': yaw_err,
-                'target_v_fwd': target_v_fwd,
-                'target_v_lat': target_v_lat,
-                'target_v_vert': (
+                "yaw_err": yaw_err,
+                "target_v_fwd": target_v_fwd,
+                "target_v_lat": target_v_lat,
+                "target_v_vert": (
                     target_v_vert
                     if self.flight_mode == MODE_HOVER
                     else (
-                        self.alt_pid.update(self.target_y - state['y'], dt)
+                        self.alt_pid.update(self.target_y - state["y"], dt)
                         if self.pitch_active
                         else 0.0
                     )
                 ),
-                'target_pitch': target_pitch,
-                'target_roll': target_roll,
-                'v_fwd': v_fwd,
-                'v_lat': v_lat,
+                "target_pitch": target_pitch,
+                "target_roll": target_roll,
+                "v_fwd": v_fwd,
+                "v_lat": v_lat,
             },
         }

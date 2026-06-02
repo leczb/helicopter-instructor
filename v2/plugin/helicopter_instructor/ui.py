@@ -45,7 +45,10 @@ def draw_window(ui_controller, window_id, ref_con):
     imgui.text_colored(
         f"Phase {ui_controller.phase}: "
         f"{virtual_instructor.PHASE_NAMES[ui_controller.phase]}",
-        0.9, 0.7, 0.1, 1.0
+        0.9,
+        0.7,
+        0.1,
+        1.0,
     )
 
     # Curriculum Phase Buttons
@@ -72,8 +75,7 @@ def draw_window(ui_controller, window_id, ref_con):
     if ui_controller.show_osd:
         imgui.indent()
         changed_dbg, new_show_dbg = imgui.checkbox(
-            "Show Excellent Criteria Debug Info",
-            ui_controller.show_envelope_debug
+            "Show Excellent Criteria Debug Info", ui_controller.show_envelope_debug
         )
         if changed_dbg:
             ui_controller.show_envelope_debug = new_show_dbg
@@ -128,9 +130,7 @@ def draw_window(ui_controller, window_id, ref_con):
         elif state_str == "OVERRIDE":
             imgui.text_colored("HARD TAKEOVER ACTIVE!", 1.0, 0.2, 0.2, 1.0)
         elif state_str == "RECOVERY_HOLD":
-            imgui.text_colored(
-                "STABILIZING COOL-DOWN...", 0.9, 0.5, 0.2, 1.0
-            )
+            imgui.text_colored("STABILIZING COOL-DOWN...", 0.9, 0.5, 0.2, 1.0)
 
         imgui.spacing()
         # Table of axes and active authority
@@ -181,36 +181,28 @@ def draw_window(ui_controller, window_id, ref_con):
         drift_str = f"Hover Drift: {drift_m:.2f} m / {safety_rad:.1f} m"
         if drift_m > safety_rad:
             imgui.text_colored(
-                drift_str + " (UNSAFE - TAKEOVER LIMIT!)",
-                1.0, 0.2, 0.2, 1.0
+                drift_str + " (UNSAFE - TAKEOVER LIMIT!)", 1.0, 0.2, 0.2, 1.0
             )
         elif drift_m > soft_rad:
             imgui.text_colored(
-                drift_str + " (WARNING - SOFT INTERVENTION)",
-                1.0, 0.6, 0.0, 1.0
+                drift_str + " (WARNING - SOFT INTERVENTION)", 1.0, 0.6, 0.0, 1.0
             )
         else:
-            imgui.text_colored(
-                drift_str + " (SAFE - NORMAL)", 0.1, 0.9, 0.1, 1.0
-            )
+            imgui.text_colored(drift_str + " (SAFE - NORMAL)", 0.1, 0.9, 0.1, 1.0)
 
         # AGL Altitude
         y_agl = ui_controller.get_y_agl()
         agl_str = f"AGL Altitude: {y_agl:.2f} m / 6.0 m"
         if y_agl < 2.0 or y_agl > 10.0:
             imgui.text_colored(
-                agl_str + " (UNSAFE - TAKEOVER LIMIT!)",
-                1.0, 0.2, 0.2, 1.0
+                agl_str + " (UNSAFE - TAKEOVER LIMIT!)", 1.0, 0.2, 0.2, 1.0
             )
         elif y_agl < 4.0 or y_agl > 8.0:
             imgui.text_colored(
-                agl_str + " (WARNING - SOFT INTERVENTION)",
-                1.0, 0.6, 0.0, 1.0
+                agl_str + " (WARNING - SOFT INTERVENTION)", 1.0, 0.6, 0.0, 1.0
             )
         else:
-            imgui.text_colored(
-                agl_str + " (SAFE - NORMAL)", 0.1, 0.9, 0.1, 1.0
-            )
+            imgui.text_colored(agl_str + " (SAFE - NORMAL)", 0.1, 0.9, 0.1, 1.0)
 
     # --- Collapsing Header: Performance Metrics Panel ---
     expanded, _ = imgui.collapsing_header(
@@ -228,9 +220,7 @@ def draw_window(ui_controller, window_id, ref_con):
         elif envelope_str == "Good":
             imgui.text_colored("GOOD HOVER", 0.9, 0.6, 0.1, 1.0)
         else:
-            imgui.text_colored(
-                "UNSTABLE / OVER-CONTROLLING", 1.0, 0.2, 0.2, 1.0
-            )
+            imgui.text_colored("UNSTABLE / OVER-CONTROLLING", 1.0, 0.2, 0.2, 1.0)
 
         # Overall Score progress bar
         imgui.spacing()
@@ -238,7 +228,7 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.progress_bar(
             metrics.overall_score / 100.0,
             size=(0, 24),
-            overlay=f"{int(metrics.overall_score)}%"
+            overlay=f"{int(metrics.overall_score)}%",
         )
 
         # Precision, Smoothness & Drift Speed sub-scores (individual lines)
@@ -247,7 +237,7 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.progress_bar(
             metrics.precision_score / 100.0,
             size=(0, 20),
-            overlay=f"{int(metrics.precision_score)}%"
+            overlay=f"{int(metrics.precision_score)}%",
         )
 
         imgui.spacing()
@@ -255,7 +245,7 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.progress_bar(
             metrics.smoothness_score / 100.0,
             size=(0, 20),
-            overlay=f"{int(metrics.smoothness_score)}%"
+            overlay=f"{int(metrics.smoothness_score)}%",
         )
 
         imgui.spacing()
@@ -263,7 +253,7 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.progress_bar(
             metrics.drift_speed_score / 100.0,
             size=(0, 20),
-            overlay=f"{int(metrics.drift_speed_score)}%"
+            overlay=f"{int(metrics.drift_speed_score)}%",
         )
 
         imgui.spacing()
@@ -271,7 +261,7 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.progress_bar(
             metrics.vert_speed_score / 100.0,
             size=(0, 20),
-            overlay=f"{int(metrics.vert_speed_score)}%"
+            overlay=f"{int(metrics.vert_speed_score)}%",
         )
 
         imgui.spacing()
@@ -279,7 +269,7 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.progress_bar(
             metrics.yaw_speed_score / 100.0,
             size=(0, 20),
-            overlay=f"{int(metrics.yaw_speed_score)}%"
+            overlay=f"{int(metrics.yaw_speed_score)}%",
         )
 
         # OCI Table
@@ -300,17 +290,11 @@ def draw_window(ui_controller, window_id, ref_con):
             imgui.next_column()
             clamped = max(0.0, min(1.0, oci_val))
             if oci_val > threshold:
-                imgui.push_style_color(
-                    imgui.COLOR_PLOT_HISTOGRAM, 1.0, 0.4, 0.1, 1.0
-                )
+                imgui.push_style_color(imgui.COLOR_PLOT_HISTOGRAM, 1.0, 0.4, 0.1, 1.0)
             else:
-                imgui.push_style_color(
-                    imgui.COLOR_PLOT_HISTOGRAM, 0.1, 0.7, 0.2, 1.0
-                )
+                imgui.push_style_color(imgui.COLOR_PLOT_HISTOGRAM, 0.1, 0.7, 0.2, 1.0)
             imgui.progress_bar(
-                clamped,
-                size=(220, 20),
-                overlay=f"{oci_val:.2f} / {threshold:.1f}"
+                clamped, size=(220, 20), overlay=f"{oci_val:.2f} / {threshold:.1f}"
             )
             imgui.pop_style_color(1)
             imgui.next_column()
@@ -325,22 +309,12 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.spacing()
         imgui.separator()
         imgui.text("Training Session Statistics:")
-        imgui.text(
-            f"  Longest Student Flight: {metrics.longest_flight_time:.1f} s"
-        )
+        imgui.text(f"  Longest Student Flight: {metrics.longest_flight_time:.1f} s")
         imgui.text(f"  Total Safety Takeovers: {metrics.total_takeovers}")
-        imgui.text(
-            f"  Average Target Drift: {metrics.get_average_drift():.2f} m"
-        )
-        imgui.text(
-            f"  Current Drift Speed: {metrics.drift_speed:.2f} m/s"
-        )
-        imgui.text(
-            f"  Current Vertical Speed: {metrics.vert_speed:.2f} m/s"
-        )
-        imgui.text(
-            f"  Current Yaw Rate: {metrics.yaw_speed:.2f} deg/s"
-        )
+        imgui.text(f"  Average Target Drift: {metrics.get_average_drift():.2f} m")
+        imgui.text(f"  Current Drift Speed: {metrics.drift_speed:.2f} m/s")
+        imgui.text(f"  Current Vertical Speed: {metrics.vert_speed:.2f} m/s")
+        imgui.text(f"  Current Yaw Rate: {metrics.yaw_speed:.2f} deg/s")
 
         # Instructor Coaching Advice
         imgui.spacing()
@@ -358,7 +332,7 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.spacing()
 
         imgui.text("Incremental Adjustments:")
-        
+
         # Longitudinal (Forward/Backward)
         imgui.text("Longitudinal:  ")
         imgui.same_line()
@@ -436,7 +410,15 @@ def draw_window(ui_controller, window_id, ref_con):
                 changed7, gains.att_roll.kd = imgui.slider_float(
                     "Kd Att Roll", gains.att_roll.kd, 0.0, 0.1
                 )
-                if changed1 or changed2 or changed3 or changed4 or changed5 or changed6 or changed7:
+                if (
+                    changed1
+                    or changed2
+                    or changed3
+                    or changed4
+                    or changed5
+                    or changed6
+                    or changed7
+                ):
                     gains_changed = True
                 imgui.end_tab_item()
 
@@ -468,7 +450,15 @@ def draw_window(ui_controller, window_id, ref_con):
                 changed7, gains.att_pitch.kd = imgui.slider_float(
                     "Kd Att Pitch", gains.att_pitch.kd, 0.0, 0.1
                 )
-                if changed1 or changed2 or changed3 or changed4 or changed5 or changed6 or changed7:
+                if (
+                    changed1
+                    or changed2
+                    or changed3
+                    or changed4
+                    or changed5
+                    or changed6
+                    or changed7
+                ):
                     gains_changed = True
                 imgui.end_tab_item()
 
