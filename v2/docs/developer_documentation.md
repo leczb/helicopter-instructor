@@ -9,15 +9,18 @@ Welcome to the Helicopter Flight Instructor codebase. This document outlines the
 All Python code in this repository conforms to the **[Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)**. Developers must follow these rules when contributing to any module:
 
 ### 1.1 Line Length & Formatting
+
 - **Line Length**: Limit all lines to a maximum of **80 characters**.
-  - *Exceptions*: Long pathnames/URLs in comments, or long raw strings in expressions where breaking them would decrease readability.
+  - _Exceptions_: Long pathnames/URLs in comments, or long raw strings in expressions where breaking them would decrease readability.
 - **Indentation**: Use exactly **4 spaces** per indentation level. Do not use tabs.
-- **Blank Lines**: 
+- **Blank Lines**:
   - Separate top-level function and class definitions with **two blank lines**.
-  - Separate method definitions inside a class with **one blank line`.
+  - Separate method definitions inside a class with \*\*one blank line`.
 
 ### 1.2 Import Ordering
+
 Imports must be grouped in the following order, with groups separated by a single blank line:
+
 1. **Standard Library** imports (e.g. `math`, `os`, `json`).
 2. **Third-Party / External** libraries (e.g. `xp`, `imgui`).
 3. **Local Application** packages (e.g. modules under `helicopter_instructor`).
@@ -25,8 +28,10 @@ Imports must be grouped in the following order, with groups separated by a singl
 Within each group, imports should be sorted alphabetically.
 
 ### 1.3 Docstrings & Comments
+
 - Every module, class, and public function must have a descriptive docstring.
 - Docstrings should use the **Google Docstring Format** to describe parameters and return values:
+
   ```python
   def example_function(plugin, filename):
       """Brief description of what the function does.
@@ -60,6 +65,7 @@ graph TD
 ```
 
 ### 2.1 Subsystem Responsibilities
+
 - **[audio.py](../plugin/helicopter_instructor/audio.py)**: OpenAL/FMOD WAV playback, volume management, and Text-to-Speech fallbacks.
 - **[config.py](../plugin/helicopter_instructor/config.py)**: Auto-detects the active X-Plane aircraft model, and handles saving/loading PID tuning gains to JSON.
 - **[graphics.py](../plugin/helicopter_instructor/graphics.py)**: Programmatic solid PNG texture generation, OBJ8 3D model writing, and Vulkan/Metal instance binding.
@@ -71,6 +77,7 @@ graph TD
 - **[envelope_limits.py](../plugin/helicopter_instructor/envelope_limits.py)**: Central single source of truth for all warning, caution, green zone, and takeover thresholds.
 
 ### 2.2 Modular Design & State Delegation
+
 To maintain high decoupling, thread safety, and testability, the plugin uses a
 clean state delegation pattern instead of module-level mutable singletons.
 Core subsystems and utilities are isolated from the main `PythonInterface`
@@ -105,30 +112,36 @@ X-Plane's active C-APIs or graphics rendering loops.
 We use standard Python unit tests to verify the correctness of autopilot calculations, state machine transitions, and UI drawing triggers.
 
 ### 3.1 Running the Tests
+
 To execute the automated test suite, run the following command from the `v2/` root directory:
+
 ```bash
-python -m unittest discover tests
+python3 -m unittest discover tests
 ```
 
 Ensure all tests pass successfully (`OK`) before committing or releasing any code.
 
 ### 3.2 Checking Test Coverage
+
 To measure and analyze code coverage of the test suite, follow these steps from the `v2/` root directory:
 
 1. **Install Coverage**:
    Install the `coverage` module via pip if it's not already present:
+
    ```bash
    pip install coverage
    ```
 
 2. **Run Tests with Coverage**:
    Execute the test suite with coverage collection active:
+
    ```bash
    python -m coverage run -m unittest discover tests
    ```
 
 3. **Generate Terminal Report**:
    View a quick summary table in the terminal including missing line numbers:
+
    ```bash
    python -m coverage report -m
    ```
@@ -139,6 +152,7 @@ To measure and analyze code coverage of the test suite, follow these steps from 
    python -m coverage html
    ```
    Open `htmlcov/index.html` in your web browser to browse line-by-line coverage for each file.
+
 ## 4. Release Notes
 
 - **Always** update `release_notes.md` with a concise, user‑friendly description of each change (added features, bug fixes, improvements). This file should be maintained as part of the release process to keep users informed.

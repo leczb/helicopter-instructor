@@ -1,5 +1,12 @@
 # Release Notes
 
+## v2.1.47 - 2026-06-03
+
+- **Fixed**: Updated the plugin signature and description to be consistent
+  with X-Plane community practices.
+
+- **Fixed**: Updated Markdown formatting and cleaned up some comments.
+
 ## v2.1.46 - 2026-06-02
 
 - **Docs**: Updated `AGENTS.md` test commands to use `python3` (the correct
@@ -17,7 +24,7 @@
 
 - **Fixed**: Eliminated attitude jolts at every phase transition, not just
   safety overrides. When the VFI reclaims cyclic authority from the student
-  (on any STUDENT_FLIGHT → * transition), the position/velocity/attitude PID
+  (on any STUDENT_FLIGHT → \* transition), the position/velocity/attitude PID
   cascade is now reset before the VFI issues its first cyclic command.
 
   Three distinct paths all trigger the reset:
@@ -39,7 +46,7 @@
   45 m from the hover target in Phase 4).
 
   **Root cause:** The flight loop was applying the override (snapping the
-  hover target to the current position) *after* the autopilot had already
+  hover target to the current position) _after_ the autopilot had already
   computed its commands for that frame. This meant the PID cascade saw a 45 m
   position error on the first recovery frame and produced maximum cyclic
   deflection. Additionally, the position/velocity/attitude PIDs had accumulated
@@ -48,7 +55,7 @@
   compounded the jolt.
 
   **Fix (two parts):**
-  1. The override target snap now runs *before* `controller.update()` on every
+  1. The override target snap now runs _before_ `controller.update()` on every
      frame, so the autopilot always sees the correct hover position.
   2. When an override first fires, the lateral and longitudinal position,
      velocity, and attitude PIDs are explicitly reset — clearing wound-up
@@ -56,11 +63,13 @@
      therefore produces calm, near-zero attitude commands.
 
 ## v2.1.42 - 2026-06-02
+
 - **Fixed**: Manually selecting a phase via the UI now plays that phase's
   intro audio. If the student was flying, "I have control" plays first;
   if the VFI already had control, only the intro is queued.
 
 ## v2.1.41 - 2026-06-02
+
 - **Fixed**: Phase 1 intro audio ("Phase 1 intro.wav") is now played when the
   VFI first engages, so the student always hears an explanation of the current
   phase before taking the controls. Re-engaging on any phase will play that

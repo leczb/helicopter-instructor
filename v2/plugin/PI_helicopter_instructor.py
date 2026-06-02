@@ -269,12 +269,12 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.46"
+        self.version = "2.1.47"
         self.Name = "Helicopter Virtual Flight Instructor"
-        self.Sig = "lecz.helicopter.instructor"
+        self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
-            "An intelligent virtual flight instructor that helps you learn "
-            f"how to hover a helicopter. [v{self.version}]"
+            "Version {self.version} - An intelligent virtual flight instructor that helps you learn "
+            f"how to hover a helicopter."
         )
 
         # Core VFI (Virtual Flight Instructor) States
@@ -346,7 +346,7 @@ class PythonInterface(object):
         self.dref_joystick_axis_assignments = None
         self.dref_joy_mapped_axis_value = None
 
-        # Cache of last outputs for display/blending
+        # Cache of last outputs for display
         self.last_commands = {
             'roll': 0.0,
             'pitch': 0.0,
@@ -380,8 +380,6 @@ class PythonInterface(object):
             'yaw': 0.0,
             'collective': 0.5
         }
-
-
 
         # Raw hardware scan diagnostics
         self.last_count_assign = 0
@@ -474,7 +472,7 @@ class PythonInterface(object):
             "sim/joystick/joy_mapped_axis_value"
         )
 
-        # 2. Try loading gains from JSON
+        # 2. Try loading PID gains from JSON
         self.load_gains()
 
         # 3. Create the ImGui control window
@@ -501,7 +499,7 @@ class PythonInterface(object):
         # 5. Register flight loop callback at 50Hz (every 0.02s)
         xp.registerFlightLoopCallback(self.flight_loop_callback, 0.02, self)
 
-        # 5b. Create draggable VFI HUD Window (replaces static draw callback)
+        # 5b. Create draggable OSD HUD Window
         left_scr, top_scr, right_scr, bottom_scr = xp.getScreenBoundsGlobal()
         center_scr_x = (left_scr + right_scr) / 2.0
 
@@ -579,12 +577,12 @@ class PythonInterface(object):
             "Helicopter Instructor: Toggle Master Engage"
         )
         self.cmd_osd_toggle = xp.createCommand(
-            "helicopter_instructor/osd_toggle",
-            "Helicopter Instructor: Toggle HUD OSD Overlay"
+            "helicopter_instructor/hud_toggle",
+            "Helicopter Instructor: Toggle HUD"
         )
         self.cmd_alt_bar_toggle = xp.createCommand(
             "helicopter_instructor/alt_bar_toggle",
-            "Helicopter Instructor: Toggle Standalone Altitude Safety Bar"
+            "Helicopter Instructor: Toggle Altitude Bar"
         )
         self.cmd_next_phase = xp.createCommand(
             "helicopter_instructor/next_phase",
@@ -596,7 +594,7 @@ class PythonInterface(object):
         )
         self.cmd_handoff_trigger = xp.createCommand(
             "helicopter_instructor/handoff_trigger",
-            "Helicopter Instructor: Trigger Lesson Axis Handoff"
+            "Helicopter Instructor: Trigger Control Handoff"
         )
         self.cmd_hover_forward = xp.createCommand(
             "helicopter_instructor/hover_forward",
@@ -612,30 +610,30 @@ class PythonInterface(object):
         )
         self.cmd_hover_right = xp.createCommand(
             "helicopter_instructor/hover_right",
-            "Helicopter Instructor: Shift Hover Target Right 1m"
+            "Helicopter Instructor: Shift hover target right 1m"
         )
         self.cmd_hover_up = xp.createCommand(
             "helicopter_instructor/hover_up",
-            "Helicopter Instructor: Increase Hover Target Altitude 0.5m"
+            "Helicopter Instructor: Increase hover target altitude 0.5m"
         )
         self.cmd_hover_down = xp.createCommand(
             "helicopter_instructor/hover_down",
-            "Helicopter Instructor: Decrease Hover Target Altitude 0.5m"
+            "Helicopter Instructor: Decrease hover target altitude 0.5m"
         )
         self.cmd_hover_heading_left = xp.createCommand(
             "helicopter_instructor/hover_heading_left",
-            "Helicopter Instructor: Adjust Hover Target Heading Left 5 deg"
+            "Helicopter Instructor: Adjust hover target heading left 5 deg"
         )
         self.cmd_hover_heading_right = xp.createCommand(
             "helicopter_instructor/hover_heading_right",
-            "Helicopter Instructor: Adjust Hover Target Heading Right 5 deg"
+            "Helicopter Instructor: Adjust hover target heading right 5 deg"
         )
         self.cmd_hover_reset_current = xp.createCommand(
-            "helicopter_instructor/hover_reset_current",
-            "Helicopter Instructor: Reset Hover Target to Current Location"
+            "helicopter_instructor/hover_set_current",
+            "Helicopter Instructor: Set the current location as the hover target"
         )
 
-        # Eagerly preload all audio assets into memory cache to prevent runtime disk stutters
+        # Preload all audio assets into memory cache to prevent runtime disk stutters
         try:
             self.audio.preload_sounds()
         except Exception as preload_err:
@@ -1314,12 +1312,12 @@ class PythonInterface(object):
         ui.draw_window(self.ui_controller, window_id, ref_con)
 
     def save_gains(self):
-        """Saves current PID parameters to a local JSON file."""
+        """Saves current PID gains to a local JSON file."""
         gains = self.controller.get_gains()
         config.save_gains(self.plugin_dir, gains)
 
     def load_gains(self):
-        """Loads PID parameters from a local JSON file."""
+        """Loads PID gains from a local JSON file."""
         gains = config.load_gains(self.plugin_dir)
         if gains:
             self.controller.set_gains(gains)
@@ -1345,7 +1343,7 @@ class PythonInterface(object):
         return 1
 
     def cmd_handler_alt_bar_toggle(self, command_ref, cmd_phase, refcon):
-        """Toggles the vertical altitude bar visibility."""
+        """Toggles the altitude bar visibility."""
         if cmd_phase == 0:
             self.ui_controller.show_alt_bar = not self.show_alt_bar
         return 1
