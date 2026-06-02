@@ -269,7 +269,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.43"
+        self.version = "2.1.44"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "lecz.helicopter.instructor"
         self.Desc = (
@@ -1007,14 +1007,7 @@ class PythonInterface(object):
             if not hasattr(self, 'last_phase'):
                 self.last_phase = curr_phase
 
-            # --- POST STEP C: Reset cyclic PIDs on first override frame ---
-            # On the frame an override first fires, Step A already ran with the
-            # stale target and wound-up integrals.  Resetting the cyclic PID
-            # cascade here clears that state so frame N+1 (which now also gets
-            # the correct target via PRE-STEP A above) starts from zero and
-            # produces calm, near-zero attitude commands.
-            if curr_state == "OVERRIDE" and self.last_system_state != "OVERRIDE":
-                self.controller.reset_position_hold_pids()
+            # (PID reset is handled below, after STEP C4 re-read.)
 
             # --- STEP C2: Run Student Performance Metrics ---
             is_student_flying = (curr_state == "STUDENT_FLIGHT")
@@ -1071,6 +1064,24 @@ class PythonInterface(object):
 
             curr_state = self.instructor.system_state
             curr_phase = self.instructor.phase
+
+            # --- Reset cyclic PIDs on any STUDENT_FLIGHT → * transition ---
+            # Whenever the VFI reclaims cyclic authority from the student,
+            # the position/velocity/attitude PID cascade may hold wound-up
+            # integrals accumulated during student flight, producing a jolt
+            # on the first VFI-commanded frame.  Resetting here covers all
+            # three transition paths:
+            #   • Safety override  (state set inside instructor.update())
+            #   • Manual phase change  (command handler fired between frames)
+            #   • Automatic phase advance  (state set inside STEP C4)
+            # Placing the check after the STEP C4 re-read means curr_state
+            # already reflects any within-frame state change, while
+            # last_system_state always holds the previous frame's value.
+            if (
+                self.last_system_state == "STUDENT_FLIGHT"
+                and curr_state != "STUDENT_FLIGHT"
+            ):
+                self.controller.reset_position_hold_pids()
 
             # Detect state and phase transitions to play audio announcements.
             # Skip if this was an automatic phase transition (audio already

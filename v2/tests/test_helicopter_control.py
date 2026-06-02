@@ -728,13 +728,12 @@ class TestAutopilotPlugin(unittest.TestCase):
                 "not the stale 50 m target."
         )
 
-    def test_cyclic_pids_reset_on_first_override_frame_only(self):
-        """reset_position_hold_pids() fires exactly once on STUDENT→OVERRIDE.
+    def test_cyclic_pids_reset_on_student_to_override_transition(self):
+        """reset_position_hold_pids() fires on STUDENT_FLIGHT → OVERRIDE.
 
-        On the frame an override first fires, wound-up cyclic PIDs must be
-        cleared.  On every subsequent OVERRIDE frame the reset must NOT fire
-        again (the PIDs are already clean and retrigggering would discard the
-        freshly accumulated recovery state).
+        Safety overrides are the highest-urgency path: the state flips inside
+        instructor.update() (Step C), so the check in the POST-C4 re-read
+        block must catch it via last_system_state == STUDENT_FLIGHT.
         """
         self.plugin.controller.update = MagicMock(
             return_value=self._make_vfi_output()
@@ -745,12 +744,11 @@ class TestAutopilotPlugin(unittest.TestCase):
         )
         self.plugin.controller.reset_position_hold_pids = MagicMock()
 
-        # --- Frame 1: transition STUDENT_FLIGHT → OVERRIDE ---
+        # --- Frame 1: STUDENT_FLIGHT → OVERRIDE (inside instructor.update) ---
         self.plugin.last_system_state = "STUDENT_FLIGHT"
         self.plugin.instructor.system_state = "STUDENT_FLIGHT"
 
-        # Force instructor to immediately flip to OVERRIDE inside update().
-        def override_on_first_call(dt, telemetry, hardware, vfi_inputs):
+        def override_on_call(dt, telemetry, hardware, vfi_inputs):
             self.plugin.instructor.system_state = "OVERRIDE"
             self.plugin.instructor.drift_recovery_active = True
             self.plugin.instructor.override_target_x = 0.0
@@ -758,29 +756,109 @@ class TestAutopilotPlugin(unittest.TestCase):
             self.plugin.instructor.override_target_z = 0.0
             return vfi_inputs
 
-        self.plugin.instructor.update = override_on_first_call
-
+        self.plugin.instructor.update = override_on_call
         self.plugin.flight_loop_callback(
             last_call=0.02, elapsed_time=0.02, counter=1, ref_con=None
         )
         self.assertEqual(
             self.plugin.controller.reset_position_hold_pids.call_count, 1,
-            "Expected exactly one PID reset on the first override frame."
+            "Expected exactly one PID reset on the STUDENT→OVERRIDE frame."
         )
 
-        # --- Frame 2: already in OVERRIDE, no further reset ---
-        def stay_in_override(dt, telemetry, hardware, vfi_inputs):
-            return vfi_inputs
-
-        self.plugin.instructor.update = stay_in_override
-
+        # --- Frame 2: already in OVERRIDE — no further reset ---
+        self.plugin.instructor.update = (
+            lambda dt, tel, hw, vfi: vfi
+        )
         self.plugin.flight_loop_callback(
             last_call=0.02, elapsed_time=0.02, counter=2, ref_con=None
         )
         self.assertEqual(
             self.plugin.controller.reset_position_hold_pids.call_count, 1,
             "reset_position_hold_pids() must not fire again on subsequent "
-            "override frames."
+            "OVERRIDE frames."
+        )
+
+    def test_cyclic_pids_reset_on_manual_phase_change(self):
+        """reset_position_hold_pids() fires when a manual phase change puts
+        the instructor into SYNCING between frames.
+
+        The command handler calls set_phase() / initiate_handoff() outside the
+        flight loop, so on the next frame last_system_state is STUDENT_FLIGHT
+        but curr_state (read after Step C) is already SYNCING.
+        """
+        self.plugin.controller.update = MagicMock(
+            return_value=self._make_vfi_output()
+        )
+        self.plugin.get_hardware_inputs = MagicMock(
+            return_value={'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+                          'collective': 0.5}
+        )
+        self.plugin.controller.reset_position_hold_pids = MagicMock()
+
+        # Simulate: previous frame was STUDENT_FLIGHT; a command handler has
+        # already flipped the instructor to SYNCING before this frame runs.
+        self.plugin.last_system_state = "STUDENT_FLIGHT"
+        self.plugin.instructor.system_state = "SYNCING"
+
+        # instructor.update() in SYNCING just returns vfi_inputs.
+        self.plugin.instructor.update = (
+            lambda dt, tel, hw, vfi: vfi
+        )
+
+        self.plugin.flight_loop_callback(
+            last_call=0.02, elapsed_time=0.02, counter=1, ref_con=None
+        )
+        self.assertEqual(
+            self.plugin.controller.reset_position_hold_pids.call_count, 1,
+            "Expected one PID reset when manual phase change caused "
+            "STUDENT→SYNCING between frames."
+        )
+
+    def test_cyclic_pids_reset_on_automatic_phase_advance(self):
+        """reset_position_hold_pids() fires when the automatic phase advance
+        flips state to SYNCING inside STEP C4 (within the same frame).
+
+        On the transition frame Step C still returns STUDENT_FLIGHT; STEP C4
+        then calls initiate_handoff(), setting state to SYNCING.  The check
+        after the STEP C4 re-read must fire because last_system_state is
+        STUDENT_FLIGHT and the final curr_state is SYNCING.
+        """
+        self.plugin.controller.update = MagicMock(
+            return_value=self._make_vfi_output()
+        )
+        self.plugin.get_hardware_inputs = MagicMock(
+            return_value={'roll': 0.0, 'pitch': 0.0, 'yaw': 0.0,
+                          'collective': 0.5}
+        )
+        self.plugin.controller.reset_position_hold_pids = MagicMock()
+
+        # Previous frame was STUDENT_FLIGHT.
+        self.plugin.last_system_state = "STUDENT_FLIGHT"
+        self.plugin.instructor.system_state = "STUDENT_FLIGHT"
+        self.plugin.instructor.phase = 4
+
+        # instructor.update() still returns STUDENT_FLIGHT this frame, but
+        # sets transition_pending so STEP C4 advances the phase.
+        def student_with_pending_transition(dt, telemetry, hardware, vfi):
+            self.plugin.instructor.transition_pending = True
+            self.plugin.instructor.transition_target_phase = 5
+            self.plugin.instructor.training_complete = False
+            return {k: hardware[k] for k in hardware}
+
+        self.plugin.instructor.update = student_with_pending_transition
+
+        self.plugin.flight_loop_callback(
+            last_call=0.02, elapsed_time=0.02, counter=1, ref_con=None
+        )
+
+        # After STEP C4, state must be SYNCING and reset must have fired.
+        self.assertEqual(
+            self.plugin.instructor.system_state, "SYNCING",
+            "STEP C4 must have advanced the instructor to SYNCING."
+        )
+        self.assertEqual(
+            self.plugin.controller.reset_position_hold_pids.call_count, 1,
+            "Expected one PID reset on the automatic phase-advance frame."
         )
 
 

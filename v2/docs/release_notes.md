@@ -1,5 +1,24 @@
 # Release Notes
 
+## v2.1.44 - 2026-06-02
+
+- **Fixed**: Eliminated attitude jolts at every phase transition, not just
+  safety overrides. When the VFI reclaims cyclic authority from the student
+  (on any STUDENT_FLIGHT → * transition), the position/velocity/attitude PID
+  cascade is now reset before the VFI issues its first cyclic command.
+
+  Three distinct paths all trigger the reset:
+  - **Safety override** — state changes inside `instructor.update()` (Step C).
+  - **Manual phase change** — command handler fires between frames; on the
+    next frame `last_system_state` is still `STUDENT_FLIGHT` while
+    `curr_state` is already `SYNCING`.
+  - **Automatic phase advance** — state changes inside STEP C4 (within the
+    same frame as the last student frame); the check runs after the STEP C4
+    re-read so it catches the within-frame flip.
+
+  Previously only the safety-override path was covered; the two phase-change
+  paths were silently missed.
+
 ## v2.1.43 - 2026-06-02
 
 - **Fixed**: Eliminated the violent attitude jolt that occurred when the VFI
