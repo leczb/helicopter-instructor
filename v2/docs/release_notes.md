@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.51 - 2026-06-03
+
+- **Docs**: Wired curriculum phase screenshots, target safety zones, and external view images into the top-level README.md.
+
 ## v2.1.50 - 2026-06-03
 
 - **Fixed**: Restrained the translucent dark background box of the HUD to only cover the bottom control input graphics section. This prevents text elements (which are drawn at a scaled 2x size) from stretching past or spilling horizontally out of the background.
