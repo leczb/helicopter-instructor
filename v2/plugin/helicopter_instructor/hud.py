@@ -68,6 +68,7 @@ COLLECTIVE_TRACK_HEIGHT = 75
 PEDALS_TRACK_WIDTH = 140
 CYCLIC_STICK_SCALE = 75.0
 CYCLIC_STICK_HALF_SIZE = 40
+CONTROL_BACKGROUND_HEIGHT = 120
 
 ALT_BAR_HEIGHT = 420
 ALT_BAR_WIDTH = 24
@@ -221,8 +222,8 @@ def draw_hud(view_model, window_id):
         "target_z": view_model.target_z,
     }
 
-    # Draw translucent background card (below title bar)
-    draw_box_scaled(box_left, box_top - 25, box_right, box_bottom)
+    # Draw translucent background card behind the control input graphics only
+    draw_box_scaled(box_left, box_bottom + CONTROL_BACKGROUND_HEIGHT, box_right, box_bottom)
     xp.setGraphicsState(0, 1, 0, 0, 1, 0, 0)
 
     # Color definitions

@@ -276,7 +276,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.49"
+        self.version = "2.1.50"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
