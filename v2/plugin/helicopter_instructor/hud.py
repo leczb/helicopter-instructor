@@ -2,6 +2,7 @@
 
 import math
 
+# pyrefly: ignore [missing-import]
 import xp
 
 from helicopter_instructor import virtual_instructor
@@ -14,6 +15,7 @@ from helicopter_instructor.envelope_limits import (
 
 # Try importing PyOpenGL once at the module level to avoid costly imports/searches on every frame
 try:
+    # pyrefly: ignore [missing-import]
     from OpenGL.GL import (
         glPushMatrix,
         glPopMatrix,

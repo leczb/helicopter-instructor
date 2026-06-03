@@ -1,5 +1,6 @@
 """ImGui User Interface submodule for Helicopter Flight Instructor."""
 
+# pyrefly: ignore [missing-import]
 import imgui
 
 from helicopter_instructor import virtual_instructor

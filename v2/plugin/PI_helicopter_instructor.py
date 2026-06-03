@@ -6,7 +6,10 @@ import os
 
 import importlib
 
+# pyrefly: ignore [missing-import]
 import xp
+
+# pyrefly: ignore [missing-import]
 import xp_imgui
 
 from helicopter_instructor import audio

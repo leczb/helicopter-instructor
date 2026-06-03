@@ -11,7 +11,10 @@ sys.path.insert(
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor"))
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
+# pyrefly: ignore [missing-import]
 from helicopter_instructor import envelope_limits
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor import metrics
 
 PerformanceMetricsEvaluator = metrics.PerformanceMetricsEvaluator

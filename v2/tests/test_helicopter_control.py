@@ -19,8 +19,13 @@ sys.modules["xp"] = mock_xp
 sys.modules["xp_imgui"] = mock_xp_imgui
 sys.modules["imgui"] = mock_imgui
 
+# pyrefly: ignore [missing-import]
 from helicopter_instructor.autopilot import helicopter_control
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor import config
+
+# pyrefly: ignore [missing-import]
 import PI_helicopter_instructor
 
 # Local module level definitions to keep test compatibility without breaking style

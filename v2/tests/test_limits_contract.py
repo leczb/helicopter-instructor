@@ -31,8 +31,13 @@ if "imgui" not in sys.modules:
 else:
     mock_imgui = sys.modules["imgui"]
 
+# pyrefly: ignore [missing-import]
 from helicopter_instructor import envelope_limits
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor import metrics
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor import virtual_instructor
 
 

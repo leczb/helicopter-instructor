@@ -3,6 +3,7 @@
 import json
 import os
 
+# pyrefly: ignore [missing-import]
 import xp
 
 from helicopter_instructor.autopilot.helicopter_control import AutopilotGains

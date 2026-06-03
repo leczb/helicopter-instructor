@@ -4,6 +4,7 @@ from helicopter_instructor import graphics
 import os
 import wave
 
+# pyrefly: ignore [missing-import]
 import xp
 
 

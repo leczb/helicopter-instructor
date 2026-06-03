@@ -6,6 +6,7 @@ import shutil
 import struct
 import zlib
 
+# pyrefly: ignore [missing-import]
 import xp
 
 from helicopter_instructor.envelope_limits import (

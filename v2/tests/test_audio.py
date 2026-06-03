@@ -25,6 +25,7 @@ if "imgui" not in sys.modules:
     sys.modules["imgui"] = mock.MagicMock()
 
 # Import the audio manager
+# pyrefly: ignore [missing-import]
 from helicopter_instructor import audio
 
 
@@ -170,6 +171,7 @@ class TestPluginAudio(unittest.TestCase):
         mock_xp.getScreenBoundsGlobal.return_value = (0, 1080, 1920, 0)
 
         # Import/instantiate PythonInterface
+        # pyrefly: ignore [missing-import]
         import PI_helicopter_instructor
 
         self.plugin = PI_helicopter_instructor.PythonInterface()
