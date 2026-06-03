@@ -46,7 +46,11 @@ This plugin is designed to run in X-Plane 12 via the **X-PPython3** (Python 3 In
    ```
    <X-Plane 12>/Resources/plugins/PythonPlugins/
    ```
-3. Copy all files and folders from the `v2/plugin` directory directly into the `PythonPlugins` folder. The final file structure inside `PythonPlugins` must look like this:
+3. Copy the plugin files into the `PythonPlugins` folder:
+   - **From the release ZIP**: copy the contents of the `PythonPlugins/` folder inside the archive.
+   - **From the source repository**: copy the contents of the `v2/plugin/` directory.
+
+   The final file structure inside `PythonPlugins` must look like this:
    ```
     <X-Plane 12>/Resources/plugins/PythonPlugins/
     ├── PI_helicopter_instructor.py
