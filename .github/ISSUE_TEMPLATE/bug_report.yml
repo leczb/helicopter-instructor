@@ -1,0 +1,96 @@
+name: Bug Report
+description: Something isn't working as expected
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill in as
+        much detail as possible — it helps us reproduce and fix the issue
+        much faster.
+
+  - type: input
+    id: plugin_version
+    attributes:
+      label: Plugin version
+      description: >
+        Shown in the X-Plane menu bar under
+        **Plugins → Helicopter Instructor**.
+      placeholder: "e.g. v2.1.49"
+    validations:
+      required: true
+
+  - type: input
+    id: xplane_version
+    attributes:
+      label: X-Plane version
+      placeholder: "e.g. 12.09r1"
+    validations:
+      required: true
+
+  - type: input
+    id: xppython3_version
+    attributes:
+      label: XPPython3 version
+      description: Shown in the XPPython3 plugin page inside X-Plane.
+      placeholder: "e.g. 4.2.1"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "e.g. macOS 15.2, Windows 11"
+    validations:
+      required: true
+
+  - type: input
+    id: aircraft
+    attributes:
+      label: Aircraft
+      placeholder: "e.g. Robinson R22 Beta II"
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: A numbered list of exact steps that reliably trigger the bug.
+      placeholder: |
+        1. Launch X-Plane 12 and load the Robinson R22 at EGLL
+        2. Engage the VFI
+        3. Start Phase 4
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      placeholder: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log excerpts
+      description: >
+        Paste the relevant sections from **both** `Log.txt` and
+        `XPPython3Log.txt` found in your `<X-Plane 12>/` root folder.
+        Search for `helicopter_instructor` to find the relevant lines.
+      render: text
+    validations:
+      required: false

@@ -1,0 +1,42 @@
+name: Feature Request
+description: Suggest an improvement or new capability
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! To help us understand and prioritise it,
+        please describe the **problem** you're trying to solve rather than
+        jumping straight to a solution.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: >
+        Describe the situation from a student pilot's perspective.
+        e.g. "When I'm in Phase 4, I have no way to tell whether my cyclic
+        inputs are too jerky until the OCI number spikes."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: >
+        How do you think this could work? If you're not sure, leave it blank
+        and we'll figure it out together.
+    validations:
+      required: false
+
+  - type: input
+    id: aircraft
+    attributes:
+      label: Aircraft / hardware context
+      description: >
+        Is this specific to a particular helicopter model or control hardware?
+      placeholder: "e.g. Robinson R22, Thrustmaster HOTAS"
+    validations:
+      required: false
