@@ -47,15 +47,22 @@ jobs:
           # 1. Create a temporary staging folder matching the X-Plane requirement
           mkdir -p staging/PythonPlugins
 
-          # 2. Copy production files/folders into it
+          # 2. Copy plugin files into PythonPlugins/
           cp v2/plugin/PI_helicopter_instructor.py staging/PythonPlugins/
           cp -r v2/plugin/helicopter_instructor staging/PythonPlugins/
 
+          # 3. Bundle user docs at the ZIP root for easy discovery
+          cp v2/README.md staging/README.md
+          cp v2/docs/release_notes.md staging/RELEASE_NOTES.md
+          cp CONTRIBUTING.md staging/CONTRIBUTING.md
+          cp LICENSE staging/LICENSE
+
       - name: Zip the plugin
         run: |
-          # Change directory to staging so 'PythonPlugins' is the top-level folder inside the zip
+          # Zip all staging contents so PythonPlugins/, README.md, and
+          # RELEASE_NOTES.md all appear at the top level of the archive
           cd staging
-          zip -r ../HelicopterFlightInstructor_Plugin_${{ github.ref_name }}.zip PythonPlugins/
+          zip -r ../HelicopterFlightInstructor_Plugin_${{ github.ref_name }}.zip .
 
       - name: Create GitHub Release and Upload Asset
         uses: softprops/action-gh-release@v3
