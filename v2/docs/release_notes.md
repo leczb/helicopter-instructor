@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.49 - 2026-06-03
+
+- **Refactor**: Consistently renamed all "OSD" / "On-Screen Display" occurrences to "HUD" (Heads-Up Display) across code and documentation.
+
 ## v2.1.48 - 2026-06-02
 
 - **Chore**: Formatted all .py files with Black
@@ -97,7 +101,7 @@
   to 0.3, making the grade more achievable during early pedal training.
 - **Improved**: Proficiency sliding window shortened from 60 s to 20 s so that
   a good run of pedal control flips the envelope grade to Excellent much faster.
-- **Added**: Excellent Criteria Debug panel on the HUD OSD. When enabled it
+- **Added**: Excellent Criteria Debug panel on the HUD. When enabled it
   shows live heading error, yaw rate, and pedal OCI values next to their limits
   with OK / !! colour indicators. Toggle via "Show Excellent Criteria Debug
   Info" in the UI panel (disabled by default, indented under the HUD overlay

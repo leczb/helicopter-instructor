@@ -7,7 +7,7 @@ LIMIT_YAW_SPEED_GREEN_DEG_S = 4.0  # Green zone yaw rate; dead-zone
 LIMIT_YAW_SPEED_ORANGE_DEG_S = 10.0  # Orange zone yaw rate limit; unstable bounds
 
 # --- 2. ALTITUDE / COLLECTIVE PARAMETERS (Meters deviation from 6.0m target) ---
-LIMIT_ALT_GREEN_M = 2.0  # OSD green band (4.0m - 8.0m AGL); score dead-zone
+LIMIT_ALT_GREEN_M = 2.0  # HUD green band (4.0m - 8.0m AGL); score dead-zone
 LIMIT_ALT_ORANGE_M = 4.0  # Outer safety limit (2.0m or 10.0m AGL); takeover beyond this
 
 # --- 3. TRANSLATION / DRIFT PARAMETERS (Meters radius and speed from target) ---

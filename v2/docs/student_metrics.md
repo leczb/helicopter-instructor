@@ -119,15 +119,15 @@ To guide the student's learning in real-time, the Virtual Flight Instructor will
 
 1. **Jerky Cyclic (Roll/Pitch OCI $> 1.0$ for $> 1.5$ seconds)**:
    - *Voice*: `"Make smaller cyclic corrections."` or `"Relax your grip on the cyclic."`
-   - *OSD HUD*: Show blinking yellow cyclic symbol to indicate over-control.
+   - *HUD*: Show blinking yellow cyclic symbol to indicate over-control.
 2. **Jerky Pedals (Yaw OCI $> 0.8$ for $> 1.5$ seconds)**:
    - *Voice*: `"Steady your feet on the pedals."`
-   - *OSD HUD*: Blinking yellow pedal slider.
+   - *HUD*: Blinking yellow pedal slider.
 3. **Chasing the Altitude (Collective OCI $> 0.8$)**:
    - *Voice*: `"Small, smooth collective adjustments only."`
 4. **Drift Warning (Horizontal drift $> 25$ meters and increasing)**:
    - *Voice*: `"Correct the drift."`
-   - *OSD HUD*: Blinking yellow drift error indicator.
+   - *HUD*: Blinking yellow drift error indicator.
 5. **Altitude Margin Warning (Altitude within 0.5m of safety limits: $2.5$m or $9.5$m)**:
    - *Voice*: `"We are too low."` (if AGL $< 3.0$m) or `"We are too high."` (if AGL $> 9.0$m).
 
@@ -160,7 +160,7 @@ To keep the student motivated, the instructor should verbally reward them when t
 ## 5. UI Integration Strategy
 
 We can present these metrics to the user on two interfaces:
-1. **The Live OSD (HUD)**: A minimal "Smoothness" bar gauge and a rolling percentage performance index.
+1. **The Live HUD**: A minimal "Smoothness" bar gauge and a rolling percentage performance index.
 2. **The ImGui Control Panel**: A new "Performance Metrics" tab containing:
    - Current 60-second score breakdown (Precision, Smoothness, Drift Speed, Safety).
    - Historical session stats (number of takeovers, longest student flight duration, average drift).

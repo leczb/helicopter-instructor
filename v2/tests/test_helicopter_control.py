@@ -485,27 +485,27 @@ class TestAutopilotPlugin(unittest.TestCase):
         self.plugin.XPluginStop()
         self.assertEqual(mock_xp.destroyWindow.call_count, 2)
 
-    def test_draw_osd_early_exit_conditions(self):
-        # 1. OSD is disabled (show_osd = False)
+    def test_draw_hud_early_exit_conditions(self):
+        # 1. HUD is disabled (show_hud = False)
         # Should return 1 immediately and not call screen bounds regardless of ap_enabled
         self.plugin.ap_enabled = True
-        self.plugin.show_osd = False
+        self.plugin.show_hud = False
         mock_xp.getWindowGeometry.reset_mock()
-        result = self.plugin.draw_osd(None, None)
+        result = self.plugin.draw_hud(None, None)
         self.assertEqual(result, 1)
         mock_xp.getWindowGeometry.assert_not_called()
 
         self.plugin.ap_enabled = False
-        self.plugin.show_osd = False
+        self.plugin.show_hud = False
         mock_xp.getWindowGeometry.reset_mock()
-        result = self.plugin.draw_osd(None, None)
+        result = self.plugin.draw_hud(None, None)
         self.assertEqual(result, 1)
         mock_xp.getWindowGeometry.assert_not_called()
 
-    def test_draw_osd_rendering_calls(self):
-        # Autopilot engaged, OSD enabled
+    def test_draw_hud_rendering_calls(self):
+        # Autopilot engaged, HUD enabled
         self.plugin.ap_enabled = True
-        self.plugin.show_osd = True
+        self.plugin.show_hud = True
 
         # Mock window dimensions (left, top, right, bottom)
         mock_xp.getWindowGeometry.return_value = (100, 350, 650, 100)
@@ -515,7 +515,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         mock_xp.drawString.reset_mock()
         mock_xp.setGraphicsState.reset_mock()
 
-        result = self.plugin.draw_osd(self.plugin.osd_window, None)
+        result = self.plugin.draw_hud(self.plugin.hud_window, None)
 
         self.assertEqual(result, 1)
         # Verify background box bounds
@@ -541,16 +541,16 @@ class TestAutopilotPlugin(unittest.TestCase):
         mock_xp.setGraphicsState.assert_any_call(0, 1, 0, 0, 1, 0, 0)
         self.assertTrue(mock_xp.drawString.call_count >= 3)
 
-    def test_cmd_handler_osd_toggle(self):
-        self.plugin.show_osd = True
+    def test_cmd_handler_hud_toggle(self):
+        self.plugin.show_hud = True
 
         # Call toggle command handler with phase 0 (CommandBegin) -> Toggles to False
-        self.plugin.cmd_handler_osd_toggle(None, 0, None)
-        self.assertFalse(self.plugin.show_osd)
+        self.plugin.cmd_handler_hud_toggle(None, 0, None)
+        self.assertFalse(self.plugin.show_hud)
 
         # Call toggle command handler with phase 0 -> Toggles to True
-        self.plugin.cmd_handler_osd_toggle(None, 0, None)
-        self.assertTrue(self.plugin.show_osd)
+        self.plugin.cmd_handler_hud_toggle(None, 0, None)
+        self.assertTrue(self.plugin.show_hud)
 
     def test_cmd_handler_alt_bar_toggle(self):
         self.plugin.show_alt_bar = True

@@ -67,13 +67,13 @@ def draw_window(ui_controller, window_id, ref_con):
             ui_controller.initiate_handoff()
 
     imgui.spacing()
-    changed, new_show_osd = imgui.checkbox(
-        "Show Interactive HUD overlay on screen", ui_controller.show_osd
+    changed, new_show_hud = imgui.checkbox(
+        "Show Interactive HUD overlay on screen", ui_controller.show_hud
     )
     if changed:
-        ui_controller.show_osd = new_show_osd
+        ui_controller.show_hud = new_show_hud
 
-    if ui_controller.show_osd:
+    if ui_controller.show_hud:
         imgui.indent()
         changed_dbg, new_show_dbg = imgui.checkbox(
             "Show Excellent Criteria Debug Info", ui_controller.show_envelope_debug

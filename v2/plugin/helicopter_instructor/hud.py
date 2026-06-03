@@ -1,4 +1,4 @@
-"""HUD overlay (OSD and altitude bar) for Helicopter Flight Instructor."""
+"""HUD overlay (Heads-Up Display and altitude bar) for Helicopter Flight Instructor."""
 
 import math
 
@@ -82,8 +82,8 @@ class HUDViewModel(object):
             setattr(self, k, v)
 
 
-def draw_osd(view_model, window_id):
-    """Draws the OSD HUD graphics including flight telemetry and matching guide.
+def draw_hud(view_model, window_id):
+    """Draws the HUD graphics including flight telemetry and matching guide.
 
     Args:
         view_model: A HUDViewModel instance.
@@ -93,12 +93,12 @@ def draw_osd(view_model, window_id):
         A tuple of (draw_success_code, new_visibility_state).
     """
     # Sync visibility state in case user closed window using native button
-    new_show_osd = view_model.show_osd
-    if view_model.osd_window:
-        new_show_osd = xp.getWindowIsVisible(view_model.osd_window) != 0
+    new_show_hud = view_model.show_hud
+    if view_model.hud_window:
+        new_show_hud = xp.getWindowIsVisible(view_model.hud_window) != 0
 
-    if not new_show_osd:
-        return 1, new_show_osd
+    if not new_show_hud:
+        return 1, new_show_hud
 
     # Use cached PyOpenGL availability
     gl_available = GL_AVAILABLE
@@ -201,7 +201,7 @@ def draw_osd(view_model, window_id):
     box_width = box_right - box_left
     box_height = box_top - box_bottom
 
-    # Prepare telemetry for OSD checks
+    # Prepare telemetry for HUD checks
     state = view_model.state
     y_agl = view_model.y_agl
     telemetry = {
@@ -438,7 +438,7 @@ def draw_osd(view_model, window_id):
             font_id=xp.Font_Proportional,
         )
 
-    # --- OSD HELPER GRAPHICS (Always visible) ---
+    # --- HUD HELPER GRAPHICS (Always visible) ---
     y_graph_base = box_bottom + 35
 
     # --- 1. Vertical Collective Slider ---
@@ -743,7 +743,7 @@ def draw_osd(view_model, window_id):
         glColor4f(1.0, 1.0, 1.0, 1.0)
         glPopMatrix()
 
-    return 1, new_show_osd
+    return 1, new_show_hud
 
 
 def draw_alt_bar(view_model, window_id):

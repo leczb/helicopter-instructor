@@ -143,14 +143,14 @@ class PluginUIController(object):
         self._plugin.instructor.initiate_handoff()
 
     @property
-    def show_osd(self):
-        return self._plugin.show_osd
+    def show_hud(self):
+        return self._plugin.show_hud
 
-    @show_osd.setter
-    def show_osd(self, value):
-        self._plugin.show_osd = value
-        if self._plugin.osd_window:
-            xp.setWindowIsVisible(self._plugin.osd_window, 1 if value else 0)
+    @show_hud.setter
+    def show_hud(self, value):
+        self._plugin.show_hud = value
+        if self._plugin.hud_window:
+            xp.setWindowIsVisible(self._plugin.hud_window, 1 if value else 0)
 
     @property
     def show_alt_bar(self):
@@ -276,7 +276,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.47"
+        self.version = "2.1.49"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -305,7 +305,7 @@ class PythonInterface(object):
         self.show_3d_boundaries = True
         self.show_3d_disks = True
         self.show_3d_arcs = True
-        self.show_osd = True
+        self.show_hud = True
         self.show_alt_bar = True
         self.show_envelope_debug = False
 
@@ -315,7 +315,7 @@ class PythonInterface(object):
         # UI & Menu handles
         self.menu_id = None
         self.window = None
-        self.osd_window = None
+        self.hud_window = None
         self.alt_bar_window = None
 
         # Dataref handles
@@ -395,7 +395,7 @@ class PythonInterface(object):
 
         # Custom command handles
         self.cmd_instructor_toggle = None
-        self.cmd_osd_toggle = None
+        self.cmd_hud_toggle = None
         self.cmd_alt_bar_toggle = None
         self.cmd_next_phase = None
         self.cmd_prev_phase = None
@@ -498,7 +498,7 @@ class PythonInterface(object):
         # 5. Register flight loop callback at 50Hz (every 0.02s)
         xp.registerFlightLoopCallback(self.flight_loop_callback, 0.02, self)
 
-        # 5b. Create draggable OSD HUD Window
+        # 5b. Create draggable HUD Window
         left_scr, top_scr, right_scr, bottom_scr = xp.getScreenBoundsGlobal()
         center_scr_x = (left_scr + right_scr) / 2.0
 
@@ -509,8 +509,8 @@ class PythonInterface(object):
         init_top = int(top_scr - 30)
         init_bottom = int(init_top - init_h)
 
-        def draw_osd_cb(window_id, refcon):
-            self.draw_osd(window_id, refcon)
+        def draw_hud_cb(window_id, refcon):
+            self.draw_hud(window_id, refcon)
 
         def dummy_mouse_cb(window_id, x, y, is_down, refcon):
             return 0
@@ -524,14 +524,14 @@ class PythonInterface(object):
         def dummy_wheel_cb(window_id, x, y, wheel, clicks, refcon):
             return 0
 
-        self.osd_window = xp.createWindowEx(
+        self.hud_window = xp.createWindowEx(
             [
                 init_left,  # 1. Left coordinate (in boxels)
                 init_top,  # 2. Top coordinate (in boxels)
                 init_right,  # 3. Right coordinate (in boxels)
                 init_bottom,  # 4. Bottom coordinate (in boxels)
-                1 if self.show_osd else 0,  # 5. Visibility state
-                draw_osd_cb,  # 6. Window drawing callback
+                1 if self.show_hud else 0,  # 5. Visibility state
+                draw_hud_cb,  # 6. Window drawing callback
                 dummy_mouse_cb,  # 7. Mouse click callback
                 dummy_key_cb,  # 8. Keyboard key callback
                 dummy_cursor_cb,  # 9. Mouse cursor callback
@@ -579,7 +579,7 @@ class PythonInterface(object):
             "helicopter_instructor/instructor_toggle",
             "Helicopter Instructor: Toggle Master Engage",
         )
-        self.cmd_osd_toggle = xp.createCommand(
+        self.cmd_hud_toggle = xp.createCommand(
             "helicopter_instructor/hud_toggle", "Helicopter Instructor: Toggle HUD"
         )
         self.cmd_alt_bar_toggle = xp.createCommand(
@@ -648,8 +648,8 @@ class PythonInterface(object):
         """Called by X-Plane when the plugin is stopped."""
         # 1. Unregister flight loop callback and destroy HUD window
         xp.unregisterFlightLoopCallback(self.flight_loop_callback, self)
-        if self.osd_window:
-            xp.destroyWindow(self.osd_window)
+        if self.hud_window:
+            xp.destroyWindow(self.hud_window)
         if self.alt_bar_window:
             xp.destroyWindow(self.alt_bar_window)
 
@@ -672,9 +672,9 @@ class PythonInterface(object):
             xp.registerCommandHandler(
                 self.cmd_instructor_toggle, self.cmd_handler_instructor_toggle, 1, None
             )
-        if self.cmd_osd_toggle:
+        if self.cmd_hud_toggle:
             xp.registerCommandHandler(
-                self.cmd_osd_toggle, self.cmd_handler_osd_toggle, 1, None
+                self.cmd_hud_toggle, self.cmd_handler_hud_toggle, 1, None
             )
         if self.cmd_alt_bar_toggle:
             xp.registerCommandHandler(
@@ -730,9 +730,9 @@ class PythonInterface(object):
             xp.unregisterCommandHandler(
                 self.cmd_instructor_toggle, self.cmd_handler_instructor_toggle, 1, None
             )
-        if self.cmd_osd_toggle:
+        if self.cmd_hud_toggle:
             xp.unregisterCommandHandler(
-                self.cmd_osd_toggle, self.cmd_handler_osd_toggle, 1, None
+                self.cmd_hud_toggle, self.cmd_handler_hud_toggle, 1, None
             )
         if self.cmd_alt_bar_toggle:
             xp.unregisterCommandHandler(
@@ -806,7 +806,7 @@ class PythonInterface(object):
         count_mapped = xp.getDatavf(self.dref_joy_mapped_axis_value, mapped_values)
         mapped_values = mapped_values[:count_mapped]
 
-        # Save raw values to self for OSD HUD dynamic engineering panel
+        # Save raw values to self for HUD dynamic engineering panel
         self.last_count_assign = count_assign
         self.last_count_mapped = count_mapped
         self.last_raw_assignments = list(assignments)
@@ -1114,7 +1114,7 @@ class PythonInterface(object):
 
         else:
             # Instructor is disengaged -> Scan hardware inputs and cockpit
-            # yoke values to keep OSD live!
+            # yoke values to keep HUD live!
             hardware_inputs = self.get_hardware_inputs()
             self.last_hardware_inputs = hardware_inputs
 
@@ -1270,10 +1270,10 @@ class PythonInterface(object):
             self.ui_controller.ap_enabled = not self.ap_enabled
         return 1
 
-    def cmd_handler_osd_toggle(self, command_ref, cmd_phase, refcon):
-        """Toggles the OSD HUD visibility."""
+    def cmd_handler_hud_toggle(self, command_ref, cmd_phase, refcon):
+        """Toggles the HUD visibility."""
         if cmd_phase == 0:
-            self.ui_controller.show_osd = not self.show_osd
+            self.ui_controller.show_hud = not self.show_hud
         return 1
 
     def cmd_handler_alt_bar_toggle(self, command_ref, cmd_phase, refcon):
@@ -1388,8 +1388,8 @@ class PythonInterface(object):
 
         self.controller.target_psi = (self.controller.target_psi + heading) % 360.0
 
-    def draw_osd(self, window_id, refcon):
-        """Draws the OSD HUD graphics including flight telemetry and matching guide."""
+    def draw_hud(self, window_id, refcon):
+        """Draws the HUD graphics including flight telemetry and matching guide."""
         state = self.get_current_state()
         y_agl = xp.getDataf(self.dref_y_agl) if self.dref_y_agl else 10.0
 
@@ -1411,8 +1411,8 @@ class PythonInterface(object):
         }
 
         view_model = hud.HUDViewModel(
-            show_osd=self.show_osd,
-            osd_window=self.osd_window,
+            show_hud=self.show_hud,
+            hud_window=self.hud_window,
             ap_enabled=self.ap_enabled,
             phase=self.instructor.phase,
             system_state=self.instructor.system_state,
@@ -1442,9 +1442,9 @@ class PythonInterface(object):
             show_envelope_debug=self.show_envelope_debug,
         )
 
-        success, new_show_osd = hud.draw_osd(view_model, window_id)
-        if new_show_osd is not None:
-            self.show_osd = new_show_osd
+        success, new_show_hud = hud.draw_hud(view_model, window_id)
+        if new_show_hud is not None:
+            self.show_hud = new_show_hud
         return success
 
     def draw_alt_bar(self, window_id, refcon):

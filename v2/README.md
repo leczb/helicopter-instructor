@@ -21,7 +21,7 @@ Mastering helicopter hovering is notoriously challenging due to highly coupled a
 * **Emergency Safety Takeover**:
   * **Hard Emergency Override**: Automatically severs control authority, plays an audio takeover cue (*"I have control"*), and recovers the helicopter to a stable hover if any critical safety threshold (pitch, roll, yaw rate, sink rate, or drift) is breached or the helicopter drifts too far from the initial hover position.
 * **3D Proximity Boundaries**: The hover safety limits are rendered as floating rings around the hover target point (green, orange, and red; orange/green for target proximity, red for the hard override limits).
-* **On-Screen Display (OSD)**: Includes a draggable OSD showing control synchronization crosshairs and status information.
+* **Heads-Up Display (HUD)**: Includes a draggable HUD showing control synchronization crosshairs and status information.
 * **Aural Voice Cues**: High-quality, authoritative voice cues that guide the student through handoffs, safety warnings, and performance feedback.
 
 ---
@@ -94,4 +94,4 @@ This plugin is designed to run in X-Plane 12 via the **X-PPython3** (Python 3 In
 3. Configure your physical collective axis as "Flaps" (not "Collective").
 4. In the X-Plane menu bar, navigate to **Plugins** -> **Helicopter Instructor** -> **Toggle Control Panel** to open the instructor window.
 5. Check **MASTER INSTRUCTOR ENGAGE** to engage the VFI. The instructor will immediately take off and stabilize the helicopter at a 6 meter hovering height above the ground.
-6. Select a lesson phase in the *Hover Training Curriculum* section and click **Trigger lesson Handoff** to begin. Match your physical inputs with the help of the OSD. Once you have matched the controls for a few seconds, the instructor gives you control, confirming the hand-off with a voice cue.
+6. Select a lesson phase in the *Hover Training Curriculum* section and click **Trigger lesson Handoff** to begin. Match your physical inputs with the help of the HUD. Once you have matched the controls for a few seconds, the instructor gives you control, confirming the hand-off with a voice cue.

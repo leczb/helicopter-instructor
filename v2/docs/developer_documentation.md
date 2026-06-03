@@ -70,7 +70,7 @@ graph TD
 - **[config.py](../plugin/helicopter_instructor/config.py)**: Auto-detects the active X-Plane aircraft model, and handles saving/loading PID tuning gains to JSON.
 - **[graphics.py](../plugin/helicopter_instructor/graphics.py)**: Programmatic solid PNG texture generation, OBJ8 3D model writing, and Vulkan/Metal instance binding.
 - **[ui.py](../plugin/helicopter_instructor/ui.py)**: ImGui settings window drawing, training curriculum management, and live gains tuning interface.
-- **[hud.py](../plugin/helicopter_instructor/hud.py)**: Renders the OSD overlays, alt safety bar, and PyOpenGL scaled vector crosshairs.
+- **[hud.py](../plugin/helicopter_instructor/hud.py)**: Renders the HUD overlays, alt safety bar, and PyOpenGL scaled vector crosshairs.
 - **[virtual_instructor.py](../plugin/helicopter_instructor/virtual_instructor.py)**: Curricular state machine (6 phases), hardware interlocks, safety envelope polling, and emergency takeover recoveries.
 - **[helicopter_control.py](../plugin/helicopter_instructor/autopilot/helicopter_control.py)**: Dual-mode cascaded PID control loop calculations (hover/cruise) and local coordinate translations.
 - **[metrics.py](../plugin/helicopter_instructor/metrics.py)**: Keeps sliding window telemetry history, computes pilot precision, smoothness (OCI), safety EPS, coaching tips, and caches verbal WAV files.

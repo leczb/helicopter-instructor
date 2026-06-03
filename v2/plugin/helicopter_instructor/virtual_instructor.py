@@ -114,7 +114,7 @@ class VirtualInstructor(object):
         self.heading_zone = "green"
 
     def set_hud_caption(self, text, duration=3.0):
-        """Sets a visual caption/subtitle to be shown on the OSD HUD."""
+        """Sets a visual caption/subtitle to be shown on the HUD."""
         self.hud_caption = text
         self.hud_caption_timer = duration
 
