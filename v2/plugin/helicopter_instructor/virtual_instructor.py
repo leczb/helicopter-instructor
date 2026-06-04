@@ -13,6 +13,15 @@ from helicopter_instructor.envelope_limits import (
     LIMIT_DRIFT_RED_M,
     LIMIT_RECOVERY_ALT_RATE_M_S,
     LIMIT_RECOVERY_SPEED_M_S,
+    LIMIT_ATTITUDE_DEG,
+    LIMIT_YAW_RATE_DEG_S,
+    LIMIT_VSPEED_FT_MIN,
+    LIMIT_GS_KNOTS,
+    LIMIT_AGL_MIN_M,
+    LIMIT_AGL_MAX_M,
+    LIMIT_RECOVERY_ATTITUDE_DEG,
+    LIMIT_RECOVERY_SINK_FT_MIN,
+    LIMIT_RECOVERY_GS_KNOTS,
 )
 
 # Conversion constants
@@ -433,19 +442,22 @@ class VirtualInstructor(object):
             True if any safety limit is violated, False otherwise.
         """
         # Pitch limit (+-15 degrees)
-        if abs(telemetry.get("theta", 0.0)) > 15.0:
+        if abs(telemetry.get("theta", 0.0)) > LIMIT_ATTITUDE_DEG:
             return True
         # Roll limit (+-15 degrees)
-        if abs(telemetry.get("phi", 0.0)) > 15.0:
+        if abs(telemetry.get("phi", 0.0)) > LIMIT_ATTITUDE_DEG:
             return True
         # Yaw rate limit (+-30 deg/sec)
-        if abs(telemetry.get("R", 0.0)) > 30.0:
+        if abs(telemetry.get("R", 0.0)) > LIMIT_YAW_RATE_DEG_S:
             return True
 
         # Vertical speed: sinking > 300 ft/min or climbing > 300 ft/min
         vy_m_s = telemetry.get("vy", 0.0)
         vspeed_ft_min = vy_m_s * M_S_TO_FT_MIN
-        if vspeed_ft_min < -300.0 or vspeed_ft_min > 300.0:
+        if (
+            vspeed_ft_min < -LIMIT_VSPEED_FT_MIN
+            or vspeed_ft_min > LIMIT_VSPEED_FT_MIN
+        ):
             return True
 
         # Ground speed drift > 12 knots
@@ -453,12 +465,12 @@ class VirtualInstructor(object):
         vz = telemetry.get("vz", 0.0)
         gs_m_s = math.sqrt(vx**2 + vz**2)
         gs_knots = gs_m_s * M_S_TO_KNOTS
-        if gs_knots > 12.0:
+        if gs_knots > LIMIT_GS_KNOTS:
             return True
 
         # Terrain height (AGL) < 2.0 meters or > 10.0 meters
         y_agl = telemetry.get("y_agl", 10.0)
-        if y_agl < 2.0 or y_agl > 10.0:
+        if y_agl < LIMIT_AGL_MIN_M or y_agl > LIMIT_AGL_MAX_M:
             return True
 
         # Heading Safety Zone Detection
@@ -711,7 +723,12 @@ class VirtualInstructor(object):
         vz = telemetry.get("vz", 0.0)
         gs_knots = math.sqrt(vx**2 + vz**2) * M_S_TO_KNOTS
 
-        is_stable = phi < 2.0 and theta < 2.0 and vy > -50.0 and gs_knots < 1.0
+        is_stable = (
+            phi < LIMIT_RECOVERY_ATTITUDE_DEG
+            and theta < LIMIT_RECOVERY_ATTITUDE_DEG
+            and vy > LIMIT_RECOVERY_SINK_FT_MIN
+            and gs_knots < LIMIT_RECOVERY_GS_KNOTS
+        )
 
         if self.system_state == VFIState.OVERRIDE:
             if is_stable:

@@ -37,3 +37,17 @@ LIMIT_RECOVERY_ALT_RATE_M_S = (
 LIMIT_RECOVERY_SPEED_M_S = (
     2.0  # Speed (m/s) to slowly translate hover target back to original
 )
+
+# --- 6. SAFETY LIMITS & OVERRIDE BOUNDARIES (Check Safety Limits) ---
+LIMIT_ATTITUDE_DEG = 15.0  # Pitch & roll safety override takeover limit
+LIMIT_YAW_RATE_DEG_S = 30.0  # Yaw rate safety override takeover limit
+LIMIT_VSPEED_FT_MIN = 300.0  # Vertical speed safety override limit
+LIMIT_GS_KNOTS = 12.0  # Ground speed safety override limit
+LIMIT_AGL_MIN_M = 2.0  # Terrain height minimum AGL limit
+LIMIT_AGL_MAX_M = 10.0  # Terrain height maximum AGL limit
+
+# --- 7. SAFETY RECOVERY STABILIZATION BOUNDARIES (Process Recovery) ---
+LIMIT_RECOVERY_ATTITUDE_DEG = 2.0  # Safe pitch & roll bounds for recovery hold
+LIMIT_RECOVERY_SINK_FT_MIN = -50.0  # Arrested vertical sink rate limit
+LIMIT_RECOVERY_GS_KNOTS = 1.0  # Safe ground speed limit for recovery hold
+

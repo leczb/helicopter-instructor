@@ -1,5 +1,13 @@
 # Release Notes
 
+## v2.1.55 - 2026-06-04
+
+- **Refactor**: Extracted all hardcoded safety limit parameters from the state
+  machine checks (`check_safety_limits()`) and post-takeover settling checks
+  (`process_recovery()`) in `virtual_instructor.py` into
+  `envelope_limits.py`. This aligns the module with project safety rules,
+  making `envelope_limits.py` the single source of truth for all limits.
+
 ## v2.1.54 - 2026-06-04
 
 - **Refactor**: Encapsulated state transitions within the `VirtualInstructor`

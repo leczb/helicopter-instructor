@@ -91,6 +91,18 @@ class TestLimitsContract(unittest.TestCase):
             metrics.LIMIT_YAW_SPEED_DEG_S, envelope_limits.LIMIT_YAW_SPEED_ORANGE_DEG_S
         )
 
+    def test_safety_limits_contract(self):
+        """Verifies safety override and recovery stabilization limit values in envelope_limits."""
+        self.assertEqual(envelope_limits.LIMIT_ATTITUDE_DEG, 15.0)
+        self.assertEqual(envelope_limits.LIMIT_YAW_RATE_DEG_S, 30.0)
+        self.assertEqual(envelope_limits.LIMIT_VSPEED_FT_MIN, 300.0)
+        self.assertEqual(envelope_limits.LIMIT_GS_KNOTS, 12.0)
+        self.assertEqual(envelope_limits.LIMIT_AGL_MIN_M, 2.0)
+        self.assertEqual(envelope_limits.LIMIT_AGL_MAX_M, 10.0)
+        self.assertEqual(envelope_limits.LIMIT_RECOVERY_ATTITUDE_DEG, 2.0)
+        self.assertEqual(envelope_limits.LIMIT_RECOVERY_SINK_FT_MIN, -50.0)
+        self.assertEqual(envelope_limits.LIMIT_RECOVERY_GS_KNOTS, 1.0)
+
 
 if __name__ == "__main__":
     unittest.main()
