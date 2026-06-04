@@ -20,6 +20,7 @@ class VFIState(Enum):
     STUDENT_FLIGHT = "STUDENT_FLIGHT"
     OVERRIDE = "OVERRIDE"
     RECOVERY_HOLD = "RECOVERY_HOLD"
+    CELEBRATING = "CELEBRATING"
 
 
 class ControlAxis(Enum):

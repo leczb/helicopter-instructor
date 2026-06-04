@@ -29,7 +29,7 @@ from helicopter_instructor.envelope_limits import (
 )
 
 # Seconds of continuous Excellent rating required before phase advance
-PHASE_EXCELLENT_REQUIRED_S = 35.0
+PHASE_EXCELLENT_REQUIRED_S = 25.0
 
 # Total number of training phases
 MAX_PHASE = 6
@@ -146,6 +146,11 @@ _VALID_TRANSITIONS = {
         VFIState.OVERRIDE,
         VFIState.VFI_FLIGHT,
         VFIState.SYNCING,
+        VFIState.CELEBRATING,
+    },
+    VFIState.CELEBRATING: {
+        VFIState.VFI_FLIGHT,
+        VFIState.OVERRIDE,
     },
     VFIState.OVERRIDE: {VFIState.RECOVERY_HOLD, VFIState.VFI_FLIGHT},
     VFIState.RECOVERY_HOLD: {VFIState.SYNCING, VFIState.VFI_FLIGHT},
@@ -170,6 +175,7 @@ class VirtualInstructor(object):
         # then resets it.
         self.transition_pending = False
         self.transition_target_phase = None
+        self.transition_in_progress = False
         # Set to True when phase 6 is mastered; prevents further advancement.
         self.training_complete = False
         # States: VFI_FLIGHT, SYNCING, STUDENT_FLIGHT, OVERRIDE, RECOVERY_HOLD
@@ -257,9 +263,19 @@ class VirtualInstructor(object):
     def reset_to_vfi_flight(self):
         """Resets the instructor back to full VFI flight authority."""
         self.system_state = VFIState.VFI_FLIGHT
+        self.transition_in_progress = False
         for axis in self.control_assignment:
             self.control_assignment[axis] = Authority.VFI
             self.sync_locked[axis] = False
+
+    def advance_phase(self, next_phase, is_final):
+        """Transitions from celebrating to VFI flight and initiates handoff for the next phase."""
+        self.reset_to_vfi_flight()
+        if is_final:
+            self.training_complete = True
+        else:
+            self.phase = next_phase
+            self.initiate_handoff()
 
     def _emit_event(self, event):
         """Emits an event to be picked up by update()."""
@@ -295,6 +311,7 @@ class VirtualInstructor(object):
             if self.system_state in (
                 VFIState.STUDENT_FLIGHT,
                 VFIState.SYNCING,
+                VFIState.CELEBRATING,
             ):
                 self.initiate_handoff()
             else:
@@ -362,6 +379,7 @@ class VirtualInstructor(object):
         if self.system_state in (
             VFIState.STUDENT_FLIGHT,
             VFIState.SYNCING,
+            VFIState.CELEBRATING,
         ):
             x = telemetry.get("x", None)
             y = telemetry.get("y", None)
@@ -430,22 +448,32 @@ class VirtualInstructor(object):
                 next_phase = self.transition_target_phase
                 is_final = self.training_complete
 
-                # Take back control & transition
-                self.reset_to_vfi_flight()
                 if is_final:
+                    self.reset_to_vfi_flight()
                     self._emit_event(
                         PhaseAdvancedEvent(self.phase, self.phase, is_final=True)
                     )
+                    return UpdateResult(vfi_inputs, events + self._events)
                 else:
+                    self.transition_in_progress = True
                     old_phase = self.phase
-                    self.phase = next_phase
-                    self.initiate_handoff()
+                    self.system_state = VFIState.CELEBRATING
+                    self.set_hud_caption(
+                        f"PHASE {old_phase} COMPLETED!",
+                        duration=2.0,
+                        style=CaptionStyle.SUCCESS,
+                    )
                     self._emit_event(
                         PhaseAdvancedEvent(old_phase, next_phase, is_final=False)
                     )
-                # Since we transitioned, return VFI inputs
-                return UpdateResult(vfi_inputs, events + self._events)
 
+            return UpdateResult(
+                self.process_student_inputs(telemetry, hardware, vfi_inputs),
+                events + self._events,
+            )
+
+        elif self.system_state == VFIState.CELEBRATING:
+            # Student remains in control during the celebration transition chime
             return UpdateResult(
                 self.process_student_inputs(telemetry, hardware, vfi_inputs),
                 events + self._events,
@@ -666,7 +694,7 @@ class VirtualInstructor(object):
         Args:
             dt: Time step in seconds.
         """
-        if self.training_complete or self.transition_pending:
+        if self.training_complete or self.transition_pending or self.transition_in_progress:
             return
 
         if self.last_envelope == Envelope.EXCELLENT:

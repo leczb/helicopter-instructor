@@ -282,7 +282,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.60"
+        self.version = "2.1.61"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -304,6 +304,9 @@ class PythonInterface(object):
         self.audio_queue = []
         self.audio_playback_timer = 0.0
         self.last_played_sound = None
+        self.phase_transition_delay_timer = 0.0
+        self.pending_next_phase = None
+        self.pending_is_final = False
         self.graphics = graphics.GraphicsAssetManager(self.plugin_dir)
         self.ui_controller = PluginUIController(self)
 
@@ -915,7 +918,25 @@ class PythonInterface(object):
                 # Sanitize dt to prevent integrator spikes during unpauses/reloads
                 dt = last_call if (0.0 < last_call < 0.1) else 0.02
 
-                # --- PRE-STEP A: Snap autopilot target to override position ---
+                # --- Update automatic phase transition delay timer ---
+                auto_phase_transition = False
+                if self.phase_transition_delay_timer > 0.0:
+                    self.phase_transition_delay_timer -= dt
+                    if self.phase_transition_delay_timer <= 0.0:
+                        self.phase_transition_delay_timer = 0.0
+                        # Auto transition timer expired! Take control and advance.
+                        auto_phase_transition = True
+                        self.instructor.advance_phase(
+                            self.pending_next_phase, self.pending_is_final
+                        )
+                        self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                        intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(
+                            self.pending_next_phase
+                        )
+                        self.play_sound(intro_sound)
+                        self.pending_next_phase = None
+
+                # --- Snap autopilot target to override position ---
                 # This MUST run before controller.update() so that the PID cascade
                 # always sees the correct hover target.  Running it after Step A
                 # would mean the autopilot computes one full frame of commands
@@ -937,7 +958,7 @@ class PythonInterface(object):
                     self.instructor.original_target_y = None
                     self.instructor.original_target_z = None
 
-                # --- STEP A: Calculate stable VFI autopilot commands ---
+                # --- Calculate stable VFI autopilot commands ---
                 # To ensure stable outputs are always calculated for all axes,
                 # we temporarily force all controller active flags to True.
                 self.controller.roll_active = True
@@ -956,11 +977,11 @@ class PythonInterface(object):
                 }
                 self.last_commands = vfi_outputs
 
-                # --- STEP B: Read student's hardware inputs ---
+                # --- Read student's hardware inputs ---
                 hardware_inputs = self.get_hardware_inputs()
                 self.last_hardware_inputs = hardware_inputs
 
-                # --- STEP C: Run VFI State Machine ---
+                # --- Run VFI State Machine ---
                 final_commands = self.instructor.update(
                     dt, telemetry, hardware_inputs, vfi_inputs
                 )
@@ -968,6 +989,11 @@ class PythonInterface(object):
 
                 curr_state = self.instructor.system_state
                 curr_phase = self.instructor.phase
+
+                # Cancel the transition timer if the state transitions out of student control
+                if curr_state not in (VFIState.STUDENT_FLIGHT, VFIState.CELEBRATING):
+                    self.phase_transition_delay_timer = 0.0
+                    self.pending_next_phase = None
 
                 # Initialize tracking variables on first loop
                 if not hasattr(self, "last_system_state"):
@@ -977,7 +1003,7 @@ class PythonInterface(object):
 
                 # (PID reset is handled below, after STEP C4 re-read.)
 
-                # --- STEP C2: Run Student Performance Metrics ---
+                # --- Run Student Performance Metrics ---
                 is_student_flying = curr_state == VFIState.STUDENT_FLIGHT
                 self.metrics.update(
                     dt, telemetry, hardware_inputs, is_student_flying, curr_phase
@@ -987,15 +1013,14 @@ class PythonInterface(object):
                 # maybe_advance_phase() can track Excellent duration.
                 self.instructor.last_envelope = self.metrics.envelope
 
-                # --- STEP C3: Play Pending Spoken Metrics Cues ---
+                # --- Play Pending Spoken Metrics Cues ---
                 while True:
                     sound_to_play = self.metrics.pop_audio_queue()
                     if sound_to_play is None:
                         break
                     self.play_sound(sound_to_play)
 
-                # --- STEP C4: Handle automatic phase progression ---
-                auto_phase_transition = False
+                # --- Handle automatic phase progression ---
                 for event in getattr(final_commands, "events", []):
                     if isinstance(event, virtual_instructor.PhaseAdvancedEvent):
                         auto_phase_transition = True
@@ -1005,14 +1030,17 @@ class PythonInterface(object):
                                 SOUND_TRAINING_COMPLETE, clear_queue=True
                             )
                         else:
-                            # Play transition sound and next phase intro
+                            # Delay the takeover: play transition chime and set the timer
+                            duration = self.audio.sound_registry.get(
+                                SOUND_PHASE_TRANSITION, {}
+                            ).get("duration_s", 2.0)
+                            self.phase_transition_delay_timer = duration
+                            self.pending_next_phase = event.to_phase
+                            self.pending_is_final = False
+                            # Play transition sound
                             self.play_sound(
                                 SOUND_PHASE_TRANSITION, clear_queue=True
                             )
-                            intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(
-                                event.to_phase
-                            )
-                            self.play_sound(intro_sound)
 
                 # Re-read state/phase after auto-transition may have changed them
 
@@ -1032,8 +1060,8 @@ class PythonInterface(object):
                 # already reflects any within-frame state change, while
                 # last_system_state always holds the previous frame's value.
                 if (
-                    self.last_system_state == VFIState.STUDENT_FLIGHT
-                    and curr_state != VFIState.STUDENT_FLIGHT
+                    self.last_system_state in (VFIState.STUDENT_FLIGHT, VFIState.CELEBRATING)
+                    and curr_state not in (VFIState.STUDENT_FLIGHT, VFIState.CELEBRATING)
                 ):
                     self.controller.reset_position_hold_pids()
 
@@ -1077,7 +1105,7 @@ class PythonInterface(object):
                 self.last_system_state = curr_state
                 self.last_phase = curr_phase
 
-                # --- STEP D: Perform Intelligent Control Routing ---
+                # --- Perform Intelligent Control Routing ---
                 # 1. Roll
                 if self.instructor.control_assignment[ControlAxis.ROLL] == Authority.STUDENT:
                     xp.setDatai(self.dref_override_roll, 0)

@@ -478,13 +478,13 @@ class TestMaybeAdvancePhase(unittest.TestCase):
         self.assertAlmostEqual(self.instructor.excellent_timer, 0.0)
         self.assertFalse(self.instructor.transition_pending)
 
-    def test_thirty_seconds_sets_transition_pending(self):
-        """30 s of Excellent sets transition_pending for a mid-course phase."""
+    def test_twenty_five_seconds_sets_transition_pending(self):
+        """25 s of Excellent sets transition_pending for a mid-course phase."""
         self.instructor.phase = 3
         self.instructor.last_envelope = Envelope.EXCELLENT
 
         # Accumulate just under the threshold
-        self.instructor.maybe_advance_phase(34.9)
+        self.instructor.maybe_advance_phase(24.9)
         self.assertFalse(self.instructor.transition_pending)
 
         # Cross the threshold
@@ -500,7 +500,7 @@ class TestMaybeAdvancePhase(unittest.TestCase):
         self.instructor.phase = 6
         self.instructor.last_envelope = Envelope.EXCELLENT
 
-        self.instructor.maybe_advance_phase(35.1)
+        self.instructor.maybe_advance_phase(25.1)
         self.assertTrue(self.instructor.transition_pending)
         self.assertTrue(self.instructor.training_complete)
         # transition_target_phase stays at 6 (no phase 7)
@@ -511,7 +511,7 @@ class TestMaybeAdvancePhase(unittest.TestCase):
         self.instructor.phase = 2
         self.instructor.last_envelope = Envelope.EXCELLENT
 
-        self.instructor.maybe_advance_phase(36.0)
+        self.instructor.maybe_advance_phase(26.0)
         self.assertTrue(self.instructor.transition_pending)
         target_before = self.instructor.transition_target_phase
 
@@ -633,6 +633,78 @@ class TestStateTransitions(unittest.TestCase):
         self.instructor.system_state = VFIState.SYNCING
         self.instructor.system_state = VFIState.STUDENT_FLIGHT
         self.assertEqual(self.instructor.excellent_timer, 0.0)
+
+    def test_celebrating_state_flow(self):
+        """Verifies VFIState.CELEBRATING flow during auto phase transition and delayed takeover."""
+        # Start in STUDENT_FLIGHT
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
+        self.instructor.phase = 3
+        # Set all axes to STUDENT control in phase 3
+        self.instructor.control_assignment[ControlAxis.YAW] = Authority.STUDENT
+        self.instructor.control_assignment[ControlAxis.COLLECTIVE] = Authority.STUDENT
+
+        # Simulate Excellent duration to trigger transition pending
+        self.instructor.last_envelope = Envelope.EXCELLENT
+        self.instructor.maybe_advance_phase(25.0)
+        self.assertTrue(self.instructor.transition_pending)
+
+        # Call update() to process the pending transition
+        telemetry = {
+            "x": 10.0, "y": 6.0, "z": 20.0,
+            "target_x": 10.0, "target_y": 6.0, "target_z": 20.0,
+            "phi": 0.0, "theta": 0.0, "psi": 0.0, "R": 0.0,
+            "vx": 0.0, "vz": 0.0, "vy": 0.0, "y_agl": 6.0
+        }
+        hardware = {
+            ControlAxis.ROLL: 0.1, ControlAxis.PITCH: 0.2,
+            ControlAxis.YAW: 0.3, ControlAxis.COLLECTIVE: 0.4
+        }
+        vfi = {
+            ControlAxis.ROLL: -0.1, ControlAxis.PITCH: -0.2,
+            ControlAxis.YAW: -0.3, ControlAxis.COLLECTIVE: -0.4
+        }
+
+        # Update should transition from STUDENT_FLIGHT to CELEBRATING
+        res = self.instructor.update(0.02, telemetry, hardware, vfi)
+        self.assertEqual(self.instructor.system_state, VFIState.CELEBRATING)
+
+        # Check student retains control during CELEBRATING state for student-authorized axes
+        self.assertEqual(res[ControlAxis.YAW], hardware[ControlAxis.YAW])
+        self.assertEqual(res[ControlAxis.COLLECTIVE], hardware[ControlAxis.COLLECTIVE])
+        # VFI keeps control of VFI axes
+        self.assertEqual(res[ControlAxis.ROLL], vfi[ControlAxis.ROLL])
+        self.assertEqual(res[ControlAxis.PITCH], vfi[ControlAxis.PITCH])
+
+        # Resolve celebration by calling advance_phase
+        self.instructor.advance_phase(next_phase=4, is_final=False)
+        # Should reset state to SYNCING for new phase
+        self.assertEqual(self.instructor.system_state, VFIState.SYNCING)
+        self.assertEqual(self.instructor.phase, 4)
+
+    def test_celebrating_safety_breach(self):
+        """Verifies that safety breach during CELEBRATING triggers immediate OVERRIDE."""
+        self.instructor._system_state = VFIState.CELEBRATING
+        # Set some student axes (meaning control_assignment has student, so safety checks trigger override)
+        self.instructor.control_assignment[ControlAxis.YAW] = Authority.STUDENT
+
+        # Telemetry with a critical safety violation (e.g. extreme pitch)
+        telemetry = {
+            "x": 10.0, "y": 6.0, "z": 20.0,
+            "target_x": 10.0, "target_y": 6.0, "target_z": 20.0,
+            "phi": 0.0, "theta": 45.0, "psi": 0.0, "R": 0.0,
+            "vx": 0.0, "vz": 0.0, "vy": 0.0, "y_agl": 6.0
+        }
+        hardware = {
+            ControlAxis.ROLL: 0.1, ControlAxis.PITCH: 0.2,
+            ControlAxis.YAW: 0.3, ControlAxis.COLLECTIVE: 0.4
+        }
+        vfi = {
+            ControlAxis.ROLL: -0.1, ControlAxis.PITCH: -0.2,
+            ControlAxis.YAW: -0.3, ControlAxis.COLLECTIVE: -0.4
+        }
+
+        res = self.instructor.update(0.02, telemetry, hardware, vfi)
+        self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
 
 
 if __name__ == "__main__":

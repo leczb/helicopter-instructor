@@ -1,5 +1,12 @@
 # Release Notes
 
+## v2.1.61 - 2026-06-04
+
+- **Improvement**: Postponed virtual flight instructor control takeover during automatic phase transitions. The student now retains control of the helicopter during the playback of the `Phase transition.wav` jingle, and control is handed over to the VFI only after the chime finishes.
+- **Improvement**: Added a new transitional state `VFIState.CELEBRATING` to represent this phase transition delay.
+- **Improvement**: Safety override limit checks remain fully active during this celebrating period. If any limit is breached, the state transitions immediately to `OVERRIDE` and the jingle delay is canceled.
+- **Improvement**: Shortened the continuous "Excellent" rating duration requirement for automatic phase transition from 35 seconds to 25 seconds (`PHASE_EXCELLENT_REQUIRED_S`).
+
 ## v2.1.60 - 2026-06-04
 
 - **Refactor**: Extracted unit conversion constants (such as `M_S_TO_FT_MIN` and `M_S_TO_KNOTS`) from `virtual_instructor.py` and `metrics.py` into a new central module `constants.py` to eliminate duplication and clean up code organization.
