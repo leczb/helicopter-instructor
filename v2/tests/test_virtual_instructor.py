@@ -684,6 +684,7 @@ class TestStateTransitions(unittest.TestCase):
     def test_celebrating_safety_breach(self):
         """Verifies that safety breach during CELEBRATING triggers immediate OVERRIDE."""
         self.instructor._system_state = VFIState.CELEBRATING
+        self.instructor.transition_in_progress = True
         # Set some student axes (meaning control_assignment has student, so safety checks trigger override)
         self.instructor.control_assignment[ControlAxis.YAW] = Authority.STUDENT
 
@@ -705,6 +706,7 @@ class TestStateTransitions(unittest.TestCase):
 
         res = self.instructor.update(0.02, telemetry, hardware, vfi)
         self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
+        self.assertFalse(self.instructor.transition_in_progress)
 
 
 if __name__ == "__main__":

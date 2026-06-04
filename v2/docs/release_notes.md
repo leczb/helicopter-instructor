@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.63 - 2026-06-04
+
+- **Fixed**: Fixed a bug where a safety override or manual phase change during the delayed phase transition (`CELEBRATING`) would leave the `transition_in_progress` flag set to `True` indefinitely. Centralized the resetting of the flag in the `system_state` property setter to clear it whenever the state transitions to any state other than `CELEBRATING`.
+
 ## v2.1.62 - 2026-06-04
 
 - **Fixed**: Simplified the "Perfect" hover praise timer check to evaluate only the `Envelope.EXCELLENT` grade (removing the drift speed limit constraint). This enables "Perfect" praise cues to play across all curriculum phases when the student is active and performing excellently, regardless of whether they have cyclic control.

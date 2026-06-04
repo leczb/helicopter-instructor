@@ -282,7 +282,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.62"
+        self.version = "2.1.63"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -992,6 +992,12 @@ class PythonInterface(object):
 
                 # Cancel the transition timer if the state transitions out of student control
                 if curr_state not in (VFIState.STUDENT_FLIGHT, VFIState.CELEBRATING):
+                    if self.phase_transition_delay_timer > 0.0:
+                        last_state_name = getattr(self, "last_system_state", curr_state).name
+                        log.info(
+                            f"Automatic phase transition delay cancelled because state transitioned "
+                            f"from {last_state_name} to {curr_state.name}."
+                        )
                     self.phase_transition_delay_timer = 0.0
                     self.pending_next_phase = None
 
@@ -1034,6 +1040,10 @@ class PythonInterface(object):
                             duration = self.audio.sound_registry.get(
                                 SOUND_PHASE_TRANSITION, {}
                             ).get("duration_s", 2.0)
+                            log.info(
+                                f"Automatic phase transition initiated. Starting celebration chime delay "
+                                f"timer for {duration:.2f}s before advancing to Phase {event.to_phase}."
+                            )
                             self.phase_transition_delay_timer = duration
                             self.pending_next_phase = event.to_phase
                             self.pending_is_final = False

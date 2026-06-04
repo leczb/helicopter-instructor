@@ -255,6 +255,8 @@ class VirtualInstructor(object):
                     f"Invalid transition: {old_state} -> {new_state}"
                 )
             self._system_state = new_state
+            if new_state != VFIState.CELEBRATING:
+                self.transition_in_progress = False
             if new_state == VFIState.STUDENT_FLIGHT:
                 self.excellent_timer = 0.0
             log.info(f"VFI state transition: {old_state.name} -> {new_state.name}")
