@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.58 - 2026-06-04
+
+- **Fixed**: Reset the student evaluation timer (`excellent_timer`) to `0.0` when the student takes control (`STUDENT_FLIGHT`). This prevents the curriculum from instantly completing a phase after regaining control if they had previously accumulated time before an override or handoff.
+
 ## v2.1.57 - 2026-06-04
 
 - **Improvement**: Enhanced logging architecture for better bug reports and troubleshooting.

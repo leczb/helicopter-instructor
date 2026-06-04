@@ -625,6 +625,14 @@ class TestStateTransitions(unittest.TestCase):
         self.assertEqual(self.instructor.hud_caption_timer, 5.0)
         self.assertEqual(self.instructor.hud_caption_style, CaptionStyle.DANGER)
 
+    def test_excellent_timer_resets_on_student_flight_transition(self):
+        """Verifies that excellent_timer is reset to 0.0 when transitioning to STUDENT_FLIGHT."""
+        self.instructor.excellent_timer = 15.0
+        # Transition path: VFI_FLIGHT -> SYNCING -> STUDENT_FLIGHT
+        self.instructor.system_state = VFIState.SYNCING
+        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.assertEqual(self.instructor.excellent_timer, 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()

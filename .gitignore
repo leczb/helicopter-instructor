@@ -16,3 +16,7 @@ htmlcov/
 
 # VSCode files
 .vscode/
+
+# Runtime log files
+v2/plugin/helicopter_instructor/helicopter_instructor.log
+
