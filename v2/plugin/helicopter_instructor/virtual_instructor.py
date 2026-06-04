@@ -309,13 +309,15 @@ class VirtualInstructor(object):
                 f"Phase {phase_num} ({PHASE_NAMES[phase_num]})"
             )
             # If the student is already flying, we should shift to syncing the
-            # new phase controls
+            # new phase controls. However, to prevent instant handoff before 
+            # the intro audio finishes, we reset to VFI flight here. Handoff
+            # will be initiated by the plugin after the intro audio.
             if self.system_state in (
                 VFIState.STUDENT_FLIGHT,
                 VFIState.SYNCING,
                 VFIState.CELEBRATING,
             ):
-                self.initiate_handoff()
+                self.reset_to_vfi_flight()
             else:
                 self.set_hud_caption(f"PHASE {self.phase} SELECTED")
 

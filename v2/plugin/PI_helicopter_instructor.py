@@ -137,6 +137,7 @@ class PluginUIController(object):
                 self._plugin.release_all_overrides()
                 self._plugin.instructor.reset_to_vfi_flight()
                 self._plugin.instructor.set_hud_caption("INSTRUCTOR DISENGAGED")
+                self._plugin.pending_handoff = False
 
     @property
     def phase(self):
@@ -282,7 +283,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.63"
+        self.version = "2.1.64"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -307,6 +308,7 @@ class PythonInterface(object):
         self.phase_transition_delay_timer = 0.0
         self.pending_next_phase = None
         self.pending_is_final = False
+        self.pending_handoff = False
         self.graphics = graphics.GraphicsAssetManager(self.plugin_dir)
         self.ui_controller = PluginUIController(self)
 
@@ -788,6 +790,7 @@ class PythonInterface(object):
             xp.setDatai(self.dref_override_collective, 0)
         if self.dref_override_throttles:
             xp.setDatai(self.dref_override_throttles, 0)
+        self.pending_handoff = False
 
     def get_current_state(self):
         """Reads and returns the current aircraft flight state dictionary."""
@@ -926,14 +929,18 @@ class PythonInterface(object):
                         self.phase_transition_delay_timer = 0.0
                         # Auto transition timer expired! Take control and advance.
                         auto_phase_transition = True
-                        self.instructor.advance_phase(
-                            self.pending_next_phase, self.pending_is_final
-                        )
-                        self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
-                        intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(
-                            self.pending_next_phase
-                        )
-                        self.play_sound(intro_sound)
+                        self.instructor.reset_to_vfi_flight()
+                        if self.pending_is_final:
+                            self.instructor.training_complete = True
+                            self.play_sound(SOUND_TRAINING_COMPLETE, clear_queue=True)
+                        else:
+                            self.instructor.phase = self.pending_next_phase
+                            self.pending_handoff = True
+                            self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                            intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(
+                                self.pending_next_phase
+                            )
+                            self.play_sound(intro_sound)
                         self.pending_next_phase = None
 
                 # --- Snap autopilot target to override position ---
@@ -1083,10 +1090,13 @@ class PythonInterface(object):
 
                 if not auto_phase_transition:
                     if phase_changed:
-                        # Manual phase change: instructor takes control and
-                        # explains the new phase via its intro audio.
-                        if curr_state in (VFIState.STUDENT_FLIGHT, VFIState.SYNCING):
+                        if self.last_system_state in (
+                            VFIState.STUDENT_FLIGHT,
+                            VFIState.SYNCING,
+                            VFIState.CELEBRATING,
+                        ):
                             self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                            self.pending_handoff = True
                         self.play_sound(SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase))
                     elif state_changed:
                         if curr_state == VFIState.SYNCING:
@@ -1281,6 +1291,11 @@ class PythonInterface(object):
                 duration_s = self.audio.play_sound(sound_to_play)
                 self.last_played_sound = sound_to_play
                 self.audio_playback_timer = duration_s + 0.3
+
+            # --- Handle Pending Control Handoff ---
+            if self.ap_enabled and self.pending_handoff and self.audio_playback_timer <= 0.0 and not self.audio_queue:
+                self.instructor.initiate_handoff()
+                self.pending_handoff = False
         except Exception as e:
             log.exception("Unhandled exception in flight_loop_callback")
 

@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.64 - 2026-06-04
+
+- **Fixed**: Resolved a bug where control handoffs during automatic and manual phase transitions would happen too quickly if user inputs happened to match target values, skipping the "Get ready to take control" audio cue. Handoff synchronization is now delayed until after the phase explanation/intro audio finishes playing.
+
 ## v2.1.63 - 2026-06-04
 
 - **Fixed**: Fixed a bug where a safety override or manual phase change during the delayed phase transition (`CELEBRATING`) would leave the `transition_in_progress` flag set to `True` indefinitely. Centralized the resetting of the flag in the `system_state` property setter to clear it whenever the state transitions to any state other than `CELEBRATING`.

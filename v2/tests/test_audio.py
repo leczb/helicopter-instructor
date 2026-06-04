@@ -234,6 +234,60 @@ class TestPluginAudio(unittest.TestCase):
         mock_xp.stopAudio.assert_called_once_with(88)
         self.assertIsNone(self.plugin.audio.active_channel)
 
+    def test_pending_handoff_in_flight_loop(self):
+        # Import enums locally inside test to avoid dependency issues
+        from helicopter_instructor.enums import ControlAxis, VFIState
+
+        # 1. Setup mocks to avoid calling real X-Plane DLL APIs
+        self.plugin.ap_enabled = True
+        self.plugin.pending_handoff = True
+        self.plugin.audio_playback_timer = 0.5
+        self.plugin.audio_queue = []
+
+        # Mock the controller, instructor, and metrics update dependencies
+        self.plugin.get_current_state = mock.MagicMock(return_value={
+            "x": 0.0, "y": 0.0, "z": 0.0, "vx": 0.0, "vy": 0.0, "vz": 0.0,
+            "phi": 0.0, "theta": 0.0, "psi": 0.0, "P": 0.0, "Q": 0.0, "R": 0.0, "g_side": 0.0
+        })
+        self.plugin.controller = mock.MagicMock()
+        self.plugin.controller.update.return_value = {
+            ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5
+        }
+        self.plugin.get_hardware_inputs = mock.MagicMock(return_value={
+            ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5
+        })
+
+        self.plugin.instructor = mock.MagicMock()
+        self.plugin.instructor.system_state = VFIState.VFI_FLIGHT
+        self.plugin.instructor.phase = 2
+        self.plugin.instructor.update.return_value = {
+            ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5
+        }
+        self.plugin.metrics = mock.MagicMock()
+        self.plugin.metrics.pop_audio_queue.return_value = None
+        self.plugin.graphics = mock.MagicMock()
+        self.plugin.alt_bar_window = None
+
+        # Mock X-Plane datarefs
+        self.plugin.dref_paused = None
+        self.plugin.dref_y_agl = None
+
+        # 2. First call to flight_loop_callback with dt = 0.02
+        # It should count down playback timer from 0.05 to 0.03.
+        # It should NOT initiate handoff because timer > 0.
+        self.plugin.audio_playback_timer = 0.05
+        self.plugin.flight_loop_callback(0.02, 0.02, 1, None)
+        self.plugin.instructor.initiate_handoff.assert_not_called()
+        self.assertTrue(self.plugin.pending_handoff)
+        self.assertAlmostEqual(self.plugin.audio_playback_timer, 0.03)
+
+        # 3. Second call with timer = 0.0
+        # Since timer <= 0 and queue is empty, handoff is initiated!
+        self.plugin.audio_playback_timer = 0.0
+        self.plugin.flight_loop_callback(0.02, 0.02, 2, None)
+        self.plugin.instructor.initiate_handoff.assert_called_once()
+        self.assertFalse(self.plugin.pending_handoff)
+
 
 if __name__ == "__main__":
     unittest.main()

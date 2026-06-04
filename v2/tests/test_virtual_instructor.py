@@ -708,6 +708,17 @@ class TestStateTransitions(unittest.TestCase):
         self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
         self.assertFalse(self.instructor.transition_in_progress)
 
+    def test_set_phase_resets_to_vfi_flight(self):
+        """set_phase during student flight should reset state to VFI_FLIGHT instead of immediately syncing."""
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
+        self.instructor.phase = 1
+
+        # Manually set phase to 2
+        self.instructor.set_phase(2)
+
+        self.assertEqual(self.instructor.system_state, VFIState.VFI_FLIGHT)
+        self.assertEqual(self.instructor.phase, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
