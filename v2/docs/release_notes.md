@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.62 - 2026-06-04
+
+- **Fixed**: Simplified the "Perfect" hover praise timer check to evaluate only the `Envelope.EXCELLENT` grade (removing the drift speed limit constraint). This enables "Perfect" praise cues to play across all curriculum phases when the student is active and performing excellently, regardless of whether they have cyclic control.
+
 ## v2.1.61 - 2026-06-04
 
 - **Improvement**: Postponed virtual flight instructor control takeover during automatic phase transitions. The student now retains control of the helicopter during the playback of the `Phase transition.wav` jingle, and control is handed over to the VFI only after the chime finishes.

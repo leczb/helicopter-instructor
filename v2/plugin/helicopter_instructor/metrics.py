@@ -816,8 +816,8 @@ class PerformanceMetricsEvaluator(object):
                 self.audio_cooldowns[SOUND_NICE_RECOVERY] = 30.0
             self.was_in_warning_zone = False
 
-        # 4. "Perfect" stable hover reinforcement (when student maintains Excellent envelope and low drift speed for 10.0s)
-        if self.envelope == Envelope.EXCELLENT and self.drift_speed <= 1.0:
+        # 4. "Perfect" stable hover reinforcement (when student maintains Excellent envelope for 10.0s)
+        if self.envelope == Envelope.EXCELLENT:
             self.perfect_hover_timer += dt
             if (
                 self.perfect_hover_timer >= 10.0

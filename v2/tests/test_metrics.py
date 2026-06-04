@@ -376,22 +376,18 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.metrics.update(0.1, self.nominal_telemetry, self.nominal_inputs, False, 6)
         self.assertEqual(self.metrics.perfect_hover_timer, 0.0)
 
+        # 4. Perfect hover timer ticks in Phase 1 (yaw-only control) if student is flying and envelope is Excellent
+        self.metrics.envelope = Envelope.EXCELLENT
+        self.metrics.perfect_hover_timer = 5.0
+        self.metrics.update(0.1, self.nominal_telemetry, self.nominal_inputs, True, 1)
+        self.assertAlmostEqual(self.metrics.perfect_hover_timer, 5.1)
+
     def test_praise_blocked_by_drift_speed(self):
         """Verifies praise is blocked/reset when drift speed is > 1.0 m/s."""
-        # 1. Block Perfect hover praise
-        self.metrics._evaluate_proficiency_envelope = lambda phase: None
-        self.metrics.envelope = Envelope.EXCELLENT
-        self.metrics.perfect_hover_timer = 9.5
-
         # Telemetry with high drift speed (vx = 1.0, vz = 1.0 -> speed = sqrt(2) ~ 1.41 m/s > 1.0)
         fast_drift_telemetry = dict(self.nominal_telemetry)
         fast_drift_telemetry["vx"] = 1.0
         fast_drift_telemetry["vz"] = 1.0
-
-        self.metrics.update(0.6, fast_drift_telemetry, self.nominal_inputs, True, 6)
-        # Should NOT trigger Perfect.wav and should reset timer to 0.0
-        self.assertNotIn("Perfect.wav", self.metrics.audio_queue)
-        self.assertEqual(self.metrics.perfect_hover_timer, 0.0)
 
         # 2. Block Pedal Master praise
         self.metrics.pedal_praise_timer = 14.5
