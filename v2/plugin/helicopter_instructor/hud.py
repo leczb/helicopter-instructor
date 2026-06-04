@@ -7,6 +7,7 @@ import xp
 
 from helicopter_instructor import virtual_instructor
 from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import CaptionStyle
 from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 from helicopter_instructor.enums import VFIState
@@ -424,11 +425,12 @@ def draw_hud(view_model, window_id):
     if view_model.hud_caption:
         y_cursor -= 26
         caption_color = color_white
-        if "I HAVE" in view_model.hud_caption:
+        style = getattr(view_model, "hud_caption_style", CaptionStyle.INFO)
+        if style in (CaptionStyle.DANGER, "danger"):
             caption_color = color_red
-        elif "YOU HAVE" in view_model.hud_caption:
+        elif style in (CaptionStyle.SUCCESS, "success"):
             caption_color = color_green
-        elif "PREPARE" in view_model.hud_caption:
+        elif style in (CaptionStyle.WARNING, "warning"):
             caption_color = color_orange
 
         # Estimated width of proportional font: about 8.5 pixels per char

@@ -1,5 +1,13 @@
 # Release Notes
 
+## v2.1.56 - 2026-06-04
+
+- **Refactor**: Resolved caption color routing fragility by introducing an
+  explicit style parameter (`hud_caption_style`) on the HUD. The color
+  routing is now driven by semantic style states (`danger`, `success`,
+  `warning`, `info`) instead of checking substrings of the display text,
+  making the HUD presentation robust to subtitle text changes.
+
 ## v2.1.55 - 2026-06-04
 
 - **Refactor**: Extracted all hardcoded safety limit parameters from the state

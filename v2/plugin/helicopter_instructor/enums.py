@@ -69,3 +69,16 @@ class HeadingZone(Enum):
     GREEN = "green"
     ORANGE = "orange"
     RED = "red"
+
+
+class CaptionStyle(Enum):
+    """Style classifications for HUD caption announcements.
+
+    Determines text coloring on the HUD overlay.
+    """
+
+    DANGER = "danger"
+    SUCCESS = "success"
+    WARNING = "warning"
+    INFO = "info"
+

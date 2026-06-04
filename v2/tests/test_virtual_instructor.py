@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 # pyrefly: ignore [missing-import]
 from helicopter_instructor import virtual_instructor
 from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import CaptionStyle
 from helicopter_instructor.enums import Envelope
 from helicopter_instructor.enums import HeadingZone
 from helicopter_instructor.enums import VFIState
@@ -614,6 +615,15 @@ class TestStateTransitions(unittest.TestCase):
         self.assertEqual(phase_events[0].from_phase, 3)
         self.assertEqual(phase_events[0].to_phase, 4)
         self.assertFalse(phase_events[0].is_final)
+
+    def test_set_hud_caption_style(self):
+        """Verifies set_hud_caption correctly saves text, duration, and style."""
+        self.instructor.set_hud_caption(
+            "TEST CAPTION", duration=5.0, style=CaptionStyle.DANGER
+        )
+        self.assertEqual(self.instructor.hud_caption, "TEST CAPTION")
+        self.assertEqual(self.instructor.hud_caption_timer, 5.0)
+        self.assertEqual(self.instructor.hud_caption_style, CaptionStyle.DANGER)
 
 
 if __name__ == "__main__":

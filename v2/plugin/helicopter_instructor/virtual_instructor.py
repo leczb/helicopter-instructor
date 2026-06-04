@@ -1,6 +1,7 @@
 import math
 
 from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import CaptionStyle
 from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 from helicopter_instructor.enums import HeadingZone
@@ -204,6 +205,7 @@ class VirtualInstructor(object):
         # Subtitles / visual announcements queue
         self.hud_caption = ""
         self.hud_caption_timer = 0.0
+        self.hud_caption_style = CaptionStyle.INFO
 
         # Drift-based stabilization takeover state
         self.drift_recovery_active = False
@@ -259,10 +261,17 @@ class VirtualInstructor(object):
         """Emits an event to be picked up by update()."""
         self._events.append(event)
 
-    def set_hud_caption(self, text, duration=3.0):
-        """Sets a visual caption/subtitle to be shown on the HUD."""
+    def set_hud_caption(self, text, duration=3.0, style=CaptionStyle.INFO):
+        """Sets a visual banner/subtitle to be shown on the HUD.
+
+        Args:
+            text: The text string to display.
+            duration: Time in seconds to display the banner.
+            style: The color style (CaptionStyle).
+        """
         self.hud_caption = text
         self.hud_caption_timer = duration
+        self.hud_caption_style = style
 
     def set_phase(self, phase_num):
         """Manually overrides the curriculum phase.
@@ -300,7 +309,11 @@ class VirtualInstructor(object):
                 self.control_assignment[axis] = Authority.VFI
                 self.sync_locked[axis] = False
 
-        self.set_hud_caption("PREPARE TO TAKE THE CONTROLS", duration=4.0)
+        self.set_hud_caption(
+            "PREPARE TO TAKE THE CONTROLS",
+            duration=4.0,
+            style=CaptionStyle.WARNING,
+        )
 
     def update(self, dt, telemetry, hardware, vfi_inputs):
         """Main update execution loop called every frame at 50Hz.
@@ -363,7 +376,11 @@ class VirtualInstructor(object):
                     self.override_target_y = y
                     self.override_target_z = z
                 self.trigger_hard_override()
-                self.set_hud_caption("I HAVE THE CONTROLS - STABILIZING", duration=4.0)
+                self.set_hud_caption(
+                    "I HAVE THE CONTROLS - STABILIZING",
+                    duration=4.0,
+                    style=CaptionStyle.DANGER,
+                )
                 return UpdateResult(
                     self.process_recovery(dt, vfi_inputs, telemetry),
                     events + self._events,
@@ -425,7 +442,9 @@ class VirtualInstructor(object):
                 self.recovery_timer -= dt
                 if self.recovery_timer <= 0.0:
                     self.set_hud_caption(
-                        "AIRCRAFT STABLE. PREPARE TO SYNC.", duration=4.0
+                        "AIRCRAFT STABLE. PREPARE TO SYNC.",
+                        duration=4.0,
+                        style=CaptionStyle.WARNING,
                     )
                     self.initiate_handoff()
             return UpdateResult(vfi_inputs, events + self._events)
@@ -569,7 +588,11 @@ class VirtualInstructor(object):
                         self.control_assignment[axis] = Authority.STUDENT
 
                 self.system_state = VFIState.STUDENT_FLIGHT
-                self.set_hud_caption("YOU HAVE THE CONTROLS", duration=3.0)
+                self.set_hud_caption(
+                    "YOU HAVE THE CONTROLS",
+                    duration=3.0,
+                    style=CaptionStyle.SUCCESS,
+                )
         else:
             # Reset timer if any axis drifts out of the matching dead-zone
             self.sync_timer = 0.0
@@ -683,7 +706,11 @@ class VirtualInstructor(object):
             self.control_assignment[axis] = Authority.VFI
             self.sync_locked[axis] = False
 
-        self.set_hud_caption("I HAVE THE CONTROLS", duration=4.0)
+        self.set_hud_caption(
+            "I HAVE THE CONTROLS",
+            duration=4.0,
+            style=CaptionStyle.DANGER,
+        )
 
     def process_recovery(self, dt, vfi_inputs, telemetry):
         """Executes a 5-step stabilization and hold sequence.
