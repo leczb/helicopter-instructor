@@ -1,5 +1,14 @@
 # Release Notes
 
+## v2.1.54 - 2026-06-04
+
+- **Refactor**: Encapsulated state transitions within the `VirtualInstructor`
+  class. Added transition validation to prevent invalid states and removed
+  direct state mutations from the plugin. Automatic phase advance
+  orchestration is now handled internally by `VirtualInstructor.update()`,
+  returning events via a backward-compatible `UpdateResult` dictionary
+  subclass.
+
 ## v2.1.53 - 2026-06-04
 
 - **Refactor**: Introduced `ControlAxis` enum (`ROLL`, `PITCH`, `YAW`,

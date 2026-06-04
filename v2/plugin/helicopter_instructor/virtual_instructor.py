@@ -77,6 +77,70 @@ PHASE_NAMES = {
 }
 
 
+class VFIEvent(object):
+    """Base class for all virtual instructor state machine events."""
+    pass
+
+
+class PhaseAdvancedEvent(VFIEvent):
+    """Triggered when a training phase is automatically completed.
+
+    Attributes:
+        from_phase: The curriculum phase number before the transition.
+        to_phase: The curriculum phase number after the transition.
+        is_final: True if phase 6 was completed and training is now finished.
+    """
+
+    def __init__(self, from_phase, to_phase, is_final):
+        self.from_phase = from_phase
+        self.to_phase = to_phase
+        self.is_final = is_final
+
+
+class StateChangedEvent(VFIEvent):
+    """Triggered when the state machine transitions between states.
+
+    Attributes:
+        from_state: The state before the transition.
+        to_state: The state after the transition.
+    """
+
+    def __init__(self, from_state, to_state):
+        self.from_state = from_state
+        self.to_state = to_state
+
+
+class UpdateResult(dict):
+    """A dictionary subclass that holds calculated commands and transition events.
+
+    Behaves exactly like a dict for backward compatibility with existing tests
+    and callers, but exposes an `events` attribute.
+    """
+
+    def __init__(self, commands, events):
+        super(UpdateResult, self).__init__(commands)
+        self.events = events
+
+
+# Valid state transitions for validation
+_VALID_TRANSITIONS = {
+    VFIState.VFI_FLIGHT: {VFIState.SYNCING, VFIState.VFI_FLIGHT},
+    VFIState.SYNCING: {
+        VFIState.STUDENT_FLIGHT,
+        VFIState.OVERRIDE,
+        VFIState.VFI_FLIGHT,
+        VFIState.SYNCING,
+    },
+    VFIState.STUDENT_FLIGHT: {
+        VFIState.OVERRIDE,
+        VFIState.VFI_FLIGHT,
+        VFIState.SYNCING,
+    },
+    VFIState.OVERRIDE: {VFIState.RECOVERY_HOLD, VFIState.VFI_FLIGHT},
+    VFIState.RECOVERY_HOLD: {VFIState.SYNCING, VFIState.VFI_FLIGHT},
+}
+
+
 class VirtualInstructor(object):
     """Core Virtual Flight Instructor (VFI) curriculum and safety logic.
 
@@ -98,7 +162,8 @@ class VirtualInstructor(object):
         # Set to True when phase 6 is mastered; prevents further advancement.
         self.training_complete = False
         # States: VFI_FLIGHT, SYNCING, STUDENT_FLIGHT, OVERRIDE, RECOVERY_HOLD
-        self.system_state = VFIState.VFI_FLIGHT
+        self._system_state = VFIState.VFI_FLIGHT
+        self._events = []
 
         # Dead-zone matching window configuration
         self.match_tolerance = 0.04  # ±4% matching window
@@ -143,6 +208,47 @@ class VirtualInstructor(object):
 
         # Heading Safety Zone Detection ("green", "orange", or "red")
         self.heading_zone = HeadingZone.GREEN
+
+    @property
+    def system_state(self):
+        """Gets the current state of the Virtual Flight Instructor."""
+        return self._system_state
+
+    @system_state.setter
+    def system_state(self, new_state):
+        """Sets the state of the VFI and validates the transition.
+
+        Args:
+            new_state: The target VFIState.
+
+        Raises:
+            TypeError: If new_state is not a VFIState.
+            ValueError: If the transition from current state is not allowed.
+        """
+        if not isinstance(new_state, VFIState):
+            raise TypeError(
+                f"State must be a VFIState enum, got {type(new_state)}"
+            )
+        old_state = self._system_state
+        if old_state != new_state:
+            valid_targets = _VALID_TRANSITIONS.get(old_state, set())
+            if new_state not in valid_targets:
+                raise ValueError(
+                    f"Invalid transition: {old_state} -> {new_state}"
+                )
+            self._system_state = new_state
+            self._emit_event(StateChangedEvent(old_state, new_state))
+
+    def reset_to_vfi_flight(self):
+        """Resets the instructor back to full VFI flight authority."""
+        self.system_state = VFIState.VFI_FLIGHT
+        for axis in self.control_assignment:
+            self.control_assignment[axis] = Authority.VFI
+            self.sync_locked[axis] = False
+
+    def _emit_event(self, event):
+        """Emits an event to be picked up by update()."""
+        self._events.append(event)
 
     def set_hud_caption(self, text, duration=3.0):
         """Sets a visual caption/subtitle to be shown on the HUD."""
@@ -210,6 +316,10 @@ class VirtualInstructor(object):
             if self.hud_caption_timer <= 0.0:
                 self.hud_caption = ""
 
+        # Collect and clear any events that accumulated between frames
+        events = list(self._events)
+        self._events.clear()
+
         # 1. RUN SAFETY AND ENVELOPE CHECKS IF STUDENT HAS OR IS TAKING CONTROLS
         if self.system_state in (
             VFIState.STUDENT_FLIGHT,
@@ -245,24 +355,57 @@ class VirtualInstructor(object):
                     self.override_target_z = z
                 self.trigger_hard_override()
                 self.set_hud_caption("I HAVE THE CONTROLS - STABILIZING", duration=4.0)
-                return self.process_recovery(dt, vfi_inputs, telemetry)
+                return UpdateResult(
+                    self.process_recovery(dt, vfi_inputs, telemetry),
+                    events + self._events,
+                )
 
         # 2. STATE MACHINE ROUTING
         if self.system_state == VFIState.VFI_FLIGHT:
             # 100% VFI flying
-            return vfi_inputs
+            return UpdateResult(vfi_inputs, events + self._events)
 
         elif self.system_state == VFIState.SYNCING:
-            return self.process_synchronization(dt, hardware, vfi_inputs)
+            return UpdateResult(
+                self.process_synchronization(dt, hardware, vfi_inputs),
+                events + self._events,
+            )
 
         elif self.system_state == VFIState.STUDENT_FLIGHT:
             # Check for automatic phase advancement before routing inputs.
             self.maybe_advance_phase(dt)
-            return self.process_student_inputs(telemetry, hardware, vfi_inputs)
+            if self.transition_pending:
+                self.transition_pending = False
+                next_phase = self.transition_target_phase
+                is_final = self.training_complete
+
+                # Take back control & transition
+                self.reset_to_vfi_flight()
+                if is_final:
+                    self._emit_event(
+                        PhaseAdvancedEvent(self.phase, self.phase, is_final=True)
+                    )
+                else:
+                    old_phase = self.phase
+                    self.phase = next_phase
+                    self.initiate_handoff()
+                    self._emit_event(
+                        PhaseAdvancedEvent(old_phase, next_phase, is_final=False)
+                    )
+                # Since we transitioned, return VFI inputs
+                return UpdateResult(vfi_inputs, events + self._events)
+
+            return UpdateResult(
+                self.process_student_inputs(telemetry, hardware, vfi_inputs),
+                events + self._events,
+            )
 
         elif self.system_state == VFIState.OVERRIDE:
             # Direct recovery execution
-            return self.process_recovery(dt, vfi_inputs, telemetry)
+            return UpdateResult(
+                self.process_recovery(dt, vfi_inputs, telemetry),
+                events + self._events,
+            )
 
         elif self.system_state == VFIState.RECOVERY_HOLD:
             # Stage 3: slowly move recovery targets horizontally and vertically towards original
@@ -276,9 +419,9 @@ class VirtualInstructor(object):
                         "AIRCRAFT STABLE. PREPARE TO SYNC.", duration=4.0
                     )
                     self.initiate_handoff()
-            return vfi_inputs
+            return UpdateResult(vfi_inputs, events + self._events)
 
-        return vfi_inputs
+        return UpdateResult(vfi_inputs, events + self._events)
 
     def check_safety_limits(self, telemetry):
         """Checks structural/aerodynamic hazard boundaries.

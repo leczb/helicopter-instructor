@@ -141,7 +141,7 @@ class TestVirtualInstructor(unittest.TestCase):
     def test_safety_envelope_triggers_hard_override(self):
         # Student flying Phase 1
         self.instructor.phase = 1
-        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
         self.instructor.control_assignment[ControlAxis.YAW] = Authority.STUDENT
 
         # Telemetry is safe
@@ -166,7 +166,7 @@ class TestVirtualInstructor(unittest.TestCase):
     def test_ground_agl_safety_trigger(self):
         # Student flying Phase 1
         self.instructor.phase = 1
-        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
         self.instructor.control_assignment[ControlAxis.YAW] = Authority.STUDENT
 
         # AGL falls to 1.8 meters (< 2.0 limit)
@@ -184,7 +184,7 @@ class TestVirtualInstructor(unittest.TestCase):
         )
 
         # Reset state for high AGL test
-        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
         self.instructor.control_assignment[ControlAxis.YAW] = Authority.STUDENT
 
         # AGL climbs to 12.0 meters (> 10.0 limit)
@@ -202,7 +202,7 @@ class TestVirtualInstructor(unittest.TestCase):
     def test_student_flight_direct_routing(self):
         # Phase 4: Cyclic is student
         self.instructor.phase = 4
-        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
         self.instructor.control_assignment[ControlAxis.ROLL] = Authority.STUDENT
         self.instructor.control_assignment[ControlAxis.PITCH] = Authority.STUDENT
 
@@ -216,7 +216,7 @@ class TestVirtualInstructor(unittest.TestCase):
     def test_recovery_hold_and_reset_loop(self):
         # Trigger takeover
         self.instructor.phase = 1
-        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
         self.instructor.control_assignment[ControlAxis.YAW] = Authority.STUDENT
 
         telem = self.nominal_telemetry.copy()
@@ -291,7 +291,7 @@ class TestVirtualInstructor(unittest.TestCase):
 
     def test_safety_takeover_target_override_and_restore(self):
         # 1. Student is flying and is at target coordinates target_x = 10, target_y = 6.0, target_z = 20
-        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
         telem = self.nominal_telemetry.copy()
         telem.update(
             {
@@ -456,7 +456,7 @@ class TestMaybeAdvancePhase(unittest.TestCase):
 
     def setUp(self):
         self.instructor = VirtualInstructor()
-        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
 
     def test_excellent_timer_accumulates(self):
         """Excellent envelope increments the timer without triggering transition."""
@@ -527,6 +527,93 @@ class TestMaybeAdvancePhase(unittest.TestCase):
         self.instructor.maybe_advance_phase(60.0)
         self.assertFalse(self.instructor.transition_pending)
         self.assertAlmostEqual(self.instructor.excellent_timer, 0.0)
+
+
+class TestStateTransitions(unittest.TestCase):
+    """Tests for transition validation, properties, and events."""
+
+    def setUp(self):
+        self.instructor = VirtualInstructor()
+
+    def test_valid_transitions(self):
+        """Transitions in the valid table should succeed."""
+        # VFI_FLIGHT -> SYNCING
+        self.instructor.system_state = VFIState.SYNCING
+        self.assertEqual(self.instructor.system_state, VFIState.SYNCING)
+
+        # SYNCING -> STUDENT_FLIGHT
+        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.assertEqual(self.instructor.system_state, VFIState.STUDENT_FLIGHT)
+
+        # STUDENT_FLIGHT -> OVERRIDE
+        self.instructor.system_state = VFIState.OVERRIDE
+        self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
+
+        # OVERRIDE -> RECOVERY_HOLD
+        self.instructor.system_state = VFIState.RECOVERY_HOLD
+        self.assertEqual(self.instructor.system_state, VFIState.RECOVERY_HOLD)
+
+        # RECOVERY_HOLD -> SYNCING
+        self.instructor.system_state = VFIState.SYNCING
+        self.assertEqual(self.instructor.system_state, VFIState.SYNCING)
+
+    def test_invalid_transition_raises_error(self):
+        """Illegal transitions should raise ValueError."""
+        # Initial is VFI_FLIGHT. Transition to STUDENT_FLIGHT is invalid.
+        with self.assertRaises(ValueError):
+            self.instructor.system_state = VFIState.STUDENT_FLIGHT
+
+    def test_reset_to_vfi_flight(self):
+        """reset_to_vfi_flight should reset authority and state."""
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
+        self.instructor.control_assignment[ControlAxis.ROLL] = Authority.STUDENT
+        self.instructor.sync_locked[ControlAxis.ROLL] = True
+
+        self.instructor.reset_to_vfi_flight()
+        self.assertEqual(self.instructor.system_state, VFIState.VFI_FLIGHT)
+        for axis in ControlAxis:
+            self.assertEqual(
+                self.instructor.control_assignment[axis], Authority.VFI
+            )
+            self.assertFalse(self.instructor.sync_locked[axis])
+
+    def test_update_result_events(self):
+        """update() should return UpdateResult containing events."""
+        # Set state to STUDENT_FLIGHT via private field
+        self.instructor._system_state = VFIState.STUDENT_FLIGHT
+        self.instructor.last_envelope = Envelope.EXCELLENT
+
+        # Force phase advance (Excellent duration threshold)
+        self.instructor.phase = 3
+        # Tick the instructor to trigger auto phase advance
+        telemetry = {
+            "x": 10.0, "y": 6.0, "z": 20.0,
+            "target_x": 10.0, "target_y": 6.0, "target_z": 20.0,
+            "phi": 0.0, "theta": 0.0, "psi": 0.0, "R": 0.0,
+            "vx": 0.0, "vz": 0.0, "vy": 0.0, "y_agl": 6.0
+        }
+        hardware = {
+            ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.0
+        }
+        vfi = hardware.copy()
+
+        # Call update with large dt to exceed threshold
+        res = self.instructor.update(40.0, telemetry, hardware, vfi)
+
+        # Check result is a dict and has events
+        self.assertTrue(isinstance(res, dict))
+        self.assertTrue(hasattr(res, "events"))
+        # Should contain StateChangedEvent to VFI_FLIGHT,
+        # then StateChangedEvent to SYNCING, and PhaseAdvancedEvent to 4
+        from helicopter_instructor.virtual_instructor import (
+            PhaseAdvancedEvent, StateChangedEvent
+        )
+        phase_events = [e for e in res.events if isinstance(e, PhaseAdvancedEvent)]
+        self.assertEqual(len(phase_events), 1)
+        self.assertEqual(phase_events[0].from_phase, 3)
+        self.assertEqual(phase_events[0].to_phase, 4)
+        self.assertFalse(phase_events[0].is_final)
 
 
 if __name__ == "__main__":

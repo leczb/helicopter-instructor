@@ -25,7 +25,9 @@ from helicopter_instructor.enums import Authority
 from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 from helicopter_instructor.enums import VFIState
-from helicopter_instructor.virtual_instructor import M_S_TO_FT_MIN, M_S_TO_KNOTS
+from helicopter_instructor.virtual_instructor import M_S_TO_FT_MIN
+from helicopter_instructor.virtual_instructor import M_S_TO_KNOTS
+from helicopter_instructor.virtual_instructor import PhaseAdvancedEvent
 
 # Explicitly reload submodules to prevent caching issues during X-Plane plugin reloads
 importlib.reload(audio)
@@ -114,13 +116,7 @@ class PluginUIController(object):
                 self._plugin.controller.engage(
                     state["x"], target_alt, state["z"], state["psi"], curr_collective
                 )
-                self._plugin.instructor.system_state = VFIState.VFI_FLIGHT
-                self._plugin.instructor.control_assignment = {
-                    ControlAxis.ROLL: Authority.VFI,
-                    ControlAxis.PITCH: Authority.VFI,
-                    ControlAxis.YAW: Authority.VFI,
-                    ControlAxis.COLLECTIVE: Authority.VFI,
-                }
+                self._plugin.instructor.reset_to_vfi_flight()
                 self._plugin.instructor.set_hud_caption("VFI ENGAGED - AUTO HOVER")
                 self._plugin.ap_enabled = True
                 self._plugin.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
@@ -133,7 +129,7 @@ class PluginUIController(object):
             else:
                 self._plugin.ap_enabled = False
                 self._plugin.release_all_overrides()
-                self._plugin.instructor.system_state = VFIState.VFI_FLIGHT
+                self._plugin.instructor.reset_to_vfi_flight()
                 self._plugin.instructor.set_hud_caption("INSTRUCTOR DISENGAGED")
 
     @property
@@ -280,7 +276,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.53"
+        self.version = "2.1.54"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -985,38 +981,24 @@ class PythonInterface(object):
                 self.play_sound(sound_to_play)
 
             # --- STEP C4: Handle automatic phase progression ---
-            # transition_pending is set by VirtualInstructor.maybe_advance_phase()
-            # after the student holds an Excellent rating for 30 seconds.
             auto_phase_transition = False
-            if self.instructor.transition_pending:
-                auto_phase_transition = True
-                self.instructor.transition_pending = False
-                next_phase = self.instructor.transition_target_phase
-                is_final = self.instructor.training_complete
-
-                # 1. Take back full VFI authority (clears student axis assignments).
-                self.instructor.system_state = VFIState.VFI_FLIGHT
-                for axis in self.instructor.control_assignment:
-                    self.instructor.control_assignment[axis] = Authority.VFI
-                    self.instructor.sync_locked[axis] = False
-
-                if is_final:
-                    # 2a. Training complete — no next phase, so skip the
-                    # transition jingle and play only the completion cue.
-                    self.play_sound(SOUND_TRAINING_COMPLETE, clear_queue=True)
-                else:
-                    # 2b. Play "Phase transition.wav" then advance to the
-                    # next phase and queue its intro audio.
-                    self.play_sound(SOUND_PHASE_TRANSITION, clear_queue=True)
-                    self.instructor.phase = next_phase
-                    intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(next_phase)
-                    self.play_sound(intro_sound)
-
-                    # 3. Initiate the hand-off to the student for the new
-                    #    phase.  This sets the state to SYNCING, which will
-                    #    eventually trigger the normal "Get ready" /
-                    #    "You have …" cues.
-                    self.instructor.initiate_handoff()
+            for event in getattr(final_commands, "events", []):
+                if isinstance(event, PhaseAdvancedEvent):
+                    auto_phase_transition = True
+                    if event.is_final:
+                        # Training complete — play only the completion cue.
+                        self.play_sound(
+                            SOUND_TRAINING_COMPLETE, clear_queue=True
+                        )
+                    else:
+                        # Play transition sound and next phase intro
+                        self.play_sound(
+                            SOUND_PHASE_TRANSITION, clear_queue=True
+                        )
+                        intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(
+                            event.to_phase
+                        )
+                        self.play_sound(intro_sound)
 
             # Re-read state/phase after auto-transition may have changed them
 

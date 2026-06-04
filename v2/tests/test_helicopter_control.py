@@ -788,7 +788,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         self.plugin.controller.target_z = 50.0
 
         # Simulate instructor already in OVERRIDE with a live drift recovery.
-        self.plugin.instructor.system_state = VFIState.OVERRIDE
+        self.plugin.instructor._system_state = VFIState.OVERRIDE
         self.plugin.instructor.drift_recovery_active = True
         self.plugin.instructor.override_target_x = 1.0  # near current position
         self.plugin.instructor.override_target_y = None
@@ -834,10 +834,10 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         # --- Frame 1: STUDENT_FLIGHT → OVERRIDE (inside instructor.update) ---
         self.plugin.last_system_state = VFIState.STUDENT_FLIGHT
-        self.plugin.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.plugin.instructor._system_state = VFIState.STUDENT_FLIGHT
 
         def override_on_call(dt, telemetry, hardware, vfi_inputs):
-            self.plugin.instructor.system_state = VFIState.OVERRIDE
+            self.plugin.instructor._system_state = VFIState.OVERRIDE
             self.plugin.instructor.drift_recovery_active = True
             self.plugin.instructor.override_target_x = 0.0
             self.plugin.instructor.override_target_y = None
@@ -883,7 +883,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         # Simulate: previous frame was STUDENT_FLIGHT; a command handler has
         # already flipped the instructor to SYNCING before this frame runs.
         self.plugin.last_system_state = VFIState.STUDENT_FLIGHT
-        self.plugin.instructor.system_state = VFIState.SYNCING
+        self.plugin.instructor._system_state = VFIState.SYNCING
 
         # instructor.update() in SYNCING just returns vfi_inputs.
         self.plugin.instructor.update = lambda dt, tel, hw, vfi: vfi
@@ -915,16 +915,22 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         # Previous frame was STUDENT_FLIGHT.
         self.plugin.last_system_state = VFIState.STUDENT_FLIGHT
-        self.plugin.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.plugin.instructor._system_state = VFIState.STUDENT_FLIGHT
         self.plugin.instructor.phase = 4
+
+        from helicopter_instructor.virtual_instructor import UpdateResult
+        from helicopter_instructor.virtual_instructor import PhaseAdvancedEvent
 
         # instructor.update() still returns STUDENT_FLIGHT this frame, but
         # sets transition_pending so STEP C4 advances the phase.
         def student_with_pending_transition(dt, telemetry, hardware, vfi):
-            self.plugin.instructor.transition_pending = True
-            self.plugin.instructor.transition_target_phase = 5
-            self.plugin.instructor.training_complete = False
-            return {k: hardware[k] for k in hardware}
+            self.plugin.instructor.reset_to_vfi_flight()
+            self.plugin.instructor.phase = 5
+            self.plugin.instructor.initiate_handoff()
+            return UpdateResult(
+                {k: hardware[k] for k in hardware},
+                [PhaseAdvancedEvent(4, 5, is_final=False)]
+            )
 
         self.plugin.instructor.update = student_with_pending_transition
 
