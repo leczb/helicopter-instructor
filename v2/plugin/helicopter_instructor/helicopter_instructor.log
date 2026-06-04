@@ -1,0 +1,352 @@
+2026-06-04 18:23:55,790 [INFO] [logger.py:71]: ====================================================
+2026-06-04 18:23:55,790 [INFO] [logger.py:72]: Helicopter Instructor logging system initialized.
+2026-06-04 18:23:55,790 [INFO] [logger.py:73]: ====================================================
+2026-06-04 18:23:55,796 [INFO] [PI_helicopter_instructor.py:654]: Plugin started successfully (version 2.1.56).
+2026-06-04 18:23:55,797 [INFO] [PI_helicopter_instructor.py:675]: Plugin stopped.
+2026-06-04 18:23:55,798 [INFO] [PI_helicopter_instructor.py:1268]: User aircraft loaded. Reloading PID gains.
+2026-06-04 18:23:55,799 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=5.0m, right=0.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=-5.00, psi=0.0
+2026-06-04 18:23:55,799 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=3.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=3.00, psi=90.0
+2026-06-04 18:23:55,799 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=0.0m, up=2.5m, heading=15.0deg. New target: x=0.00, y=12.50, z=0.00, psi=15.0
+2026-06-04 18:26:53,612 [INFO] [logger.py:71]: ====================================================
+2026-06-04 18:26:53,613 [INFO] [logger.py:72]: Helicopter Instructor logging system initialized.
+2026-06-04 18:26:53,613 [INFO] [logger.py:73]: ====================================================
+2026-06-04 18:26:53,621 [INFO] [audio.py:71]: Preloaded 26 audio assets into memory.
+2026-06-04 18:26:53,622 [INFO] [PI_helicopter_instructor.py:654]: Plugin started successfully (version 2.1.56).
+2026-06-04 18:26:53,622 [INFO] [PI_helicopter_instructor.py:675]: Plugin stopped.
+2026-06-04 18:26:53,623 [INFO] [PI_helicopter_instructor.py:1268]: User aircraft loaded. Reloading PID gains.
+2026-06-04 18:26:53,624 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=5.0m, right=0.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=-5.00, psi=0.0
+2026-06-04 18:26:53,624 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=3.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=3.00, psi=90.0
+2026-06-04 18:26:53,624 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=0.0m, up=2.5m, heading=15.0deg. New target: x=0.00, y=12.50, z=0.00, psi=15.0
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:690]: Student completed final Phase 6 by holding Excellent envelope for 35.0s. Curriculum complete!
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:682]: Student completed Phase 3 by holding Excellent envelope for 35.0s. Advancing to Phase 4.
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:682]: Student completed Phase 2 by holding Excellent envelope for 35.0s. Advancing to Phase 3.
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> VFI_FLIGHT
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:682]: Student completed Phase 3 by holding Excellent envelope for 35.0s. Advancing to Phase 4.
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> VFI_FLIGHT
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:26:53,626 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: RECOVERY_HOLD -> SYNCING
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:606]: Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:606]: Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:643]: Control synchronization complete. Handed authority for ['ROLL', 'PITCH'] to STUDENT.
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:26:53,627 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Altitude 1.8m AGL below minimum limit of 2.0m | Telemetry snapshot: pitch=0.0°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=1.8m
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:26:53,627 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Altitude 12.0m AGL above maximum limit of 10.0m | Telemetry snapshot: pitch=0.0°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=12.0m
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:26:53,627 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Roll attitude 16.0° exceeded limit of ±15.0° | Telemetry snapshot: pitch=0.0°, roll=16.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: RECOVERY_HOLD -> SYNCING
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:26:53,627 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Pitch attitude -15.5° exceeded limit of ±15.0° | Telemetry snapshot: pitch=-15.5°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:26:53,627 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:26:53,628 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Horizontal drift distance 47.0m exceeded safety limit of 45.0m | Telemetry snapshot: pitch=0.0°, roll=5.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:26:53,628 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:26:53,628 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:26:53,628 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:26:53,628 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:26:53,628 [INFO] [virtual_instructor.py:623]: Axis YAW synchronized (hardware matched VFI target).
+2026-06-04 18:26:53,628 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:26:53,628 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:26:53,628 [INFO] [virtual_instructor.py:623]: Axis YAW synchronized (hardware matched VFI target).
+2026-06-04 18:26:53,628 [INFO] [virtual_instructor.py:643]: Control synchronization complete. Handed authority for ['YAW'] to STUDENT.
+2026-06-04 18:26:53,628 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:27:09,112 [INFO] [logger.py:71]: ====================================================
+2026-06-04 18:27:09,112 [INFO] [logger.py:72]: Helicopter Instructor logging system initialized.
+2026-06-04 18:27:09,112 [INFO] [logger.py:73]: ====================================================
+2026-06-04 18:27:09,116 [INFO] [audio.py:71]: Preloaded 26 audio assets into memory.
+2026-06-04 18:27:09,116 [INFO] [PI_helicopter_instructor.py:654]: Plugin started successfully (version 2.1.56).
+2026-06-04 18:27:09,117 [INFO] [PI_helicopter_instructor.py:675]: Plugin stopped.
+2026-06-04 18:27:09,117 [INFO] [PI_helicopter_instructor.py:1268]: User aircraft loaded. Reloading PID gains.
+2026-06-04 18:27:09,118 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=5.0m, right=0.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=-5.00, psi=0.0
+2026-06-04 18:27:09,118 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=3.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=3.00, psi=90.0
+2026-06-04 18:27:09,118 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=0.0m, up=2.5m, heading=15.0deg. New target: x=0.00, y=12.50, z=0.00, psi=15.0
+2026-06-04 18:27:09,120 [INFO] [virtual_instructor.py:690]: Student completed final Phase 6 by holding Excellent envelope for 35.0s. Curriculum complete!
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:682]: Student completed Phase 3 by holding Excellent envelope for 35.0s. Advancing to Phase 4.
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:682]: Student completed Phase 2 by holding Excellent envelope for 35.0s. Advancing to Phase 3.
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> VFI_FLIGHT
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:682]: Student completed Phase 3 by holding Excellent envelope for 35.0s. Advancing to Phase 4.
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> VFI_FLIGHT
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: RECOVERY_HOLD -> SYNCING
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:606]: Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:606]: Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:643]: Control synchronization complete. Handed authority for ['ROLL', 'PITCH'] to STUDENT.
+2026-06-04 18:27:09,121 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:27:09,121 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Altitude 1.8m AGL below minimum limit of 2.0m | Telemetry snapshot: pitch=0.0°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=1.8m
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:09,122 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Altitude 12.0m AGL above maximum limit of 10.0m | Telemetry snapshot: pitch=0.0°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=12.0m
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:09,122 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Roll attitude 16.0° exceeded limit of ±15.0° | Telemetry snapshot: pitch=0.0°, roll=16.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: RECOVERY_HOLD -> SYNCING
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:09,122 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Pitch attitude -15.5° exceeded limit of ±15.0° | Telemetry snapshot: pitch=-15.5°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:09,122 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Horizontal drift distance 47.0m exceeded safety limit of 45.0m | Telemetry snapshot: pitch=0.0°, roll=5.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:623]: Axis YAW synchronized (hardware matched VFI target).
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:09,122 [INFO] [virtual_instructor.py:623]: Axis YAW synchronized (hardware matched VFI target).
+2026-06-04 18:27:09,123 [INFO] [virtual_instructor.py:643]: Control synchronization complete. Handed authority for ['YAW'] to STUDENT.
+2026-06-04 18:27:09,123 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:27:37,655 [INFO] [logger.py:71]: ====================================================
+2026-06-04 18:27:37,656 [INFO] [logger.py:72]: Helicopter Instructor logging system initialized.
+2026-06-04 18:27:37,656 [INFO] [logger.py:73]: ====================================================
+2026-06-04 18:27:37,659 [INFO] [audio.py:71]: Preloaded 26 audio assets into memory.
+2026-06-04 18:27:37,659 [INFO] [PI_helicopter_instructor.py:654]: Plugin started successfully (version 2.1.56).
+2026-06-04 18:27:37,660 [INFO] [PI_helicopter_instructor.py:675]: Plugin stopped.
+2026-06-04 18:27:37,660 [INFO] [PI_helicopter_instructor.py:1268]: User aircraft loaded. Reloading PID gains.
+2026-06-04 18:27:37,661 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=5.0m, right=0.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=-5.00, psi=0.0
+2026-06-04 18:27:37,661 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=3.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=3.00, psi=90.0
+2026-06-04 18:27:37,661 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=0.0m, up=2.5m, heading=15.0deg. New target: x=0.00, y=12.50, z=0.00, psi=15.0
+2026-06-04 18:27:37,662 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:27:37,662 [INFO] [metrics.py:164]: Coaching cue triggered: We are too low.wav
+2026-06-04 18:27:37,662 [INFO] [metrics.py:164]: Coaching cue triggered: We are too high.wav
+2026-06-04 18:27:37,662 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 100.0%, excellent: 0.0%)
+2026-06-04 18:27:37,662 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:27:37,662 [INFO] [metrics.py:164]: Coaching cue triggered: Relax cyclic.wav
+2026-06-04 18:27:37,662 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 50.0%)
+2026-06-04 18:27:37,662 [INFO] [metrics.py:612]: Proficiency envelope transition: GOOD -> EXCELLENT (unstable: 0.0%, excellent: 66.7%)
+2026-06-04 18:27:37,662 [INFO] [metrics.py:164]: Coaching cue triggered: Nice recovery.wav
+2026-06-04 18:27:37,663 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 50.0%)
+2026-06-04 18:27:37,663 [INFO] [metrics.py:164]: Coaching cue triggered: Perfect.wav
+2026-06-04 18:27:37,663 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:27:37,663 [INFO] [metrics.py:612]: Proficiency envelope transition: GOOD -> EXCELLENT (unstable: 0.0%, excellent: 100.0%)
+2026-06-04 18:27:37,663 [INFO] [metrics.py:164]: Coaching cue triggered: Great pedals.wav
+2026-06-04 18:27:37,663 [INFO] [metrics.py:164]: Coaching cue triggered: Nice recovery.wav
+2026-06-04 18:27:37,663 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 50.0%, excellent: 50.0%)
+2026-06-04 18:27:37,663 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:27:37,663 [INFO] [metrics.py:612]: Proficiency envelope transition: GOOD -> EXCELLENT (unstable: 0.0%, excellent: 66.7%)
+2026-06-04 18:27:37,663 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 50.0%, excellent: 50.0%)
+2026-06-04 18:27:37,664 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 30.0%, excellent: 70.0%)
+2026-06-04 18:27:37,664 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:690]: Student completed final Phase 6 by holding Excellent envelope for 35.0s. Curriculum complete!
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:682]: Student completed Phase 3 by holding Excellent envelope for 35.0s. Advancing to Phase 4.
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:682]: Student completed Phase 2 by holding Excellent envelope for 35.0s. Advancing to Phase 3.
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> VFI_FLIGHT
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:682]: Student completed Phase 3 by holding Excellent envelope for 35.0s. Advancing to Phase 4.
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> VFI_FLIGHT
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:254]: VFI state transition: RECOVERY_HOLD -> SYNCING
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:37,664 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:606]: Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:606]: Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:643]: Control synchronization complete. Handed authority for ['ROLL', 'PITCH'] to STUDENT.
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:27:37,665 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Altitude 1.8m AGL below minimum limit of 2.0m | Telemetry snapshot: pitch=0.0°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=1.8m
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:37,665 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Altitude 12.0m AGL above maximum limit of 10.0m | Telemetry snapshot: pitch=0.0°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=12.0m
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:37,665 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Roll attitude 16.0° exceeded limit of ±15.0° | Telemetry snapshot: pitch=0.0°, roll=16.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:254]: VFI state transition: RECOVERY_HOLD -> SYNCING
+2026-06-04 18:27:37,665 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:37,665 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Pitch attitude -15.5° exceeded limit of ±15.0° | Telemetry snapshot: pitch=-15.5°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:37,666 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Horizontal drift distance 47.0m exceeded safety limit of 45.0m | Telemetry snapshot: pitch=0.0°, roll=5.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:623]: Axis YAW synchronized (hardware matched VFI target).
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:623]: Axis YAW synchronized (hardware matched VFI target).
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:643]: Control synchronization complete. Handed authority for ['YAW'] to STUDENT.
+2026-06-04 18:27:37,666 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:27:49,588 [INFO] [logger.py:71]: ====================================================
+2026-06-04 18:27:49,588 [INFO] [logger.py:72]: Helicopter Instructor logging system initialized.
+2026-06-04 18:27:49,588 [INFO] [logger.py:73]: ====================================================
+2026-06-04 18:27:49,592 [INFO] [audio.py:71]: Preloaded 26 audio assets into memory.
+2026-06-04 18:27:49,592 [INFO] [PI_helicopter_instructor.py:654]: Plugin started successfully (version 2.1.56).
+2026-06-04 18:27:49,593 [INFO] [PI_helicopter_instructor.py:675]: Plugin stopped.
+2026-06-04 18:27:49,593 [INFO] [PI_helicopter_instructor.py:1268]: User aircraft loaded. Reloading PID gains.
+2026-06-04 18:27:49,594 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=5.0m, right=0.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=-5.00, psi=0.0
+2026-06-04 18:27:49,595 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=3.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=3.00, psi=90.0
+2026-06-04 18:27:49,595 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=0.0m, up=2.5m, heading=15.0deg. New target: x=0.00, y=12.50, z=0.00, psi=15.0
+2026-06-04 18:27:49,601 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:27:49,601 [INFO] [metrics.py:164]: Coaching cue triggered: We are too low.wav
+2026-06-04 18:27:49,601 [INFO] [metrics.py:164]: Coaching cue triggered: We are too high.wav
+2026-06-04 18:27:49,601 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 100.0%, excellent: 0.0%)
+2026-06-04 18:27:49,601 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:27:49,602 [INFO] [metrics.py:164]: Coaching cue triggered: Relax cyclic.wav
+2026-06-04 18:27:49,602 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 50.0%)
+2026-06-04 18:27:49,602 [INFO] [metrics.py:612]: Proficiency envelope transition: GOOD -> EXCELLENT (unstable: 0.0%, excellent: 66.7%)
+2026-06-04 18:27:49,602 [INFO] [metrics.py:164]: Coaching cue triggered: Nice recovery.wav
+2026-06-04 18:27:49,602 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 50.0%)
+2026-06-04 18:27:49,602 [INFO] [metrics.py:164]: Coaching cue triggered: Perfect.wav
+2026-06-04 18:27:49,602 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:27:49,602 [INFO] [metrics.py:612]: Proficiency envelope transition: GOOD -> EXCELLENT (unstable: 0.0%, excellent: 100.0%)
+2026-06-04 18:27:49,602 [INFO] [metrics.py:164]: Coaching cue triggered: Great pedals.wav
+2026-06-04 18:27:49,602 [INFO] [metrics.py:164]: Coaching cue triggered: Nice recovery.wav
+2026-06-04 18:27:49,602 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 50.0%, excellent: 50.0%)
+2026-06-04 18:27:49,603 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:27:49,603 [INFO] [metrics.py:612]: Proficiency envelope transition: GOOD -> EXCELLENT (unstable: 0.0%, excellent: 66.7%)
+2026-06-04 18:27:49,603 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 50.0%, excellent: 50.0%)
+2026-06-04 18:27:49,603 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 30.0%, excellent: 70.0%)
+2026-06-04 18:27:49,603 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:27:49,603 [INFO] [virtual_instructor.py:690]: Student completed final Phase 6 by holding Excellent envelope for 35.0s. Curriculum complete!
+2026-06-04 18:27:49,603 [INFO] [virtual_instructor.py:682]: Student completed Phase 3 by holding Excellent envelope for 35.0s. Advancing to Phase 4.
+2026-06-04 18:27:49,603 [INFO] [virtual_instructor.py:682]: Student completed Phase 2 by holding Excellent envelope for 35.0s. Advancing to Phase 3.
+2026-06-04 18:27:49,603 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> VFI_FLIGHT
+2026-06-04 18:27:49,603 [INFO] [virtual_instructor.py:682]: Student completed Phase 3 by holding Excellent envelope for 35.0s. Advancing to Phase 4.
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> VFI_FLIGHT
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: RECOVERY_HOLD -> SYNCING
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:606]: Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:606]: Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:643]: Control synchronization complete. Handed authority for ['ROLL', 'PITCH'] to STUDENT.
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:27:49,604 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Altitude 1.8m AGL below minimum limit of 2.0m | Telemetry snapshot: pitch=0.0°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=1.8m
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:49,604 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Altitude 12.0m AGL above maximum limit of 10.0m | Telemetry snapshot: pitch=0.0°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=12.0m
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:49,604 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Roll attitude 16.0° exceeded limit of ±15.0° | Telemetry snapshot: pitch=0.0°, roll=16.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:49,604 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:254]: VFI state transition: RECOVERY_HOLD -> SYNCING
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:49,605 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Pitch attitude -15.5° exceeded limit of ±15.0° | Telemetry snapshot: pitch=-15.5°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:49,605 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Horizontal drift distance 47.0m exceeded safety limit of 45.0m | Telemetry snapshot: pitch=0.0°, roll=5.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:623]: Axis YAW synchronized (hardware matched VFI target).
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:623]: Axis YAW synchronized (hardware matched VFI target).
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:643]: Control synchronization complete. Handed authority for ['YAW'] to STUDENT.
+2026-06-04 18:27:49,605 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:38:24,533 [INFO] [logger.py:71]: ====================================================
+2026-06-04 18:38:24,533 [INFO] [logger.py:72]: Helicopter Instructor logging system initialized.
+2026-06-04 18:38:24,533 [INFO] [logger.py:73]: ====================================================
+2026-06-04 18:38:24,537 [INFO] [audio.py:71]: Preloaded 26 audio assets into memory.
+2026-06-04 18:38:24,537 [INFO] [PI_helicopter_instructor.py:654]: Plugin started successfully (version 2.1.57).
+2026-06-04 18:38:24,537 [INFO] [PI_helicopter_instructor.py:675]: Plugin stopped.
+2026-06-04 18:38:24,538 [INFO] [PI_helicopter_instructor.py:1268]: User aircraft loaded. Reloading PID gains.
+2026-06-04 18:38:24,539 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=5.0m, right=0.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=-5.00, psi=0.0
+2026-06-04 18:38:24,539 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=3.0m, up=0.0m, heading=0.0deg. New target: x=0.00, y=10.00, z=3.00, psi=90.0
+2026-06-04 18:38:24,539 [INFO] [PI_helicopter_instructor.py:1398]: Adjusted hover target by forward=0.0m, right=0.0m, up=2.5m, heading=15.0deg. New target: x=0.00, y=12.50, z=0.00, psi=15.0
+2026-06-04 18:38:24,545 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:38:24,545 [INFO] [metrics.py:164]: Coaching cue triggered: We are too low.wav
+2026-06-04 18:38:24,545 [INFO] [metrics.py:164]: Coaching cue triggered: We are too high.wav
+2026-06-04 18:38:24,545 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 100.0%, excellent: 0.0%)
+2026-06-04 18:38:24,545 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:38:24,545 [INFO] [metrics.py:164]: Coaching cue triggered: Relax cyclic.wav
+2026-06-04 18:38:24,546 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 50.0%)
+2026-06-04 18:38:24,546 [INFO] [metrics.py:612]: Proficiency envelope transition: GOOD -> EXCELLENT (unstable: 0.0%, excellent: 66.7%)
+2026-06-04 18:38:24,546 [INFO] [metrics.py:164]: Coaching cue triggered: Nice recovery.wav
+2026-06-04 18:38:24,546 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 50.0%)
+2026-06-04 18:38:24,546 [INFO] [metrics.py:164]: Coaching cue triggered: Perfect.wav
+2026-06-04 18:38:24,546 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:38:24,546 [INFO] [metrics.py:612]: Proficiency envelope transition: GOOD -> EXCELLENT (unstable: 0.0%, excellent: 100.0%)
+2026-06-04 18:38:24,546 [INFO] [metrics.py:164]: Coaching cue triggered: Great pedals.wav
+2026-06-04 18:38:24,546 [INFO] [metrics.py:164]: Coaching cue triggered: Nice recovery.wav
+2026-06-04 18:38:24,546 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 50.0%, excellent: 50.0%)
+2026-06-04 18:38:24,546 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:38:24,547 [INFO] [metrics.py:612]: Proficiency envelope transition: GOOD -> EXCELLENT (unstable: 0.0%, excellent: 66.7%)
+2026-06-04 18:38:24,547 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 50.0%, excellent: 50.0%)
+2026-06-04 18:38:24,547 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> UNSTABLE (unstable: 30.0%, excellent: 70.0%)
+2026-06-04 18:38:24,547 [INFO] [metrics.py:612]: Proficiency envelope transition: EXCELLENT -> GOOD (unstable: 0.0%, excellent: 0.0%)
+2026-06-04 18:38:24,547 [INFO] [virtual_instructor.py:690]: Student completed final Phase 6 by holding Excellent envelope for 35.0s. Curriculum complete!
+2026-06-04 18:38:24,547 [INFO] [virtual_instructor.py:682]: Student completed Phase 3 by holding Excellent envelope for 35.0s. Advancing to Phase 4.
+2026-06-04 18:38:24,547 [INFO] [virtual_instructor.py:682]: Student completed Phase 2 by holding Excellent envelope for 35.0s. Advancing to Phase 3.
+2026-06-04 18:38:24,547 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> VFI_FLIGHT
+2026-06-04 18:38:24,547 [INFO] [virtual_instructor.py:682]: Student completed Phase 3 by holding Excellent envelope for 35.0s. Advancing to Phase 4.
+2026-06-04 18:38:24,547 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> VFI_FLIGHT
+2026-06-04 18:38:24,547 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:38:24,547 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:38:24,547 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:38:24,547 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: RECOVERY_HOLD -> SYNCING
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:606]: Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 4 (CYCLIC ONLY (ROLL/PITCH)). Student must synchronize hardware for axes: ['ROLL', 'PITCH'].
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:606]: Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:643]: Control synchronization complete. Handed authority for ['ROLL', 'PITCH'] to STUDENT.
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT
+2026-06-04 18:38:24,548 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Altitude 1.8m AGL below minimum limit of 2.0m | Telemetry snapshot: pitch=0.0°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=1.8m
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:38:24,548 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Altitude 12.0m AGL above maximum limit of 10.0m | Telemetry snapshot: pitch=0.0°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=12.0m
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:38:24,548 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Roll attitude 16.0° exceeded limit of ±15.0° | Telemetry snapshot: pitch=0.0°, roll=16.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: RECOVERY_HOLD -> SYNCING
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:38:24,548 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Pitch attitude -15.5° exceeded limit of ±15.0° | Telemetry snapshot: pitch=-15.5°, roll=10.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:38:24,548 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:38:24,549 [WARNING] [virtual_instructor.py:378]: Safety Override Triggered: Horizontal drift distance 47.0m exceeded safety limit of 45.0m | Telemetry snapshot: pitch=0.0°, roll=5.0°, yaw_rate=0.0°/s, vspeed=0.0 ft/min, agl=5.0m
+2026-06-04 18:38:24,549 [INFO] [virtual_instructor.py:254]: VFI state transition: STUDENT_FLIGHT -> OVERRIDE
+2026-06-04 18:38:24,549 [INFO] [virtual_instructor.py:254]: VFI state transition: OVERRIDE -> RECOVERY_HOLD
+2026-06-04 18:38:24,549 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:38:24,549 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:38:24,549 [INFO] [virtual_instructor.py:623]: Axis YAW synchronized (hardware matched VFI target).
+2026-06-04 18:38:24,549 [INFO] [virtual_instructor.py:254]: VFI state transition: VFI_FLIGHT -> SYNCING
+2026-06-04 18:38:24,549 [INFO] [virtual_instructor.py:323]: Handoff sequence initiated for Phase 1 (PEDALS ONLY (YAW)). Student must synchronize hardware for axes: ['YAW'].
+2026-06-04 18:38:24,549 [INFO] [virtual_instructor.py:623]: Axis YAW synchronized (hardware matched VFI target).
+2026-06-04 18:38:24,549 [INFO] [virtual_instructor.py:643]: Control synchronization complete. Handed authority for ['YAW'] to STUDENT.
+2026-06-04 18:38:24,549 [INFO] [virtual_instructor.py:254]: VFI state transition: SYNCING -> STUDENT_FLIGHT

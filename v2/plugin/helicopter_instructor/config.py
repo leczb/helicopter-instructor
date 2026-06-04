@@ -1,12 +1,15 @@
 """Configuration manager submodule for Helicopter Flight Instructor."""
 
 import json
+import logging
 import os
 
 # pyrefly: ignore [missing-import]
 import xp
 
 from helicopter_instructor.autopilot.helicopter_control import AutopilotGains
+
+log = logging.getLogger("helicopter_instructor")
 
 
 def get_gains_filepath(plugin_dir):
@@ -28,7 +31,7 @@ def get_gains_filepath(plugin_dir):
             )
             return os.path.join(autopilot_dir, f"autopilot_gains_{aircraft_name}.json")
     except Exception as e:
-        xp.log("Helicopter Flight Instructor: " f"Error getting aircraft filename: {e}")
+        log.error(f"Error getting aircraft filename: {e}")
     return os.path.join(autopilot_dir, "autopilot_gains.json")
 
 
@@ -47,12 +50,9 @@ def save_gains(plugin_dir, gains):
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, "w") as f:
             json.dump(gains.to_dict(), f, indent=4)
-        xp.log(
-            "Helicopter Flight Instructor: Saved PID gains to "
-            f"{os.path.basename(filepath)}."
-        )
+        log.info(f"Saved PID gains to {os.path.basename(filepath)}.")
     except Exception as e:
-        xp.log(f"Helicopter Flight Instructor: Error saving gains: {e}")
+        log.error(f"Error saving gains: {e}")
 
 
 def load_gains(plugin_dir):
@@ -76,11 +76,9 @@ def load_gains(plugin_dir):
             data = json.load(f)
 
         gains = AutopilotGains.from_dict(data)
-        xp.log(
-            "Helicopter Flight Instructor: Loaded PID gains from "
-            f"{os.path.basename(filepath)}."
-        )
+        log.info(f"Loaded PID gains from {os.path.basename(filepath)}.")
         return gains
     except Exception as e:
-        xp.log(f"Helicopter Flight Instructor: Error loading gains: {e}")
+        log.error(f"Error loading gains: {e}")
         return None
+

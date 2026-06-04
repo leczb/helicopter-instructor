@@ -1,3 +1,4 @@
+import logging
 import math
 
 from helicopter_instructor.enums import Authority
@@ -85,6 +86,8 @@ PHASE_NAMES = {
     5: "CYCLIC + PEDALS",
     6: "ALL THREE CONTROLS (FULL HANDOVER)",
 }
+
+log = logging.getLogger("helicopter_instructor")
 
 
 class VFIEvent(object):
@@ -248,6 +251,7 @@ class VirtualInstructor(object):
                     f"Invalid transition: {old_state} -> {new_state}"
                 )
             self._system_state = new_state
+            log.info(f"VFI state transition: {old_state.name} -> {new_state.name}")
             self._emit_event(StateChangedEvent(old_state, new_state))
 
     def reset_to_vfi_flight(self):
@@ -280,13 +284,18 @@ class VirtualInstructor(object):
             phase_num: The target curriculum phase number (1 to 6).
         """
         if phase_num in PHASE_CONFIGS:
+            old_phase = self.phase
             self.phase = phase_num
+            log.info(
+                f"Lesson phase manually set: Phase {old_phase} ({PHASE_NAMES[old_phase]}) -> "
+                f"Phase {phase_num} ({PHASE_NAMES[phase_num]})"
+            )
             # If the student is already flying, we should shift to syncing the
             # new phase controls
             if self.system_state in (
-            VFIState.STUDENT_FLIGHT,
-            VFIState.SYNCING,
-        ):
+                VFIState.STUDENT_FLIGHT,
+                VFIState.SYNCING,
+            ):
                 self.initiate_handoff()
             else:
                 self.set_hud_caption(f"PHASE {self.phase} SELECTED")
@@ -298,6 +307,7 @@ class VirtualInstructor(object):
 
         # Determine target axes that belong to the student in this phase
         phase_config = PHASE_CONFIGS[self.phase]
+        student_axes = []
         for axis in self.control_assignment:
             # Re-initialize syncing locks. If an axis belongs to VFI, it's
             # immediately "synced" (no sync needed)
@@ -308,6 +318,12 @@ class VirtualInstructor(object):
                 # VFI holds flight authority during matching
                 self.control_assignment[axis] = Authority.VFI
                 self.sync_locked[axis] = False
+                student_axes.append(axis.name)
+
+        log.info(
+            f"Handoff sequence initiated for Phase {self.phase} ({PHASE_NAMES[self.phase]}). "
+            f"Student must synchronize hardware for axes: {student_axes}."
+        )
 
         self.set_hud_caption(
             "PREPARE TO TAKE THE CONTROLS",
@@ -355,11 +371,20 @@ class VirtualInstructor(object):
             target_z = telemetry.get("target_z", None)
 
             # Check if any safety limit is violated
-            is_unsafe = self.check_safety_limits(telemetry)
+            breach_reason = self.get_safety_breach_reason(telemetry)
 
-            if is_unsafe:
-                # Capture current position as the temporary stabilization hover
-                # target
+            if breach_reason is not None:
+                # Log detailed safety breach reasons (triggered exactly once on state transition)
+                log.warning(
+                    f"Safety Override Triggered: {breach_reason} | Telemetry snapshot: "
+                    f"pitch={telemetry.get('theta', 0.0):.1f}°, "
+                    f"roll={telemetry.get('phi', 0.0):.1f}°, "
+                    f"yaw_rate={telemetry.get('R', 0.0):.1f}°/s, "
+                    f"vspeed={telemetry.get('vy', 0.0) * M_S_TO_FT_MIN:.1f} ft/min, "
+                    f"agl={telemetry.get('y_agl', 0.0):.1f}m"
+                )
+
+                # Capture current position as the temporary stabilization hover target
                 if (
                     x is not None
                     and y is not None
@@ -451,33 +476,37 @@ class VirtualInstructor(object):
 
         return UpdateResult(vfi_inputs, events + self._events)
 
-    def check_safety_limits(self, telemetry):
-        """Checks structural/aerodynamic hazard boundaries.
+    def get_safety_breach_reason(self, telemetry):
+        """Checks structural/aerodynamic hazard boundaries and returns the breach reason.
 
         Args:
             telemetry: Dict containing current flight states.
 
         Returns:
-            True if any safety limit is violated, False otherwise.
+            A string describing the first breached limit, or None if safe.
         """
         # Pitch limit (+-15 degrees)
-        if abs(telemetry.get("theta", 0.0)) > LIMIT_ATTITUDE_DEG:
-            return True
+        pitch = telemetry.get("theta", 0.0)
+        if abs(pitch) > LIMIT_ATTITUDE_DEG:
+            return f"Pitch attitude {pitch:.1f}° exceeded limit of ±{LIMIT_ATTITUDE_DEG}°"
+
         # Roll limit (+-15 degrees)
-        if abs(telemetry.get("phi", 0.0)) > LIMIT_ATTITUDE_DEG:
-            return True
+        roll = telemetry.get("phi", 0.0)
+        if abs(roll) > LIMIT_ATTITUDE_DEG:
+            return f"Roll attitude {roll:.1f}° exceeded limit of ±{LIMIT_ATTITUDE_DEG}°"
+
         # Yaw rate limit (+-30 deg/sec)
-        if abs(telemetry.get("R", 0.0)) > LIMIT_YAW_RATE_DEG_S:
-            return True
+        yaw_rate = telemetry.get("R", 0.0)
+        if abs(yaw_rate) > LIMIT_YAW_RATE_DEG_S:
+            return f"Yaw rate {yaw_rate:.1f}°/s exceeded limit of ±{LIMIT_YAW_RATE_DEG_S}°/s"
 
         # Vertical speed: sinking > 300 ft/min or climbing > 300 ft/min
         vy_m_s = telemetry.get("vy", 0.0)
         vspeed_ft_min = vy_m_s * M_S_TO_FT_MIN
-        if (
-            vspeed_ft_min < -LIMIT_VSPEED_FT_MIN
-            or vspeed_ft_min > LIMIT_VSPEED_FT_MIN
-        ):
-            return True
+        if vspeed_ft_min < -LIMIT_VSPEED_FT_MIN:
+            return f"Sink rate {vspeed_ft_min:.1f} ft/min exceeded limit of {LIMIT_VSPEED_FT_MIN} ft/min"
+        if vspeed_ft_min > LIMIT_VSPEED_FT_MIN:
+            return f"Climb rate {vspeed_ft_min:.1f} ft/min exceeded limit of {LIMIT_VSPEED_FT_MIN} ft/min"
 
         # Ground speed drift > 12 knots
         vx = telemetry.get("vx", 0.0)
@@ -485,29 +514,23 @@ class VirtualInstructor(object):
         gs_m_s = math.sqrt(vx**2 + vz**2)
         gs_knots = gs_m_s * M_S_TO_KNOTS
         if gs_knots > LIMIT_GS_KNOTS:
-            return True
+            return f"Ground speed {gs_knots:.1f} knots exceeded limit of {LIMIT_GS_KNOTS} knots"
 
         # Terrain height (AGL) < 2.0 meters or > 10.0 meters
         y_agl = telemetry.get("y_agl", 10.0)
-        if y_agl < LIMIT_AGL_MIN_M or y_agl > LIMIT_AGL_MAX_M:
-            return True
+        if y_agl < LIMIT_AGL_MIN_M:
+            return f"Altitude {y_agl:.1f}m AGL below minimum limit of {LIMIT_AGL_MIN_M}m"
+        if y_agl > LIMIT_AGL_MAX_M:
+            return f"Altitude {y_agl:.1f}m AGL above maximum limit of {LIMIT_AGL_MAX_M}m"
 
         # Heading Safety Zone Detection
-        # (+-0..green green, +-green..orange orange, outside orange red/unsafe)
         psi = telemetry.get("psi", None)
         target_psi = telemetry.get("target_psi", None)
         if psi is not None and target_psi is not None:
             err = (target_psi - psi + 180.0) % 360.0 - 180.0
             abs_err = abs(err)
-            if abs_err <= LIMIT_HDG_GREEN_DEG:
-                self.heading_zone = HeadingZone.GREEN
-            elif abs_err <= LIMIT_HDG_ORANGE_DEG:
-                self.heading_zone = HeadingZone.ORANGE
-            else:
-                self.heading_zone = HeadingZone.RED
-                return True
-        else:
-            self.heading_zone = HeadingZone.GREEN
+            if abs_err > LIMIT_HDG_ORANGE_DEG:
+                return f"Heading error {abs_err:.1f}° exceeded safety limit of {LIMIT_HDG_ORANGE_DEG}°"
 
         # Hovering safety distance from target (default: 45 meters)
         x = telemetry.get("x", None)
@@ -522,9 +545,35 @@ class VirtualInstructor(object):
         ):
             dist = math.sqrt((x - target_x) ** 2 + (z - target_z) ** 2)
             if dist > self.hover_safety_radius:
-                return True
+                return f"Horizontal drift distance {dist:.1f}m exceeded safety limit of {self.hover_safety_radius}m"
 
-        return False
+        return None
+
+    def check_safety_limits(self, telemetry):
+        """Checks structural/aerodynamic hazard boundaries.
+
+        Args:
+            telemetry: Dict containing current flight states.
+
+        Returns:
+            True if any safety limit is violated, False otherwise.
+        """
+        # Maintain the side-effect of setting self.heading_zone
+        psi = telemetry.get("psi", None)
+        target_psi = telemetry.get("target_psi", None)
+        if psi is not None and target_psi is not None:
+            err = (target_psi - psi + 180.0) % 360.0 - 180.0
+            abs_err = abs(err)
+            if abs_err <= LIMIT_HDG_GREEN_DEG:
+                self.heading_zone = HeadingZone.GREEN
+            elif abs_err <= LIMIT_HDG_ORANGE_DEG:
+                self.heading_zone = HeadingZone.ORANGE
+            else:
+                self.heading_zone = HeadingZone.RED
+        else:
+            self.heading_zone = HeadingZone.GREEN
+
+        return self.get_safety_breach_reason(telemetry) is not None
 
     def process_synchronization(self, dt, hardware, vfi_inputs):
         """Monitors physical controls until they match active VFI commands.
@@ -553,6 +602,8 @@ class VirtualInstructor(object):
                 + (hardware[ControlAxis.PITCH] - vfi_inputs[ControlAxis.PITCH]) ** 2
             )
             if cyclic_dist <= self.match_tolerance:
+                if not self.sync_locked[ControlAxis.ROLL]:
+                    log.info("Cyclic axes (ROLL/PITCH) synchronized (hardware matched VFI targets).")
                 self.sync_locked[ControlAxis.ROLL] = True
                 self.sync_locked[ControlAxis.PITCH] = True
             else:
@@ -566,10 +617,10 @@ class VirtualInstructor(object):
         # Check other axes individually (yaw, collective)
         for axis in [ControlAxis.YAW, ControlAxis.COLLECTIVE]:
             if phase_config[axis] == Authority.STUDENT:
-                delta = abs(
-                    hardware[axis] - vfi_inputs[axis]
-                )
+                delta = abs(hardware[axis] - vfi_inputs[axis])
                 if delta <= self.match_tolerance:
+                    if not self.sync_locked[axis]:
+                        log.info(f"Axis {axis.name} synchronized (hardware matched VFI target).")
                     self.sync_locked[axis] = True
                 else:
                     self.sync_locked[axis] = False
@@ -583,10 +634,13 @@ class VirtualInstructor(object):
             if self.sync_timer >= self.sync_hold_duration:
                 # Synchronization lock succeeded!
                 # Hot-swap authority to student
+                student_axes = []
                 for axis in ControlAxis:
                     if phase_config[axis] == Authority.STUDENT:
                         self.control_assignment[axis] = Authority.STUDENT
+                        student_axes.append(axis.name)
 
+                log.info(f"Control synchronization complete. Handed authority for {student_axes} to STUDENT.")
                 self.system_state = VFIState.STUDENT_FLIGHT
                 self.set_hud_caption(
                     "YOU HAVE THE CONTROLS",
@@ -625,10 +679,18 @@ class VirtualInstructor(object):
             self.transition_pending = True
             if self.phase < MAX_PHASE:
                 self.transition_target_phase = self.phase + 1
+                log.info(
+                    f"Student completed Phase {self.phase} by holding Excellent envelope "
+                    f"for {PHASE_EXCELLENT_REQUIRED_S}s. Advancing to Phase {self.phase + 1}."
+                )
             else:
                 # Already on the final phase; signal completion.
                 self.transition_target_phase = self.phase
                 self.training_complete = True
+                log.info(
+                    f"Student completed final Phase {self.phase} by holding Excellent envelope "
+                    f"for {PHASE_EXCELLENT_REQUIRED_S}s. Curriculum complete!"
+                )
 
     def process_student_inputs(self, telemetry, hardware, vfi_inputs):
         """Processes flight inputs without blending, routing full authority to student on active axes.
@@ -765,3 +827,4 @@ class VirtualInstructor(object):
 
         # Return VFI inputs
         return vfi_inputs
+

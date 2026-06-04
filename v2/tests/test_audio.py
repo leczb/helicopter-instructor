@@ -40,9 +40,17 @@ class TestAudio(unittest.TestCase):
         mock_xp.AudioRadioPilot = 2
         mock_xp.reset_mock()
 
+        # Mock the logger
+        self.mock_log = mock.MagicMock()
+        self.log_patcher = mock.patch("helicopter_instructor.audio.log", self.mock_log)
+        self.log_patcher.start()
+
         # Set up an AudioManager instance
         self.audio_manager = audio.AudioManager("/mock/plugin/dir")
         self.audio_manager.voice_volume = 0.85
+
+    def tearDown(self):
+        self.log_patcher.stop()
 
     @mock.patch("os.path.exists")
     @mock.patch("os.listdir")
@@ -83,7 +91,7 @@ class TestAudio(unittest.TestCase):
         self.assertEqual(sound_info["num_channels"], 1)
 
         # Verify log output
-        mock_xp.log.assert_any_call("Preloaded 2 audio assets into memory.")
+        self.mock_log.info.assert_any_call("Preloaded 2 audio assets into memory.")
 
     def test_play_sound_success(self):
         # Manually register a mock sound in sound_registry
@@ -123,7 +131,7 @@ class TestAudio(unittest.TestCase):
         mock_xp.setAudioVolume.assert_not_called()
 
         # Assert: Error log is written
-        mock_xp.log.assert_called_once_with(
+        self.mock_log.error.assert_called_once_with(
             "Sound Error: Failed to play MissingSound.wav. Sound is not preloaded in memory."
         )
 

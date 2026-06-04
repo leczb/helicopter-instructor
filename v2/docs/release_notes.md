@@ -1,5 +1,14 @@
 # Release Notes
 
+## v2.1.57 - 2026-06-04
+
+- **Improvement**: Enhanced logging architecture for better bug reports and troubleshooting.
+  - Replaced legacy print statements and raw `xp.log` calls with standard Python `logging`.
+  - Configured a dual-handler logging setup: (1) `RotatingFileHandler` writing isolated logs to `helicopter_instructor.log` under the plugin folder, and (2) custom `XPLogHandler` mirroring records to X-Plane's `xp.log` (letting XPPython3 handle the plugin prefix automatically).
+  - Structured logs to capture critical system events (VFI state transitions, synchronization lock states, control handoffs, curriculum phase advancement, and detailed safety breach reasons) on an edge-triggered basis to ensure O(1) file-safety inside the 50Hz flight loop callback.
+  - Logged instructor verbal coaching warnings/praise cue decisions and audio play/stop events (including duration tracking).
+  - Wrapped the 50Hz flight loop callback in a try-except handler to safely log tracebacks of uncaught errors before reporting them to X-Plane.
+
 ## v2.1.56 - 2026-06-04
 
 - **Refactor**: Resolved caption color routing fragility by introducing an

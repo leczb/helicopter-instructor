@@ -1,11 +1,15 @@
 """Audio manager submodule for Helicopter Flight Instructor."""
 
-from helicopter_instructor import graphics
+import logging
 import os
 import wave
 
 # pyrefly: ignore [missing-import]
 import xp
+
+from helicopter_instructor import graphics
+
+log = logging.getLogger("helicopter_instructor")
 
 
 class AudioManager(object):
@@ -26,13 +30,15 @@ class AudioManager(object):
     def preload_sounds(self):
         """Eagerly loads all WAV files in the assets directory into the sound registry to avoid synchronous disk I/O stutters."""
         if not os.path.exists(self.assets_dir):
-            xp.log(f"Assets directory {self.assets_dir} not found. Preloading skipped.")
+            log.warning(
+                f"Assets directory {self.assets_dir} not found. Preloading skipped."
+            )
             return
 
         try:
             filenames = os.listdir(self.assets_dir)
         except Exception as list_err:
-            xp.log(f"Failed to list assets directory. Exception: {str(list_err)}")
+            log.error(f"Failed to list assets directory: {list_err}")
             return
 
         preloaded_count = 0
@@ -56,13 +62,13 @@ class AudioManager(object):
                             "num_channels": wav.getnchannels(),
                             "duration_s": duration_s,
                         }
-                        xp.log(f"Preloaded {filename} ({duration_s:.2f} s)")
+                        log.debug(f"Preloaded {filename} ({duration_s:.2f} s)")
                         preloaded_count += 1
                 except Exception as e:
-                    xp.log(f"Failed to preload {filename}. Exception: {str(e)}")
+                    log.error(f"Failed to preload {filename}: {e}")
 
         if preloaded_count > 0:
-            xp.log(f"Preloaded {preloaded_count} audio assets into memory.")
+            log.info(f"Preloaded {preloaded_count} audio assets into memory.")
 
     def play_sound(self, filename):
         """Plays a preloaded WAV file.
@@ -77,7 +83,7 @@ class AudioManager(object):
         sound_info = self.sound_registry.get(filename)
 
         if not sound_info:
-            xp.log(
+            log.error(
                 f"Sound Error: Failed to play {filename}. Sound is not preloaded in memory."
             )
             return 0.0
@@ -105,20 +111,25 @@ class AudioManager(object):
 
             if channel:
                 self.active_channel = channel
+                log.info(
+                    f"Started playing audio: {filename} (duration: {sound_info['duration_s']:.2f}s)"
+                )
                 try:
                     xp.setAudioVolume(channel, self.voice_volume)
                 except Exception as volume_err:
-                    xp.log(f"Failed to set audio volume. Exception: {str(volume_err)}")
+                    log.error(f"Failed to set audio volume: {volume_err}")
         except Exception as e:
-            xp.log(f"Sound Error: Failed to play {filename}. Exception: {str(e)}")
+            log.error(f"Sound Error: Failed to play {filename}: {e}")
 
         return sound_info["duration_s"]
 
     def stop_sound(self):
         """Stops the currently playing audio channel if active."""
         if self.active_channel:
+            log.info("Stopped audio playback.")
             try:
                 xp.stopAudio(self.active_channel)
             except Exception as stop_err:
-                xp.log(f"Failed to stop audio channel. Exception: {str(stop_err)}")
+                log.error(f"Failed to stop audio channel: {stop_err}")
             self.active_channel = None
+

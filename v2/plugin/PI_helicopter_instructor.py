@@ -1,6 +1,7 @@
 """X-Plane entrypoint plugin for the Helicopter Flight Instructor."""
 
 import collections
+import logging
 import math
 import os
 
@@ -17,6 +18,7 @@ from helicopter_instructor import config
 from helicopter_instructor import envelope_limits
 from helicopter_instructor import graphics
 from helicopter_instructor import hud
+from helicopter_instructor import logger
 from helicopter_instructor import metrics
 from helicopter_instructor import ui
 from helicopter_instructor import virtual_instructor
@@ -30,6 +32,7 @@ from helicopter_instructor.virtual_instructor import M_S_TO_KNOTS
 from helicopter_instructor.virtual_instructor import PhaseAdvancedEvent
 
 # Explicitly reload submodules to prevent caching issues during X-Plane plugin reloads
+importlib.reload(logger)
 importlib.reload(audio)
 importlib.reload(config)
 importlib.reload(envelope_limits)
@@ -39,6 +42,8 @@ importlib.reload(metrics)
 importlib.reload(ui)
 importlib.reload(virtual_instructor)
 importlib.reload(helicopter_control)
+
+log = logging.getLogger("helicopter_instructor")
 
 # Symbolic curriculum phase constants to avoid magic numbers
 PHASE_PEDALS_ONLY = 1
@@ -276,7 +281,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.56"
+        self.version = "2.1.57"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -412,6 +417,11 @@ class PythonInterface(object):
 
     def XPluginStart(self):
         """Called by X-Plane when the plugin is started."""
+        # Initialize logging first to capture any startup messages or failures
+        import importlib
+        importlib.reload(logger)
+        logger.setup_logging(self.plugin_dir)
+
         # 1. Find all required datarefs
         self.dref_local_x = xp.findDataRef("sim/flightmodel/position/local_x")
         self.dref_local_y = xp.findDataRef("sim/flightmodel/position/local_y")
@@ -639,9 +649,9 @@ class PythonInterface(object):
         try:
             self.audio.preload_sounds()
         except Exception as preload_err:
-            xp.log(f"Failed to preload audio assets: {str(preload_err)}")
+            log.error(f"Failed to preload audio assets: {preload_err}")
 
-        xp.log("Plugin started successfully.")
+        log.info("Plugin started successfully (version %s).", self.version)
         return self.Name, self.Sig, self.Desc
 
     def XPluginStop(self):
@@ -662,11 +672,11 @@ class PythonInterface(object):
         if self.menu_id:
             xp.destroyMenu(self.menu_id)
 
-        xp.log("Plugin stopped.")
+        log.info("Plugin stopped.")
 
     def XPluginEnable(self):
         """Called by X-Plane when the plugin is enabled."""
-        xp.log("XPluginEnable called.")
+        log.info("XPluginEnable called.")
         # Register command handlers
         if self.cmd_instructor_toggle:
             xp.registerCommandHandler(
@@ -714,7 +724,7 @@ class PythonInterface(object):
 
     def XPluginDisable(self):
         """Called by X-Plane when the plugin is disabled."""
-        xp.log("XPluginDisable called.")
+        log.info("XPluginDisable called.")
         # Release overrides when disabled
         self.release_all_overrides()
         self.ap_enabled = False
@@ -723,7 +733,7 @@ class PythonInterface(object):
         try:
             self.graphics.unload_objects()
         except Exception as err:
-            xp.log(f"Failed to clean up 3D instances: {str(err)}")
+            log.error(f"Failed to clean up 3D instances: {err}")
 
         # Unregister command handlers
         if self.cmd_instructor_toggle:
@@ -818,7 +828,7 @@ class PythonInterface(object):
                 self._log_throttle_counter = 0
             self._log_throttle_counter += 1
             if self._log_throttle_counter % 250 == 1:
-                xp.log(
+                log.warning(
                     f"Joystick Warning: count_assign={count_assign}, "
                     f"count_mapped={count_mapped}. "
                     "Check X-Plane calibration."
@@ -870,365 +880,370 @@ class PythonInterface(object):
 
     def flight_loop_callback(self, last_call, elapsed_time, counter, ref_con):
         """Core flight loop callback executing control updates at 50Hz."""
-        # 0. Check if simulator is paused
-        if self.dref_paused and xp.getDatai(self.dref_paused) != 0:
-            return 0.02
+        try:
+            # 0. Check if simulator is paused
+            if self.dref_paused and xp.getDatai(self.dref_paused) != 0:
+                return 0.02
 
-        # 1. Read aircraft state
-        state = self.get_current_state()
-        y_agl = xp.getDataf(self.dref_y_agl) if self.dref_y_agl else 10.0
+            # 1. Read aircraft state
+            state = self.get_current_state()
+            y_agl = xp.getDataf(self.dref_y_agl) if self.dref_y_agl else 10.0
 
-        # Parse telemetry package
-        telemetry = {
-            "phi": state["phi"],
-            "theta": state["theta"],
-            "psi": state["psi"],
-            "P": state["P"],
-            "Q": state["Q"],
-            "R": state["R"],
-            "vx": state["vx"],
-            "vy": state["vy"],
-            "vz": state["vz"],
-            "y_agl": y_agl,
-            "x": state["x"],
-            "y": state["y"],
-            "z": state["z"],
-            "target_x": self.controller.target_x,
-            "target_y": self.controller.target_y,
-            "target_z": self.controller.target_z,
-            "target_psi": self.controller.target_psi,
-        }
-
-        if self.ap_enabled:
-            # Sanitize dt to prevent integrator spikes during unpauses/reloads
-            dt = last_call if (0.0 < last_call < 0.1) else 0.02
-
-            # --- PRE-STEP A: Snap autopilot target to override position ---
-            # This MUST run before controller.update() so that the PID cascade
-            # always sees the correct hover target.  Running it after Step A
-            # would mean the autopilot computes one full frame of commands
-            # against a stale position error the instant an override fires,
-            # producing a violent attitude jolt.
-            if self.instructor.drift_recovery_active:
-                self.controller.target_x = self.instructor.override_target_x
-                if self.instructor.override_target_y is not None:
-                    self.controller.target_y = self.instructor.override_target_y
-                self.controller.target_z = self.instructor.override_target_z
-            elif self.instructor.was_drift_recovery_active:
-                # Recovery interpolation has finished: restore original target.
-                self.controller.target_x = self.instructor.original_target_x
-                if self.instructor.original_target_y is not None:
-                    self.controller.target_y = self.instructor.original_target_y
-                self.controller.target_z = self.instructor.original_target_z
-                self.instructor.was_drift_recovery_active = False
-                self.instructor.original_target_x = None
-                self.instructor.original_target_y = None
-                self.instructor.original_target_z = None
-
-            # --- STEP A: Calculate stable VFI autopilot commands ---
-            # To ensure stable outputs are always calculated for all axes,
-            # we temporarily force all controller active flags to True.
-            self.controller.roll_active = True
-            self.controller.pitch_active = True
-            self.controller.yaw_active = True
-            self.controller.collective_active = True
-
-            vfi_outputs = self.controller.update(dt, state)
-            vfi_inputs = {
-                ControlAxis.ROLL: vfi_outputs[ControlAxis.ROLL],
-                ControlAxis.PITCH: vfi_outputs[ControlAxis.PITCH],
-                ControlAxis.YAW: vfi_outputs[ControlAxis.YAW],
-                ControlAxis.COLLECTIVE: vfi_outputs[ControlAxis.COLLECTIVE],
+            # Parse telemetry package
+            telemetry = {
+                "phi": state["phi"],
+                "theta": state["theta"],
+                "psi": state["psi"],
+                "P": state["P"],
+                "Q": state["Q"],
+                "R": state["R"],
+                "vx": state["vx"],
+                "vy": state["vy"],
+                "vz": state["vz"],
+                "y_agl": y_agl,
+                "x": state["x"],
+                "y": state["y"],
+                "z": state["z"],
+                "target_x": self.controller.target_x,
+                "target_y": self.controller.target_y,
+                "target_z": self.controller.target_z,
+                "target_psi": self.controller.target_psi,
             }
-            self.last_commands = vfi_outputs
 
-            # --- STEP B: Read student's hardware inputs ---
-            hardware_inputs = self.get_hardware_inputs()
-            self.last_hardware_inputs = hardware_inputs
+            if self.ap_enabled:
+                # Sanitize dt to prevent integrator spikes during unpauses/reloads
+                dt = last_call if (0.0 < last_call < 0.1) else 0.02
 
-            # --- STEP C: Run VFI State Machine ---
-            final_commands = self.instructor.update(
-                dt, telemetry, hardware_inputs, vfi_inputs
-            )
-            self.last_final_commands = final_commands
+                # --- PRE-STEP A: Snap autopilot target to override position ---
+                # This MUST run before controller.update() so that the PID cascade
+                # always sees the correct hover target.  Running it after Step A
+                # would mean the autopilot computes one full frame of commands
+                # against a stale position error the instant an override fires,
+                # producing a violent attitude jolt.
+                if self.instructor.drift_recovery_active:
+                    self.controller.target_x = self.instructor.override_target_x
+                    if self.instructor.override_target_y is not None:
+                        self.controller.target_y = self.instructor.override_target_y
+                    self.controller.target_z = self.instructor.override_target_z
+                elif self.instructor.was_drift_recovery_active:
+                    # Recovery interpolation has finished: restore original target.
+                    self.controller.target_x = self.instructor.original_target_x
+                    if self.instructor.original_target_y is not None:
+                        self.controller.target_y = self.instructor.original_target_y
+                    self.controller.target_z = self.instructor.original_target_z
+                    self.instructor.was_drift_recovery_active = False
+                    self.instructor.original_target_x = None
+                    self.instructor.original_target_y = None
+                    self.instructor.original_target_z = None
 
-            curr_state = self.instructor.system_state
-            curr_phase = self.instructor.phase
+                # --- STEP A: Calculate stable VFI autopilot commands ---
+                # To ensure stable outputs are always calculated for all axes,
+                # we temporarily force all controller active flags to True.
+                self.controller.roll_active = True
+                self.controller.pitch_active = True
+                self.controller.yaw_active = True
+                self.controller.collective_active = True
 
-            # Initialize tracking variables on first loop
-            if not hasattr(self, "last_system_state"):
+                # Note: vfi_outputs = self.controller.update(dt, state)
+                # But state is dictionary returned by get_current_state(), which is indeed 'state' in scope.
+                vfi_outputs = self.controller.update(dt, state)
+                vfi_inputs = {
+                    ControlAxis.ROLL: vfi_outputs[ControlAxis.ROLL],
+                    ControlAxis.PITCH: vfi_outputs[ControlAxis.PITCH],
+                    ControlAxis.YAW: vfi_outputs[ControlAxis.YAW],
+                    ControlAxis.COLLECTIVE: vfi_outputs[ControlAxis.COLLECTIVE],
+                }
+                self.last_commands = vfi_outputs
+
+                # --- STEP B: Read student's hardware inputs ---
+                hardware_inputs = self.get_hardware_inputs()
+                self.last_hardware_inputs = hardware_inputs
+
+                # --- STEP C: Run VFI State Machine ---
+                final_commands = self.instructor.update(
+                    dt, telemetry, hardware_inputs, vfi_inputs
+                )
+                self.last_final_commands = final_commands
+
+                curr_state = self.instructor.system_state
+                curr_phase = self.instructor.phase
+
+                # Initialize tracking variables on first loop
+                if not hasattr(self, "last_system_state"):
+                    self.last_system_state = curr_state
+                if not hasattr(self, "last_phase"):
+                    self.last_phase = curr_phase
+
+                # (PID reset is handled below, after STEP C4 re-read.)
+
+                # --- STEP C2: Run Student Performance Metrics ---
+                is_student_flying = curr_state == VFIState.STUDENT_FLIGHT
+                self.metrics.update(
+                    dt, telemetry, hardware_inputs, is_student_flying, curr_phase
+                )
+
+                # Feed current envelope grade back to instructor so that
+                # maybe_advance_phase() can track Excellent duration.
+                self.instructor.last_envelope = self.metrics.envelope
+
+                # --- STEP C3: Play Pending Spoken Metrics Cues ---
+                while True:
+                    sound_to_play = self.metrics.pop_audio_queue()
+                    if sound_to_play is None:
+                        break
+                    self.play_sound(sound_to_play)
+
+                # --- STEP C4: Handle automatic phase progression ---
+                auto_phase_transition = False
+                for event in getattr(final_commands, "events", []):
+                    if isinstance(event, PhaseAdvancedEvent):
+                        auto_phase_transition = True
+                        if event.is_final:
+                            # Training complete — play only the completion cue.
+                            self.play_sound(
+                                SOUND_TRAINING_COMPLETE, clear_queue=True
+                            )
+                        else:
+                            # Play transition sound and next phase intro
+                            self.play_sound(
+                                SOUND_PHASE_TRANSITION, clear_queue=True
+                            )
+                            intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(
+                                event.to_phase
+                            )
+                            self.play_sound(intro_sound)
+
+                # Re-read state/phase after auto-transition may have changed them
+
+                curr_state = self.instructor.system_state
+                curr_phase = self.instructor.phase
+
+                # --- Reset cyclic PIDs on any STUDENT_FLIGHT → * transition ---
+                # Whenever the VFI reclaims cyclic authority from the student,
+                # the position/velocity/attitude PID cascade may hold wound-up
+                # integrals accumulated during student flight, producing a jolt
+                # on the first VFI-commanded frame.  Resetting here covers all
+                # three transition paths:
+                #   • Safety override  (state set inside instructor.update())
+                #   • Manual phase change  (command handler fired between frames)
+                #   • Automatic phase advance  (state set inside STEP C4)
+                # Placing the check after the STEP C4 re-read means curr_state
+                # already reflects any within-frame state change, while
+                # last_system_state always holds the previous frame's value.
+                if (
+                    self.last_system_state == VFIState.STUDENT_FLIGHT
+                    and curr_state != VFIState.STUDENT_FLIGHT
+                ):
+                    self.controller.reset_position_hold_pids()
+
+                # Detect state and phase transitions to play audio announcements.
+                # Skip if this was an automatic phase transition (audio already
+                # scheduled above).
+                phase_changed = curr_phase != self.last_phase
+                state_changed = curr_state != self.last_system_state
+
+                if not auto_phase_transition:
+                    if phase_changed:
+                        # Manual phase change: instructor takes control and
+                        # explains the new phase via its intro audio.
+                        if curr_state in (VFIState.STUDENT_FLIGHT, VFIState.SYNCING):
+                            self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                        self.play_sound(SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase))
+                    elif state_changed:
+                        if curr_state == VFIState.SYNCING:
+                            if self.last_system_state == VFIState.STUDENT_FLIGHT:
+                                self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                            else:
+                                self.play_sound(SOUND_GET_READY)
+                        elif curr_state == VFIState.STUDENT_FLIGHT:
+                            phase = self.instructor.phase
+                            if phase == PHASE_PEDALS_ONLY:
+                                self.play_sound(SOUND_YOU_HAVE_PEDALS)
+                            elif phase == PHASE_COLLECTIVE_ONLY:
+                                self.play_sound(SOUND_YOU_HAVE_COLLECTIVE)
+                            elif phase == PHASE_COLLECTIVE_PEDALS:
+                                self.play_sound(SOUND_YOU_HAVE_COLLECTIVE_PEDALS)
+                            elif phase == PHASE_CYCLIC_ONLY:
+                                self.play_sound(SOUND_YOU_HAVE_CYCLIC)
+                            elif phase == PHASE_CYCLIC_PEDALS:
+                                self.play_sound(SOUND_YOU_HAVE_CYCLIC_PEDALS)
+                            elif phase == PHASE_ALL_CONTROLS:
+                                self.play_sound(SOUND_YOU_HAVE_ALL)
+                        elif curr_state == VFIState.OVERRIDE:
+                            self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+
+                # Update persistent tracking state
                 self.last_system_state = curr_state
-            if not hasattr(self, "last_phase"):
                 self.last_phase = curr_phase
 
-            # (PID reset is handled below, after STEP C4 re-read.)
+                # --- STEP D: Perform Intelligent Control Routing ---
+                # 1. Roll
+                if self.instructor.control_assignment[ControlAxis.ROLL] == Authority.STUDENT:
+                    xp.setDatai(self.dref_override_roll, 0)
+                else:
+                    xp.setDatai(self.dref_override_roll, 1)
+                    xp.setDataf(self.dref_yoke_roll, final_commands[ControlAxis.ROLL])
 
-            # --- STEP C2: Run Student Performance Metrics ---
-            is_student_flying = curr_state == VFIState.STUDENT_FLIGHT
-            self.metrics.update(
-                dt, telemetry, hardware_inputs, is_student_flying, curr_phase
-            )
+                # 2. Pitch
+                if self.instructor.control_assignment[ControlAxis.PITCH] == Authority.STUDENT:
+                    xp.setDatai(self.dref_override_pitch, 0)
+                else:
+                    xp.setDatai(self.dref_override_pitch, 1)
+                    xp.setDataf(self.dref_yoke_pitch, final_commands[ControlAxis.PITCH])
 
-            # Feed current envelope grade back to instructor so that
-            # maybe_advance_phase() can track Excellent duration.
-            self.instructor.last_envelope = self.metrics.envelope
+                # 3. Yaw
+                if self.instructor.control_assignment[ControlAxis.YAW] == Authority.STUDENT:
+                    xp.setDatai(self.dref_override_yaw, 0)
+                else:
+                    xp.setDatai(self.dref_override_yaw, 1)
+                    xp.setDataf(self.dref_yoke_heading, final_commands[ControlAxis.YAW])
 
-            # --- STEP C3: Play Pending Spoken Metrics Cues ---
-            while True:
-                sound_to_play = self.metrics.pop_audio_queue()
-                if sound_to_play is None:
-                    break
-                self.play_sound(sound_to_play)
-
-            # --- STEP C4: Handle automatic phase progression ---
-            auto_phase_transition = False
-            for event in getattr(final_commands, "events", []):
-                if isinstance(event, PhaseAdvancedEvent):
-                    auto_phase_transition = True
-                    if event.is_final:
-                        # Training complete — play only the completion cue.
-                        self.play_sound(
-                            SOUND_TRAINING_COMPLETE, clear_queue=True
-                        )
-                    else:
-                        # Play transition sound and next phase intro
-                        self.play_sound(
-                            SOUND_PHASE_TRANSITION, clear_queue=True
-                        )
-                        intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(
-                            event.to_phase
-                        )
-                        self.play_sound(intro_sound)
-
-            # Re-read state/phase after auto-transition may have changed them
-
-            curr_state = self.instructor.system_state
-            curr_phase = self.instructor.phase
-
-            # --- Reset cyclic PIDs on any STUDENT_FLIGHT → * transition ---
-            # Whenever the VFI reclaims cyclic authority from the student,
-            # the position/velocity/attitude PID cascade may hold wound-up
-            # integrals accumulated during student flight, producing a jolt
-            # on the first VFI-commanded frame.  Resetting here covers all
-            # three transition paths:
-            #   • Safety override  (state set inside instructor.update())
-            #   • Manual phase change  (command handler fired between frames)
-            #   • Automatic phase advance  (state set inside STEP C4)
-            # Placing the check after the STEP C4 re-read means curr_state
-            # already reflects any within-frame state change, while
-            # last_system_state always holds the previous frame's value.
-            if (
-                self.last_system_state == VFIState.STUDENT_FLIGHT
-                and curr_state != VFIState.STUDENT_FLIGHT
-            ):
-                self.controller.reset_position_hold_pids()
-
-            # Detect state and phase transitions to play audio announcements.
-            # Skip if this was an automatic phase transition (audio already
-            # scheduled above).
-            phase_changed = curr_phase != self.last_phase
-            state_changed = curr_state != self.last_system_state
-
-            if not auto_phase_transition:
-                if phase_changed:
-                    # Manual phase change: instructor takes control and
-                    # explains the new phase via its intro audio.
-                    if curr_state in (VFIState.STUDENT_FLIGHT, VFIState.SYNCING):
-                        self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
-                    self.play_sound(SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase))
-                elif state_changed:
-                    if curr_state == VFIState.SYNCING:
-                        if self.last_system_state == VFIState.STUDENT_FLIGHT:
-                            self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
-                        else:
-                            self.play_sound(SOUND_GET_READY)
-                    elif curr_state == VFIState.STUDENT_FLIGHT:
-                        phase = self.instructor.phase
-                        if phase == PHASE_PEDALS_ONLY:
-                            self.play_sound(SOUND_YOU_HAVE_PEDALS)
-                        elif phase == PHASE_COLLECTIVE_ONLY:
-                            self.play_sound(SOUND_YOU_HAVE_COLLECTIVE)
-                        elif phase == PHASE_COLLECTIVE_PEDALS:
-                            self.play_sound(SOUND_YOU_HAVE_COLLECTIVE_PEDALS)
-                        elif phase == PHASE_CYCLIC_ONLY:
-                            self.play_sound(SOUND_YOU_HAVE_CYCLIC)
-                        elif phase == PHASE_CYCLIC_PEDALS:
-                            self.play_sound(SOUND_YOU_HAVE_CYCLIC_PEDALS)
-                        elif phase == PHASE_ALL_CONTROLS:
-                            self.play_sound(SOUND_YOU_HAVE_ALL)
-                    elif curr_state == VFIState.OVERRIDE:
-                        self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
-
-            # Update persistent tracking state
-            self.last_system_state = curr_state
-            self.last_phase = curr_phase
-
-            # --- STEP D: Perform Intelligent Control Routing ---
-            # 1. Roll
-            if self.instructor.control_assignment[ControlAxis.ROLL] == Authority.STUDENT:
-                xp.setDatai(self.dref_override_roll, 0)
-            else:
-                xp.setDatai(self.dref_override_roll, 1)
-                xp.setDataf(self.dref_yoke_roll, final_commands[ControlAxis.ROLL])
-
-            # 2. Pitch
-            if self.instructor.control_assignment[ControlAxis.PITCH] == Authority.STUDENT:
-                xp.setDatai(self.dref_override_pitch, 0)
-            else:
-                xp.setDatai(self.dref_override_pitch, 1)
-                xp.setDataf(self.dref_yoke_pitch, final_commands[ControlAxis.PITCH])
-
-            # 3. Yaw
-            if self.instructor.control_assignment[ControlAxis.YAW] == Authority.STUDENT:
-                xp.setDatai(self.dref_override_yaw, 0)
-            else:
-                xp.setDatai(self.dref_override_yaw, 1)
-                xp.setDataf(self.dref_yoke_heading, final_commands[ControlAxis.YAW])
-
-            # 4. Collective
-            # Determine if collective injection is active (VFI is flying,
-            # or flaps fallback is checked)
-            inject_collective = (
-                self.instructor.control_assignment[ControlAxis.COLLECTIVE] == Authority.VFI
-                or self.use_flaps_collective
-            )
-
-            if inject_collective:
-                coll_val = final_commands[ControlAxis.COLLECTIVE]
-                props = [coll_val] * 8
-                xp.setDatavf(self.dref_prop_ratio, props, 0, 8)
-                xp.setDataf(self.dref_prop_ratio_all, coll_val)
-
-            # Keep native governor active
-            xp.setDatai(self.dref_override_collective, 0)
-            xp.setDatai(self.dref_override_throttles, 0)
-
-        else:
-            # Instructor is disengaged -> Scan hardware inputs and cockpit
-            # yoke values to keep HUD live!
-            hardware_inputs = self.get_hardware_inputs()
-            self.last_hardware_inputs = hardware_inputs
-
-            roll_val = (
-                xp.getDataf(self.dref_yoke_roll)
-                if self.dref_yoke_roll
-                else hardware_inputs[ControlAxis.ROLL]
-            )
-            pitch_val = (
-                xp.getDataf(self.dref_yoke_pitch)
-                if self.dref_yoke_pitch
-                else hardware_inputs[ControlAxis.PITCH]
-            )
-            yaw_val = (
-                xp.getDataf(self.dref_yoke_heading)
-                if self.dref_yoke_heading
-                else hardware_inputs[ControlAxis.YAW]
-            )
-            coll_val = (
-                xp.getDataf(self.dref_prop_ratio_all)
-                if self.dref_prop_ratio_all
-                else hardware_inputs[ControlAxis.COLLECTIVE]
-            )
-
-            self.last_final_commands = {
-                ControlAxis.ROLL: roll_val,
-                ControlAxis.PITCH: pitch_val,
-                ControlAxis.YAW: yaw_val,
-                ControlAxis.COLLECTIVE: coll_val,
-            }
-
-            self.last_commands = {
-                ControlAxis.ROLL: 0.0,
-                ControlAxis.PITCH: 0.0,
-                ControlAxis.YAW: 0.0,
-                ControlAxis.COLLECTIVE: 0.5,
-            }
-
-            self.release_all_overrides()
-
-            # --- Reset Performance Metrics Evaluator ---
-            self.metrics.update(
-                0.02, telemetry, hardware_inputs, False, self.instructor.phase
-            )
-
-        # --- Update 3D Object Instances ---
-        try:
-            # 2. Update Disks and Arcs centered on the hover target
-            show_any = self.show_3d_boundaries and self.ap_enabled and self.controller
-            if show_any:
-                tx = (
-                    self.instructor.original_target_x
-                    if self.instructor.original_target_x is not None
-                    else self.controller.target_x
+                # 4. Collective
+                # Determine if collective injection is active (VFI is flying,
+                # or flaps fallback is checked)
+                inject_collective = (
+                    self.instructor.control_assignment[ControlAxis.COLLECTIVE] == Authority.VFI
+                    or self.use_flaps_collective
                 )
-                tz = (
-                    self.instructor.original_target_z
-                    if self.instructor.original_target_z is not None
-                    else self.controller.target_z
-                )
-                ground_y = state["y"] - y_agl
-                ty = ground_y
-                t_heading = self.controller.target_psi
-            else:
-                tx, ty, tz = 0.0, -9999.0, 0.0
-                t_heading = 0.0
 
-            draw_disks = (
-                show_any
-                and self.show_3d_disks
-                and (self.instructor.phase >= PHASE_CYCLIC_ONLY)
-            )
-            draw_arcs = (
-                show_any
-                and self.show_3d_arcs
-                and (
-                    self.instructor.phase
-                    in (
-                        PHASE_PEDALS_ONLY,
-                        PHASE_COLLECTIVE_PEDALS,
-                        PHASE_CYCLIC_PEDALS,
-                        PHASE_ALL_CONTROLS,
+                if inject_collective:
+                    coll_val = final_commands[ControlAxis.COLLECTIVE]
+                    props = [coll_val] * 8
+                    xp.setDatavf(self.dref_prop_ratio, props, 0, 8)
+                    xp.setDataf(self.dref_prop_ratio_all, coll_val)
+
+                # Keep native governor active
+                xp.setDatai(self.dref_override_collective, 0)
+                xp.setDatai(self.dref_override_throttles, 0)
+
+            else:
+                # Instructor is disengaged -> Scan hardware inputs and cockpit
+                # yoke values to keep HUD live!
+                hardware_inputs = self.get_hardware_inputs()
+                self.last_hardware_inputs = hardware_inputs
+
+                roll_val = (
+                    xp.getDataf(self.dref_yoke_roll)
+                    if self.dref_yoke_roll
+                    else hardware_inputs[ControlAxis.ROLL]
+                )
+                pitch_val = (
+                    xp.getDataf(self.dref_yoke_pitch)
+                    if self.dref_yoke_pitch
+                    else hardware_inputs[ControlAxis.PITCH]
+                )
+                yaw_val = (
+                    xp.getDataf(self.dref_yoke_heading)
+                    if self.dref_yoke_heading
+                    else hardware_inputs[ControlAxis.YAW]
+                )
+                coll_val = (
+                    xp.getDataf(self.dref_prop_ratio_all)
+                    if self.dref_prop_ratio_all
+                    else hardware_inputs[ControlAxis.COLLECTIVE]
+                )
+
+                self.last_final_commands = {
+                    ControlAxis.ROLL: roll_val,
+                    ControlAxis.PITCH: pitch_val,
+                    ControlAxis.YAW: yaw_val,
+                    ControlAxis.COLLECTIVE: coll_val,
+                }
+
+                self.last_commands = {
+                    ControlAxis.ROLL: 0.0,
+                    ControlAxis.PITCH: 0.0,
+                    ControlAxis.YAW: 0.0,
+                    ControlAxis.COLLECTIVE: 0.5,
+                }
+
+                self.release_all_overrides()
+
+                # --- Reset Performance Metrics Evaluator ---
+                self.metrics.update(
+                    0.02, telemetry, hardware_inputs, False, self.instructor.phase
+                )
+
+            # --- Update 3D Object Instances ---
+            try:
+                # 2. Update Disks and Arcs centered on the hover target
+                show_any = self.show_3d_boundaries and self.ap_enabled and self.controller
+                if show_any:
+                    tx = (
+                        self.instructor.original_target_x
+                        if self.instructor.original_target_x is not None
+                        else self.controller.target_x
+                    )
+                    tz = (
+                        self.instructor.original_target_z
+                        if self.instructor.original_target_z is not None
+                        else self.controller.target_z
+                    )
+                    ground_y = state["y"] - y_agl
+                    ty = ground_y
+                    t_heading = self.controller.target_psi
+                else:
+                    tx, ty, tz = 0.0, -9999.0, 0.0
+                    t_heading = 0.0
+
+                draw_disks = (
+                    show_any
+                    and self.show_3d_disks
+                    and (self.instructor.phase >= PHASE_CYCLIC_ONLY)
+                )
+                draw_arcs = (
+                    show_any
+                    and self.show_3d_arcs
+                    and (
+                        self.instructor.phase
+                        in (
+                            PHASE_PEDALS_ONLY,
+                            PHASE_COLLECTIVE_PEDALS,
+                            PHASE_CYCLIC_PEDALS,
+                            PHASE_ALL_CONTROLS,
+                        )
                     )
                 )
-            )
 
-            self.graphics.set_instance_positions(
-                tx=tx,
-                ty=ty,
-                tz=tz,
-                t_heading=t_heading,
-                draw_disks=draw_disks,
-                draw_arcs=draw_arcs,
-            )
-
-            # Dynamic visibility for standalone altitude bar window
-            # Only show the altitude box when user is in control of collective
-            if self.alt_bar_window:
-                is_student_coll = self.ap_enabled and (
-                    virtual_instructor.PHASE_CONFIGS[self.instructor.phase][
-                        ControlAxis.COLLECTIVE
-                    ]
-                    == Authority.STUDENT
+                self.graphics.set_instance_positions(
+                    tx=tx,
+                    ty=ty,
+                    tz=tz,
+                    t_heading=t_heading,
+                    draw_disks=draw_disks,
+                    draw_arcs=draw_arcs,
                 )
-                active_visible = 1 if (self.show_alt_bar and is_student_coll) else 0
-                if xp.getWindowIsVisible(self.alt_bar_window) != active_visible:
-                    xp.setWindowIsVisible(self.alt_bar_window, active_visible)
-        except Exception as inst_err:
-            if not hasattr(self, "_inst_update_failed_logged"):
-                self._inst_update_failed_logged = True
-                xp.log(f"Failed to update 3D instances. Exception: {str(inst_err)}")
 
-        # --- Run Sequential Audio Playback Queue ---
-        # Spaced out playbacks by tracking length of files and adding a 0.3s pause.
-        loop_dt = last_call if (0.0 < last_call < 0.1) else 0.02
-        if self.audio_playback_timer > 0.0:
-            self.audio_playback_timer -= loop_dt
+                # Dynamic visibility for standalone altitude bar window
+                # Only show the altitude box when user is in control of collective
+                if self.alt_bar_window:
+                    is_student_coll = self.ap_enabled and (
+                        virtual_instructor.PHASE_CONFIGS[self.instructor.phase][
+                            ControlAxis.COLLECTIVE
+                        ]
+                        == Authority.STUDENT
+                    )
+                    active_visible = 1 if (self.show_alt_bar and is_student_coll) else 0
+                    if xp.getWindowIsVisible(self.alt_bar_window) != active_visible:
+                        xp.setWindowIsVisible(self.alt_bar_window, active_visible)
+            except Exception as inst_err:
+                if not hasattr(self, "_inst_update_failed_logged"):
+                    self._inst_update_failed_logged = True
+                    log.error(f"Failed to update 3D instances: {inst_err}")
 
-        if self.audio_playback_timer <= 0.0 and self.audio_queue:
-            sound_to_play = self.audio_queue.pop(0)
-            duration_s = self.audio.play_sound(sound_to_play)
-            self.last_played_sound = sound_to_play
-            self.audio_playback_timer = duration_s + 0.3
+            # --- Run Sequential Audio Playback Queue ---
+            # Spaced out playbacks by tracking length of files and adding a 0.3s pause.
+            loop_dt = last_call if (0.0 < last_call < 0.1) else 0.02
+            if self.audio_playback_timer > 0.0:
+                self.audio_playback_timer -= loop_dt
+
+            if self.audio_playback_timer <= 0.0 and self.audio_queue:
+                sound_to_play = self.audio_queue.pop(0)
+                duration_s = self.audio.play_sound(sound_to_play)
+                self.last_played_sound = sound_to_play
+                self.audio_playback_timer = duration_s + 0.3
+        except Exception as e:
+            log.exception("Unhandled exception in flight_loop_callback")
 
         return 0.02
 
@@ -1250,6 +1265,7 @@ class PythonInterface(object):
     def XPluginReceiveMessage(self, in_from_who, in_message, in_param):
         """Called by X-Plane when a message is received by the plugin."""
         if in_message == MSG_PLANE_LOADED and in_param == PLANE_USER_IDX:
+            log.info("User aircraft loaded. Reloading PID gains.")
             self.load_gains()
 
     # --- COMMAND HANDLERS ---
@@ -1378,6 +1394,11 @@ class PythonInterface(object):
             self.instructor.override_target_z += delta_z
 
         self.controller.target_psi = (self.controller.target_psi + heading) % 360.0
+
+        log.info(
+            f"Adjusted hover target by forward={forward}m, right={right}m, up={up}m, heading={heading}deg. "
+            f"New target: x={self.controller.target_x:.2f}, y={self.controller.target_y:.2f}, z={self.controller.target_z:.2f}, psi={self.controller.target_psi:.1f}"
+        )
 
     def draw_hud(self, window_id, refcon):
         """Draws the HUD graphics including flight telemetry and matching guide."""

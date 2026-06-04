@@ -1,5 +1,6 @@
 """3D OBJ8 and PNG texture assets manager for Helicopter Flight Instructor."""
 
+import logging
 import math
 import os
 import shutil
@@ -14,6 +15,8 @@ from helicopter_instructor.envelope_limits import (
     LIMIT_DRIFT_ORANGE_M,
     LIMIT_DRIFT_RED_M,
 )
+
+log = logging.getLogger("helicopter_instructor")
 
 
 def generate_solid_png(filepath, r, g, b, alpha):
@@ -439,9 +442,8 @@ class GraphicsAssetManager(object):
                 try:
                     shutil.rmtree(gen_dir)
                 except Exception as wipe_err:
-                    xp.log(
-                        "Helicopter Flight Instructor Warning: Failed to wipe "
-                        f"assets/generated folder: {str(wipe_err)}"
+                    log.warning(
+                        f"Failed to wipe assets/generated folder: {wipe_err}"
                     )
             os.makedirs(gen_dir, exist_ok=True)
 
@@ -575,24 +577,17 @@ class GraphicsAssetManager(object):
                 num_segments=64,
             )
 
-            xp.log(
-                "Helicopter Flight Instructor: Programmatic OBJ8 files "
-                "and PNG textures generated successfully in assets/generated."
+            log.info(
+                "Programmatic OBJ8 files and PNG textures generated successfully in assets/generated."
             )
         except Exception as err:
-            xp.log(
-                "Helicopter Flight Instructor: Failed to generate OBJ8 "
-                f"files/textures. Exception: {str(err)}"
-            )
+            log.error(f"Failed to generate OBJ8 files/textures: {err}")
             return
 
         # 2. Get relative path to X-Plane root
         res_idx = self.plugin_dir.find("Resources")
         if res_idx == -1:
-            xp.log(
-                "Helicopter Flight Instructor: Could not determine X-Plane "
-                "root relative path."
-            )
+            log.error("Could not determine X-Plane root relative path.")
             return
 
         rel_dir = self.plugin_dir[res_idx:].replace("\\", "/")
@@ -645,15 +640,9 @@ class GraphicsAssetManager(object):
             if self.obj_arc_red_r:
                 self.inst_arc_red_r = xp.createInstance(self.obj_arc_red_r)
 
-            xp.log(
-                "Helicopter Flight Instructor: 3D Object instances "
-                "created successfully under Vulkan/Metal."
-            )
+            log.info("3D Object instances created successfully under Vulkan/Metal.")
         except Exception as err:
-            xp.log(
-                "Helicopter Flight Instructor: Failed to load 3D objects "
-                f"or create instances: {str(err)}"
-            )
+            log.error(f"Failed to load 3D objects or create instances: {err}")
 
     def set_instance_positions(self, tx, ty, tz, t_heading, draw_disks, draw_arcs):
         """Positions disk and heading arc instances dynamically in the 3D world."""
@@ -769,12 +758,7 @@ class GraphicsAssetManager(object):
                 xp.unloadObject(self.obj_arc_red_r)
                 self.obj_arc_red_r = None
 
-            xp.log(
-                "Helicopter Flight Instructor: 3D Object instances destroyed "
-                "and unloaded cleanly."
-            )
+            log.info("3D Object instances destroyed and unloaded cleanly.")
         except Exception as err:
-            xp.log(
-                "Helicopter Flight Instructor: Failed to clean up 3D "
-                f"instances: {str(err)}"
-            )
+            log.error(f"Failed to clean up 3D instances: {err}")
+

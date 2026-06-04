@@ -6,12 +6,15 @@ margins, proficiency grading, and verbal/visual training cues.
 """
 
 import collections
+import logging
 import math
 
 from helicopter_instructor.enums import Authority
 from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 from helicopter_instructor.virtual_instructor import PHASE_CONFIGS
+
+log = logging.getLogger("helicopter_instructor")
 
 # Conversion Constants
 M_S_TO_KNOTS = 1.94384
@@ -154,6 +157,11 @@ class PerformanceMetricsEvaluator(object):
         self.cyclic_praise_timer = 0.0
         self.perfect_hover_timer = 0.0
         self.was_in_warning_zone = False
+
+    def _queue_audio_cue(self, cue):
+        """Queues an audio coaching cue and logs the trigger event."""
+        self.audio_queue.append(cue)
+        log.info(f"Coaching cue triggered: {cue}")
 
     def pop_audio_queue(self):
         """Pops and returns the next pending audio WAV file in the queue.
@@ -592,12 +600,21 @@ class PerformanceMetricsEvaluator(object):
         unstable_ratio = float(unstable_count) / total_samples
         excellent_ratio = float(excellent_count) / total_samples
 
+        old_envelope = self.envelope
         if unstable_ratio > 0.15:
-            self.envelope = Envelope.UNSTABLE
+            new_envelope = Envelope.UNSTABLE
         elif excellent_ratio > 0.60:
-            self.envelope = Envelope.EXCELLENT
+            new_envelope = Envelope.EXCELLENT
         else:
-            self.envelope = Envelope.GOOD
+            new_envelope = Envelope.GOOD
+
+        if old_envelope != new_envelope:
+            log.info(
+                f"Proficiency envelope transition: {old_envelope.name} -> "
+                f"{new_envelope.name} (unstable: {unstable_ratio:.1%}, "
+                f"excellent: {excellent_ratio:.1%})"
+            )
+            self.envelope = new_envelope
 
     def _check_feedback_triggers(self, dt, telemetry, phase):
         """Monitors trigger durations and cues instructional warning/praise.
@@ -624,7 +641,7 @@ class PerformanceMetricsEvaluator(object):
                     self.jerk_timers["cyclic"] >= 1.5
                     and self.audio_cooldowns[SOUND_RELAX_CYCLIC] == 0.0
                 ):
-                    self.audio_queue.append(SOUND_RELAX_CYCLIC)
+                    self._queue_audio_cue(SOUND_RELAX_CYCLIC)
                     self.audio_cooldowns[SOUND_RELAX_CYCLIC] = 10.0
                     self.jerk_timers["cyclic"] = 0.0
             else:
@@ -640,7 +657,7 @@ class PerformanceMetricsEvaluator(object):
                     self.jerk_timers["yaw"] >= 1.5
                     and self.audio_cooldowns[SOUND_STEADY_PEDALS] == 0.0
                 ):
-                    self.audio_queue.append(SOUND_STEADY_PEDALS)
+                    self._queue_audio_cue(SOUND_STEADY_PEDALS)
                     self.audio_cooldowns[SOUND_STEADY_PEDALS] = 10.0
                     self.jerk_timers["yaw"] = 0.0
             else:
@@ -656,7 +673,7 @@ class PerformanceMetricsEvaluator(object):
                     self.jerk_timers["collective"] >= 1.5
                     and self.audio_cooldowns[SOUND_SMOOTH_COLLECTIVE] == 0.0
                 ):
-                    self.audio_queue.append(SOUND_SMOOTH_COLLECTIVE)
+                    self._queue_audio_cue(SOUND_SMOOTH_COLLECTIVE)
                     self.audio_cooldowns[SOUND_SMOOTH_COLLECTIVE] = 10.0
                     self.jerk_timers["collective"] = 0.0
             else:
@@ -679,7 +696,7 @@ class PerformanceMetricsEvaluator(object):
                         self.drift_warning_timer >= 2.0
                         and self.audio_cooldowns[SOUND_CORRECT_DRIFT] == 0.0
                     ):
-                        self.audio_queue.append(SOUND_CORRECT_DRIFT)
+                        self._queue_audio_cue(SOUND_CORRECT_DRIFT)
                         self.audio_cooldowns[SOUND_CORRECT_DRIFT] = 15.0
                         self.drift_warning_timer = 0.0
                         self.was_in_warning_zone = True
@@ -699,7 +716,7 @@ class PerformanceMetricsEvaluator(object):
                         self.low_alt_warning_timer >= 1.5
                         and self.audio_cooldowns[SOUND_WE_ARE_TOO_LOW] == 0.0
                     ):
-                        self.audio_queue.append(SOUND_WE_ARE_TOO_LOW)
+                        self._queue_audio_cue(SOUND_WE_ARE_TOO_LOW)
                         self.audio_cooldowns[SOUND_WE_ARE_TOO_LOW] = 10.0
                         self.low_alt_warning_timer = 0.0
                         self.was_in_warning_zone = True
@@ -713,7 +730,7 @@ class PerformanceMetricsEvaluator(object):
                         self.high_alt_warning_timer >= 1.5
                         and self.audio_cooldowns[SOUND_WE_ARE_TOO_HIGH] == 0.0
                     ):
-                        self.audio_queue.append(SOUND_WE_ARE_TOO_HIGH)
+                        self._queue_audio_cue(SOUND_WE_ARE_TOO_HIGH)
                         self.audio_cooldowns[SOUND_WE_ARE_TOO_HIGH] = 10.0
                         self.high_alt_warning_timer = 0.0
                         self.was_in_warning_zone = True
@@ -738,7 +755,7 @@ class PerformanceMetricsEvaluator(object):
                         self.pedal_praise_timer >= 15.0
                         and self.audio_cooldowns[SOUND_GREAT_PEDALS] == 0.0
                     ):
-                        self.audio_queue.append(SOUND_GREAT_PEDALS)
+                        self._queue_audio_cue(SOUND_GREAT_PEDALS)
                         self.audio_cooldowns[SOUND_GREAT_PEDALS] = 30.0
                         self.pedal_praise_timer = 0.0
                 else:
@@ -761,7 +778,7 @@ class PerformanceMetricsEvaluator(object):
                     self.cyclic_praise_timer >= 30.0
                     and self.audio_cooldowns[SOUND_SMOOTH_CYCLIC] == 0.0
                 ):
-                    self.audio_queue.append(SOUND_SMOOTH_CYCLIC)
+                    self._queue_audio_cue(SOUND_SMOOTH_CYCLIC)
                     self.audio_cooldowns[SOUND_SMOOTH_CYCLIC] = 30.0
                     self.cyclic_praise_timer = 0.0
             else:
@@ -795,7 +812,7 @@ class PerformanceMetricsEvaluator(object):
             and self.drift_speed <= 1.0
         ):
             if self.audio_cooldowns[SOUND_NICE_RECOVERY] == 0.0:
-                self.audio_queue.append(SOUND_NICE_RECOVERY)
+                self._queue_audio_cue(SOUND_NICE_RECOVERY)
                 self.audio_cooldowns[SOUND_NICE_RECOVERY] = 30.0
             self.was_in_warning_zone = False
 
@@ -806,7 +823,7 @@ class PerformanceMetricsEvaluator(object):
                 self.perfect_hover_timer >= 10.0
                 and self.audio_cooldowns[SOUND_PERFECT] == 0.0
             ):
-                self.audio_queue.append(SOUND_PERFECT)
+                self._queue_audio_cue(SOUND_PERFECT)
                 self.audio_cooldowns[SOUND_PERFECT] = 30.0
                 self.perfect_hover_timer = 0.0
         else:
