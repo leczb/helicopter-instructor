@@ -15,6 +15,7 @@ import xp_imgui
 
 from helicopter_instructor import audio
 from helicopter_instructor import config
+from helicopter_instructor import constants
 from helicopter_instructor import envelope_limits
 from helicopter_instructor import graphics
 from helicopter_instructor import hud
@@ -27,13 +28,14 @@ from helicopter_instructor.enums import Authority
 from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 from helicopter_instructor.enums import VFIState
-from helicopter_instructor.virtual_instructor import M_S_TO_FT_MIN
-from helicopter_instructor.virtual_instructor import M_S_TO_KNOTS
+from helicopter_instructor.constants import M_S_TO_FT_MIN
+from helicopter_instructor.constants import M_S_TO_KNOTS
 
 # Explicitly reload submodules to prevent caching issues during X-Plane plugin reloads
 importlib.reload(logger)
 importlib.reload(audio)
 importlib.reload(config)
+importlib.reload(constants)
 importlib.reload(envelope_limits)
 importlib.reload(graphics)
 importlib.reload(hud)
@@ -280,7 +282,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.59"
+        self.version = "2.1.60"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (

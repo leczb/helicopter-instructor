@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.60 - 2026-06-04
+
+- **Refactor**: Extracted unit conversion constants (such as `M_S_TO_FT_MIN` and `M_S_TO_KNOTS`) from `virtual_instructor.py` and `metrics.py` into a new central module `constants.py` to eliminate duplication and clean up code organization.
+
 ## v2.1.59 - 2026-06-04
 
 - **Fixed**: Fixed a type-checking bug in the automatic phase progression sequence where `PhaseAdvancedEvent` instances returned by the reloaded `virtual_instructor` module failed type checking via `isinstance` in `PI_helicopter_instructor.py`. Replaced the direct class type check with a namespace-aware check (`virtual_instructor.PhaseAdvancedEvent`) to ensure the transition audio cue ("Phase transition.wav") plays correctly.

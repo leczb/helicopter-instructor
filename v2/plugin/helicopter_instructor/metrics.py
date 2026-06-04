@@ -9,6 +9,8 @@ import collections
 import logging
 import math
 
+from helicopter_instructor.constants import M_S_TO_FT_MIN
+from helicopter_instructor.constants import M_S_TO_KNOTS
 from helicopter_instructor.enums import Authority
 from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
@@ -16,9 +18,7 @@ from helicopter_instructor.virtual_instructor import PHASE_CONFIGS
 
 log = logging.getLogger("helicopter_instructor")
 
-# Conversion Constants
-M_S_TO_KNOTS = 1.94384
-M_S_TO_FT_MIN = 196.8504
+
 
 # Symbolic audio cue constants to avoid raw filenames
 SOUND_RELAX_CYCLIC = "Relax cyclic.wav"

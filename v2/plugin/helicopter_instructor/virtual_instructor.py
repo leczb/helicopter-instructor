@@ -1,6 +1,8 @@
 import logging
 import math
 
+from helicopter_instructor.constants import M_S_TO_FT_MIN
+from helicopter_instructor.constants import M_S_TO_KNOTS
 from helicopter_instructor.enums import Authority
 from helicopter_instructor.enums import CaptionStyle
 from helicopter_instructor.enums import ControlAxis
@@ -25,10 +27,6 @@ from helicopter_instructor.envelope_limits import (
     LIMIT_RECOVERY_SINK_FT_MIN,
     LIMIT_RECOVERY_GS_KNOTS,
 )
-
-# Conversion constants
-M_S_TO_KNOTS = 1.94384
-M_S_TO_FT_MIN = 196.8504
 
 # Seconds of continuous Excellent rating required before phase advance
 PHASE_EXCELLENT_REQUIRED_S = 35.0

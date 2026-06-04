@@ -15,12 +15,13 @@ sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 from helicopter_instructor import envelope_limits
 
 # pyrefly: ignore [missing-import]
+from helicopter_instructor import constants
 from helicopter_instructor import metrics
 from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 
 PerformanceMetricsEvaluator = metrics.PerformanceMetricsEvaluator
-M_S_TO_FT_MIN = metrics.M_S_TO_FT_MIN
+M_S_TO_FT_MIN = constants.M_S_TO_FT_MIN
 
 
 class TestPerformanceMetricsEvaluator(unittest.TestCase):

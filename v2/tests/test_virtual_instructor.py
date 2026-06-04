@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
 # pyrefly: ignore [missing-import]
+from helicopter_instructor import constants
 from helicopter_instructor import virtual_instructor
 from helicopter_instructor.enums import Authority
 from helicopter_instructor.enums import CaptionStyle
@@ -21,7 +22,7 @@ from helicopter_instructor.enums import ControlAxis
 
 VirtualInstructor = virtual_instructor.VirtualInstructor
 PHASE_CONFIGS = virtual_instructor.PHASE_CONFIGS
-M_S_TO_FT_MIN = virtual_instructor.M_S_TO_FT_MIN
+M_S_TO_FT_MIN = constants.M_S_TO_FT_MIN
 
 
 class TestVirtualInstructor(unittest.TestCase):
