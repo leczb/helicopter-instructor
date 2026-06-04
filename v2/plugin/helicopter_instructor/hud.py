@@ -7,6 +7,7 @@ import xp
 
 from helicopter_instructor import virtual_instructor
 from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 from helicopter_instructor.enums import VFIState
 from helicopter_instructor.envelope_limits import (
@@ -339,7 +340,7 @@ def draw_hud(view_model, window_id):
         from helicopter_instructor.virtual_instructor import PHASE_CONFIGS
 
         phase_config = PHASE_CONFIGS.get(view_model.phase, {})
-        if view_model.show_envelope_debug and phase_config.get("yaw") == Authority.STUDENT:
+        if view_model.show_envelope_debug and phase_config.get(ControlAxis.YAW) == Authority.STUDENT:
             y_cursor -= 20
             draw_string_scaled(
                 COLOR_DARK_GREY,
@@ -398,7 +399,7 @@ def draw_hud(view_model, window_id):
 
             # Pedal OCI
             oci = view_model.oci
-            yaw_oci = oci.get("yaw", 0.0)
+            yaw_oci = oci.get(ControlAxis.YAW, 0.0)
             oci_limit = 0.3
             oci_ok = yaw_oci < oci_limit
             oci_symbol = "OK" if oci_ok else "!!"
@@ -450,9 +451,9 @@ def draw_hud(view_model, window_id):
     col_y = y_graph_base
     col_height = COLLECTIVE_TRACK_HEIGHT
 
-    vfi_coll_y = int(col_y + view_model.last_commands["collective"] * col_height)
+    vfi_coll_y = int(col_y + view_model.last_commands[ControlAxis.COLLECTIVE] * col_height)
     phys_coll_y = int(
-        col_y + view_model.last_hardware_inputs["collective"] * col_height
+        col_y + view_model.last_hardware_inputs[ControlAxis.COLLECTIVE] * col_height
     )
 
     # Over-controlling visual warning state (solid red when overcontrolled, representing Over-Controlling Index (OCI))
@@ -464,7 +465,7 @@ def draw_hud(view_model, window_id):
 
         # Draw vertical slot track outline (width 8 pixels)
         col_slot_color = COLOR_DARK_GREY
-        if oci.get("collective", 0.0) > 0.8:
+        if oci.get(ControlAxis.COLLECTIVE, 0.0) > 0.8:
             col_slot_color = COLOR_RED
         draw_vector_rect_scaled(
             col_slot_color,
@@ -487,7 +488,7 @@ def draw_hud(view_model, window_id):
 
         # Set dynamic deflection indicator color
         coll_color = COLOR_ORANGE  # Bright orange
-        if view_model.sync_locked["collective"]:
+        if view_model.sync_locked[ControlAxis.COLLECTIVE]:
             coll_color = COLOR_GREEN  # Bright green
 
         # Draw VFI target acceptable range as a hollow green rectangle
@@ -547,12 +548,12 @@ def draw_hud(view_model, window_id):
     ped_width = PEDALS_TRACK_WIDTH
 
     vfi_yaw_x = int(
-        ped_x + ped_width / 2.0 + view_model.last_commands["yaw"] * (ped_width / 2.0)
+        ped_x + ped_width / 2.0 + view_model.last_commands[ControlAxis.YAW] * (ped_width / 2.0)
     )
     phys_yaw_x = int(
         ped_x
         + ped_width / 2.0
-        + view_model.last_hardware_inputs["yaw"] * (ped_width / 2.0)
+        + view_model.last_hardware_inputs[ControlAxis.YAW] * (ped_width / 2.0)
     )
 
     if gl_available:
@@ -561,7 +562,7 @@ def draw_hud(view_model, window_id):
 
         # Draw horizontal slot track outline (height 8 pixels)
         ped_slot_color = COLOR_DARK_GREY
-        if oci.get("yaw", 0.0) > 0.8:
+        if oci.get(ControlAxis.YAW, 0.0) > 0.8:
             ped_slot_color = COLOR_RED
         draw_vector_rect_scaled(
             ped_slot_color,
@@ -584,7 +585,7 @@ def draw_hud(view_model, window_id):
 
         # Set dynamic pedals deflection indicator color
         yaw_color = COLOR_ORANGE  # Bright orange
-        if view_model.sync_locked["yaw"]:
+        if view_model.sync_locked[ControlAxis.YAW]:
             yaw_color = COLOR_GREEN  # Bright green
 
         # Draw VFI target acceptable range as a hollow green rectangle
@@ -653,19 +654,19 @@ def draw_hud(view_model, window_id):
 
     # Draw physical stick position scaled to stick scale
     stick_scale = CYCLIC_STICK_SCALE
-    stick_x = int(cross_x + view_model.last_hardware_inputs["roll"] * stick_scale)
-    stick_y = int(cross_y - view_model.last_hardware_inputs["pitch"] * stick_scale)
+    stick_x = int(cross_x + view_model.last_hardware_inputs[ControlAxis.ROLL] * stick_scale)
+    stick_y = int(cross_y - view_model.last_hardware_inputs[ControlAxis.PITCH] * stick_scale)
 
     # Draw target VFI position scaled to stick scale
-    vfi_x = int(cross_x + view_model.last_commands["roll"] * stick_scale)
-    vfi_y = int(cross_y - view_model.last_commands["pitch"] * stick_scale)
+    vfi_x = int(cross_x + view_model.last_commands[ControlAxis.ROLL] * stick_scale)
+    vfi_y = int(cross_y - view_model.last_commands[ControlAxis.PITCH] * stick_scale)
 
     # Dynamic stick deflection pointer color
     stick_color = COLOR_ORANGE  # Bright orange
-    if view_model.sync_locked["roll"] and view_model.sync_locked["pitch"]:
+    if view_model.sync_locked[ControlAxis.ROLL] and view_model.sync_locked[ControlAxis.PITCH]:
         stick_color = COLOR_GREEN  # Bright green
 
-    cyclic_overcontrolled = max(oci.get("roll", 0.0), oci.get("pitch", 0.0)) > 1.0
+    cyclic_overcontrolled = max(oci.get(ControlAxis.ROLL, 0.0), oci.get(ControlAxis.PITCH, 0.0)) > 1.0
     if cyclic_overcontrolled:
         stick_color = COLOR_RED
 
@@ -767,7 +768,7 @@ def draw_alt_bar(view_model, window_id):
 
     # Only show when autopilot is enabled and Lesson collective is STUDENT
     is_student_coll = (
-        virtual_instructor.PHASE_CONFIGS[view_model.phase]["collective"] == Authority.STUDENT
+        virtual_instructor.PHASE_CONFIGS[view_model.phase][ControlAxis.COLLECTIVE] == Authority.STUDENT
     )
     active_visible = new_show_alt_bar and view_model.ap_enabled and is_student_coll
 

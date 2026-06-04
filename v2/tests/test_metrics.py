@@ -16,6 +16,7 @@ from helicopter_instructor import envelope_limits
 
 # pyrefly: ignore [missing-import]
 from helicopter_instructor import metrics
+from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 
 PerformanceMetricsEvaluator = metrics.PerformanceMetricsEvaluator
@@ -46,10 +47,10 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             "target_psi": 0.0,
         }
         self.nominal_inputs = {
-            "roll": 0.0,
-            "pitch": 0.0,
-            "yaw": 0.0,
-            "collective": 0.5,
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
         }
 
     def test_initial_state(self):
@@ -82,19 +83,19 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         """Verifies over-controlling OCI index reacts to input velocities."""
         # 1. Nominal inputs: OCI should remain zero
         self.metrics.update(0.02, self.nominal_telemetry, self.nominal_inputs, True, 6)
-        self.assertEqual(self.metrics.oci["roll"], 0.0)
+        self.assertEqual(self.metrics.oci[ControlAxis.ROLL], 0.0)
 
         # 2. Sudden jerky input on roll: from 0.0 to 0.4 in 20ms
         jerky_inputs = {
-            "roll": 0.4,
-            "pitch": 0.0,
-            "yaw": 0.0,
-            "collective": 0.5,
+            ControlAxis.ROLL: 0.4,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
         }
         # velocity = 0.4 / 0.02 = 20.0
         # OCI_roll = 0.05 * 20.0 = 1.0
         self.metrics.update(0.02, self.nominal_telemetry, jerky_inputs, True, 6)
-        self.assertAlmostEqual(self.metrics.oci["roll"], 1.0)
+        self.assertAlmostEqual(self.metrics.oci[ControlAxis.ROLL], 1.0)
         self.assertTrue(self.metrics.smoothness_score < 100.0)
 
     def test_precision_scoring_pedals_only_phase(self):
@@ -247,10 +248,10 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
                 "telemetry": dict(self.nominal_telemetry),
                 "inputs": dict(self.nominal_inputs),
                 "oci": {
-                    "roll": 0.1,
-                    "pitch": 0.1,
-                    "yaw": 0.05,
-                    "collective": 0.0,
+                    ControlAxis.ROLL: 0.1,
+                    ControlAxis.PITCH: 0.1,
+                    ControlAxis.YAW: 0.05,
+                    ControlAxis.COLLECTIVE: 0.0,
                 },
             }
             self.metrics.history.append(frame)
@@ -269,10 +270,10 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
                 "telemetry": unstable_telemetry if i < 3 else self.nominal_telemetry,
                 "inputs": dict(self.nominal_inputs),
                 "oci": {
-                    "roll": 0.0,
-                    "pitch": 0.0,
-                    "yaw": 0.0,
-                    "collective": 0.0,
+                    ControlAxis.ROLL: 0.0,
+                    ControlAxis.PITCH: 0.0,
+                    ControlAxis.YAW: 0.0,
+                    ControlAxis.COLLECTIVE: 0.0,
                 },
             }
             self.metrics.history.append(frame)
@@ -288,7 +289,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
 
         # Phase 6: All controls. We trigger a cyclic over-control (OCI > 1.0)
         # We simulate the OCI roll being maintained at 1.1.
-        self.metrics.oci["roll"] = 1.1
+        self.metrics.oci[ControlAxis.ROLL] = 1.1
 
         # Timer counts up with dt = 0.5s. Below 1.5s -> no trigger yet
         self.metrics.update(0.5, self.nominal_telemetry, self.nominal_inputs, True, 6)
@@ -303,7 +304,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.metrics.audio_queue.clear()
 
         # Cooldown prevents immediate re-triggering of the same warning
-        self.metrics.oci["roll"] = 1.2
+        self.metrics.oci[ControlAxis.ROLL] = 1.2
         self.metrics.update(2.0, self.nominal_telemetry, self.nominal_inputs, True, 6)
         self.assertEqual(len(self.metrics.audio_queue), 0)
 
@@ -493,10 +494,10 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
                 "telemetry": unstable_telemetry,
                 "inputs": dict(self.nominal_inputs),
                 "oci": {
-                    "roll": 0.1,
-                    "pitch": 0.1,
-                    "yaw": 0.05,
-                    "collective": 0.0,
+                    ControlAxis.ROLL: 0.1,
+                    ControlAxis.PITCH: 0.1,
+                    ControlAxis.YAW: 0.05,
+                    ControlAxis.COLLECTIVE: 0.0,
                 },
             }
             self.metrics.history.append(frame)
@@ -514,10 +515,10 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
                 "telemetry": excellent_telemetry,
                 "inputs": dict(self.nominal_inputs),
                 "oci": {
-                    "roll": 0.1,
-                    "pitch": 0.1,
-                    "yaw": 0.05,
-                    "collective": 0.0,
+                    ControlAxis.ROLL: 0.1,
+                    ControlAxis.PITCH: 0.1,
+                    ControlAxis.YAW: 0.05,
+                    ControlAxis.COLLECTIVE: 0.0,
                 },
             }
             self.metrics.history.append(frame)
@@ -543,10 +544,10 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
                 "telemetry": unstable_vfi_telemetry,
                 "inputs": dict(self.nominal_inputs),
                 "oci": {
-                    "roll": 1.8,  # Jerky roll cyclic (ignored in Phase 1)
-                    "pitch": 0.1,
-                    "yaw": 0.05,
-                    "collective": 0.0,
+                    ControlAxis.ROLL: 1.8,  # Jerky roll cyclic (ignored in Phase 1)
+                    ControlAxis.PITCH: 0.1,
+                    ControlAxis.YAW: 0.05,
+                    ControlAxis.COLLECTIVE: 0.0,
                 },
             }
             self.metrics.history.append(frame)

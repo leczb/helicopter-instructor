@@ -1,6 +1,7 @@
 import math
 
 from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 from helicopter_instructor.enums import HeadingZone
 from helicopter_instructor.enums import VFIState
@@ -28,40 +29,40 @@ MAX_PHASE = 6
 # Defines which axes are STUDENT-controlled vs VFI-controlled
 PHASE_CONFIGS = {
     1: {
-        "roll": Authority.VFI,
-        "pitch": Authority.VFI,
-        "yaw": Authority.STUDENT,
-        "collective": Authority.VFI,
+        ControlAxis.ROLL: Authority.VFI,
+        ControlAxis.PITCH: Authority.VFI,
+        ControlAxis.YAW: Authority.STUDENT,
+        ControlAxis.COLLECTIVE: Authority.VFI,
     },
     2: {
-        "roll": Authority.VFI,
-        "pitch": Authority.VFI,
-        "yaw": Authority.VFI,
-        "collective": Authority.STUDENT,
+        ControlAxis.ROLL: Authority.VFI,
+        ControlAxis.PITCH: Authority.VFI,
+        ControlAxis.YAW: Authority.VFI,
+        ControlAxis.COLLECTIVE: Authority.STUDENT,
     },
     3: {
-        "roll": Authority.VFI,
-        "pitch": Authority.VFI,
-        "yaw": Authority.STUDENT,
-        "collective": Authority.STUDENT,
+        ControlAxis.ROLL: Authority.VFI,
+        ControlAxis.PITCH: Authority.VFI,
+        ControlAxis.YAW: Authority.STUDENT,
+        ControlAxis.COLLECTIVE: Authority.STUDENT,
     },
     4: {
-        "roll": Authority.STUDENT,
-        "pitch": Authority.STUDENT,
-        "yaw": Authority.VFI,
-        "collective": Authority.VFI,
+        ControlAxis.ROLL: Authority.STUDENT,
+        ControlAxis.PITCH: Authority.STUDENT,
+        ControlAxis.YAW: Authority.VFI,
+        ControlAxis.COLLECTIVE: Authority.VFI,
     },
     5: {
-        "roll": Authority.STUDENT,
-        "pitch": Authority.STUDENT,
-        "yaw": Authority.STUDENT,
-        "collective": Authority.VFI,
+        ControlAxis.ROLL: Authority.STUDENT,
+        ControlAxis.PITCH: Authority.STUDENT,
+        ControlAxis.YAW: Authority.STUDENT,
+        ControlAxis.COLLECTIVE: Authority.VFI,
     },
     6: {
-        "roll": Authority.STUDENT,
-        "pitch": Authority.STUDENT,
-        "yaw": Authority.STUDENT,
-        "collective": Authority.STUDENT,
+        ControlAxis.ROLL: Authority.STUDENT,
+        ControlAxis.PITCH: Authority.STUDENT,
+        ControlAxis.YAW: Authority.STUDENT,
+        ControlAxis.COLLECTIVE: Authority.STUDENT,
     },
 }
 
@@ -114,16 +115,16 @@ class VirtualInstructor(object):
 
         # Active control assignments (starts all VFI-controlled)
         self.control_assignment = {
-            "roll": Authority.VFI,
-            "pitch": Authority.VFI,
-            "yaw": Authority.VFI,
-            "collective": Authority.VFI,
+            ControlAxis.ROLL: Authority.VFI,
+            ControlAxis.PITCH: Authority.VFI,
+            ControlAxis.YAW: Authority.VFI,
+            ControlAxis.COLLECTIVE: Authority.VFI,
         }
         self.sync_locked = {
-            "roll": False,
-            "pitch": False,
-            "yaw": False,
-            "collective": False,
+            ControlAxis.ROLL: False,
+            ControlAxis.PITCH: False,
+            ControlAxis.YAW: False,
+            ControlAxis.COLLECTIVE: False,
         }
 
         # Subtitles / visual announcements queue
@@ -367,31 +368,33 @@ class VirtualInstructor(object):
 
         # Check if cyclic controls are student-controlled in this phase
         cyclic_student = (
-            phase_config["roll"] == Authority.STUDENT
-            and phase_config["pitch"] == Authority.STUDENT
+            phase_config[ControlAxis.ROLL] == Authority.STUDENT
+            and phase_config[ControlAxis.PITCH] == Authority.STUDENT
         )
 
         # Check cyclic as a circular 2D distance
         if cyclic_student:
             cyclic_dist = math.sqrt(
-                (hardware["roll"] - vfi_inputs["roll"]) ** 2
-                + (hardware["pitch"] - vfi_inputs["pitch"]) ** 2
+                (hardware[ControlAxis.ROLL] - vfi_inputs[ControlAxis.ROLL]) ** 2
+                + (hardware[ControlAxis.PITCH] - vfi_inputs[ControlAxis.PITCH]) ** 2
             )
             if cyclic_dist <= self.match_tolerance:
-                self.sync_locked["roll"] = True
-                self.sync_locked["pitch"] = True
+                self.sync_locked[ControlAxis.ROLL] = True
+                self.sync_locked[ControlAxis.PITCH] = True
             else:
-                self.sync_locked["roll"] = False
-                self.sync_locked["pitch"] = False
+                self.sync_locked[ControlAxis.ROLL] = False
+                self.sync_locked[ControlAxis.PITCH] = False
                 all_matched = False
         else:
-            self.sync_locked["roll"] = True
-            self.sync_locked["pitch"] = True
+            self.sync_locked[ControlAxis.ROLL] = True
+            self.sync_locked[ControlAxis.PITCH] = True
 
         # Check other axes individually (yaw, collective)
-        for axis in ["yaw", "collective"]:
+        for axis in [ControlAxis.YAW, ControlAxis.COLLECTIVE]:
             if phase_config[axis] == Authority.STUDENT:
-                delta = abs(hardware[axis] - vfi_inputs[axis])
+                delta = abs(
+                    hardware[axis] - vfi_inputs[axis]
+                )
                 if delta <= self.match_tolerance:
                     self.sync_locked[axis] = True
                 else:
@@ -406,7 +409,7 @@ class VirtualInstructor(object):
             if self.sync_timer >= self.sync_hold_duration:
                 # Synchronization lock succeeded!
                 # Hot-swap authority to student
-                for axis in ["roll", "pitch", "yaw", "collective"]:
+                for axis in ControlAxis:
                     if phase_config[axis] == Authority.STUDENT:
                         self.control_assignment[axis] = Authority.STUDENT
 
@@ -461,7 +464,7 @@ class VirtualInstructor(object):
             Dict containing final control commands.
         """
         output = {}
-        for axis in ["roll", "pitch", "yaw", "collective"]:
+        for axis in ControlAxis:
             if self.control_assignment[axis] == Authority.STUDENT:
                 output[axis] = hardware[axis]
             else:

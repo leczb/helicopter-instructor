@@ -1,5 +1,13 @@
 # Release Notes
 
+## v2.1.53 - 2026-06-04
+
+- **Refactor**: Introduced `ControlAxis` enum (`ROLL`, `PITCH`, `YAW`,
+  `COLLECTIVE`) to replace raw string dictionary keys for flight axis
+  identification across the entire codebase. All `PHASE_CONFIGS`,
+  `control_assignment`, `sync_locked`, hardware inputs, VFI outputs, OCI
+  metrics, and HUD rendering now use type-safe enum keys.
+
 ## v2.1.52 - 2026-06-04
 
 - **Refactor**: Replaced all raw string comparisons for state machine states,

@@ -1,5 +1,7 @@
 import math
 
+from helicopter_instructor.enums import ControlAxis
+
 
 def wrap_180(angle_deg):
     """Wraps an angle in degrees to the range [-180, 180]."""
@@ -742,10 +744,10 @@ class HoverAutopilotController(object):
                 collective_cmd = self.hover_feedforward
 
         return {
-            "roll": roll_cmd,
-            "pitch": pitch_cmd,
-            "yaw": yaw_cmd,
-            "collective": collective_cmd,
+            ControlAxis.ROLL: roll_cmd,
+            ControlAxis.PITCH: pitch_cmd,
+            ControlAxis.YAW: yaw_cmd,
+            ControlAxis.COLLECTIVE: collective_cmd,
             # Intermediate targets for UI feedback
             "debug": {
                 "fwd_err": fwd_err,

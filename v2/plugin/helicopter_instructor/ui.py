@@ -5,6 +5,7 @@ import imgui
 
 from helicopter_instructor import virtual_instructor
 from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 from helicopter_instructor.enums import VFIState
 
@@ -168,10 +169,10 @@ def draw_window(ui_controller, window_id, ref_con):
                 imgui.text_colored("NOT ALIGNED", 1.0, 0.4, 0.1, 1.0)
             imgui.next_column()
 
-        draw_axis_row("Roll Cyclic L/R", "roll")
-        draw_axis_row("Pitch Cyclic F/B", "pitch")
-        draw_axis_row("Anti-Torque Pedals", "yaw")
-        draw_axis_row("Collective Altitude", "collective")
+        draw_axis_row("Roll Cyclic L/R", ControlAxis.ROLL)
+        draw_axis_row("Pitch Cyclic F/B", ControlAxis.PITCH)
+        draw_axis_row("Anti-Torque Pedals", ControlAxis.YAW)
+        draw_axis_row("Collective Altitude", ControlAxis.COLLECTIVE)
 
         imgui.columns(1)
 
@@ -303,10 +304,10 @@ def draw_window(ui_controller, window_id, ref_con):
             imgui.pop_style_color(1)
             imgui.next_column()
 
-        draw_oci_row("Cyclic Roll L/R", metrics.oci["roll"], 1.0)
-        draw_oci_row("Cyclic Pitch F/B", metrics.oci["pitch"], 1.0)
-        draw_oci_row("Anti-Torque Pedals", metrics.oci["yaw"], 0.8)
-        draw_oci_row("Collective Altitude", metrics.oci["collective"], 0.8)
+        draw_oci_row("Cyclic Roll L/R", metrics.oci[ControlAxis.ROLL], 1.0)
+        draw_oci_row("Cyclic Pitch F/B", metrics.oci[ControlAxis.PITCH], 1.0)
+        draw_oci_row("Anti-Torque Pedals", metrics.oci[ControlAxis.YAW], 0.8)
+        draw_oci_row("Collective Altitude", metrics.oci[ControlAxis.COLLECTIVE], 0.8)
         imgui.columns(1)
 
         # Session Stats

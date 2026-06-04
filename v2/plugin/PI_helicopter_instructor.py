@@ -22,6 +22,7 @@ from helicopter_instructor import ui
 from helicopter_instructor import virtual_instructor
 from helicopter_instructor.autopilot import helicopter_control
 from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
 from helicopter_instructor.enums import VFIState
 from helicopter_instructor.virtual_instructor import M_S_TO_FT_MIN, M_S_TO_KNOTS
@@ -115,10 +116,10 @@ class PluginUIController(object):
                 )
                 self._plugin.instructor.system_state = VFIState.VFI_FLIGHT
                 self._plugin.instructor.control_assignment = {
-                    "roll": Authority.VFI,
-                    "pitch": Authority.VFI,
-                    "yaw": Authority.VFI,
-                    "collective": Authority.VFI,
+                    ControlAxis.ROLL: Authority.VFI,
+                    ControlAxis.PITCH: Authority.VFI,
+                    ControlAxis.YAW: Authority.VFI,
+                    ControlAxis.COLLECTIVE: Authority.VFI,
                 }
                 self._plugin.instructor.set_hud_caption("VFI ENGAGED - AUTO HOVER")
                 self._plugin.ap_enabled = True
@@ -279,7 +280,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.52"
+        self.version = "2.1.53"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -357,10 +358,10 @@ class PythonInterface(object):
 
         # Cache of last outputs for display
         self.last_commands = {
-            "roll": 0.0,
-            "pitch": 0.0,
-            "yaw": 0.0,
-            "collective": 0.5,
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
             "debug": {
                 "fwd_err": 0.0,
                 "lat_err": 0.0,
@@ -377,17 +378,17 @@ class PythonInterface(object):
         }
 
         self.last_hardware_inputs = {
-            "roll": 0.0,
-            "pitch": 0.0,
-            "yaw": 0.0,
-            "collective": 0.5,
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
         }
 
         self.last_final_commands = {
-            "roll": 0.0,
-            "pitch": 0.0,
-            "yaw": 0.0,
-            "collective": 0.5,
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
         }
 
         # Raw hardware scan diagnostics
@@ -827,7 +828,12 @@ class PythonInterface(object):
                     "Check X-Plane calibration."
                 )
 
-        hw = {"roll": 0.0, "pitch": 0.0, "yaw": 0.0, "collective": 0.5}
+        hw = {
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
+        }
 
         # Assignments mapping: 1=Pitch, 2=Roll, 3=Yaw, 5=Collective
         limit = min(len(assignments), len(mapped_values))
@@ -835,34 +841,34 @@ class PythonInterface(object):
             func = assignments[i]
             val = mapped_values[i]
             if func == 1:
-                if abs(val) > abs(hw["pitch"]):
-                    hw["pitch"] = val
+                if abs(val) > abs(hw[ControlAxis.PITCH]):
+                    hw[ControlAxis.PITCH] = val
             elif func == 2:
-                if abs(val) > abs(hw["roll"]):
-                    hw["roll"] = val
+                if abs(val) > abs(hw[ControlAxis.ROLL]):
+                    hw[ControlAxis.ROLL] = val
             elif func == 3:
-                if abs(val) > abs(hw["yaw"]):
-                    hw["yaw"] = val
+                if abs(val) > abs(hw[ControlAxis.YAW]):
+                    hw[ControlAxis.YAW] = val
             elif func == 5:
-                hw["collective"] = (val + 1.0) / 2.0
+                hw[ControlAxis.COLLECTIVE] = (val + 1.0) / 2.0
 
         # Smart per-axis fallback if assignments are not detected in X-Plane DataRef
         # Pitch: Fall back to standard Axis 1
-        if hw["pitch"] == 0.0 and len(mapped_values) > 1:
-            hw["pitch"] = mapped_values[1]
+        if hw[ControlAxis.PITCH] == 0.0 and len(mapped_values) > 1:
+            hw[ControlAxis.PITCH] = mapped_values[1]
 
         # Roll: Fall back to standard Axis 2
-        if hw["roll"] == 0.0 and len(mapped_values) > 2:
-            hw["roll"] = mapped_values[2]
+        if hw[ControlAxis.ROLL] == 0.0 and len(mapped_values) > 2:
+            hw[ControlAxis.ROLL] = mapped_values[2]
 
         # Yaw (Pedals): Fall back to standard Axis 3
-        if hw["yaw"] == 0.0 and len(mapped_values) > 3:
-            hw["yaw"] = mapped_values[3]
+        if hw[ControlAxis.YAW] == 0.0 and len(mapped_values) > 3:
+            hw[ControlAxis.YAW] = mapped_values[3]
 
         # Collective: Always use the physical flaps axis input for collective control
         if self.use_flaps_collective:
             flap_input = xp.getDataf(self.dref_flap_ratio)
-            hw["collective"] = max(0.0, min(1.0, flap_input))
+            hw[ControlAxis.COLLECTIVE] = max(0.0, min(1.0, flap_input))
 
         return hw
 
@@ -933,10 +939,10 @@ class PythonInterface(object):
 
             vfi_outputs = self.controller.update(dt, state)
             vfi_inputs = {
-                "roll": vfi_outputs["roll"],
-                "pitch": vfi_outputs["pitch"],
-                "yaw": vfi_outputs["yaw"],
-                "collective": vfi_outputs["collective"],
+                ControlAxis.ROLL: vfi_outputs[ControlAxis.ROLL],
+                ControlAxis.PITCH: vfi_outputs[ControlAxis.PITCH],
+                ControlAxis.YAW: vfi_outputs[ControlAxis.YAW],
+                ControlAxis.COLLECTIVE: vfi_outputs[ControlAxis.COLLECTIVE],
             }
             self.last_commands = vfi_outputs
 
@@ -1077,36 +1083,36 @@ class PythonInterface(object):
 
             # --- STEP D: Perform Intelligent Control Routing ---
             # 1. Roll
-            if self.instructor.control_assignment["roll"] == Authority.STUDENT:
+            if self.instructor.control_assignment[ControlAxis.ROLL] == Authority.STUDENT:
                 xp.setDatai(self.dref_override_roll, 0)
             else:
                 xp.setDatai(self.dref_override_roll, 1)
-                xp.setDataf(self.dref_yoke_roll, final_commands["roll"])
+                xp.setDataf(self.dref_yoke_roll, final_commands[ControlAxis.ROLL])
 
             # 2. Pitch
-            if self.instructor.control_assignment["pitch"] == Authority.STUDENT:
+            if self.instructor.control_assignment[ControlAxis.PITCH] == Authority.STUDENT:
                 xp.setDatai(self.dref_override_pitch, 0)
             else:
                 xp.setDatai(self.dref_override_pitch, 1)
-                xp.setDataf(self.dref_yoke_pitch, final_commands["pitch"])
+                xp.setDataf(self.dref_yoke_pitch, final_commands[ControlAxis.PITCH])
 
             # 3. Yaw
-            if self.instructor.control_assignment["yaw"] == Authority.STUDENT:
+            if self.instructor.control_assignment[ControlAxis.YAW] == Authority.STUDENT:
                 xp.setDatai(self.dref_override_yaw, 0)
             else:
                 xp.setDatai(self.dref_override_yaw, 1)
-                xp.setDataf(self.dref_yoke_heading, final_commands["yaw"])
+                xp.setDataf(self.dref_yoke_heading, final_commands[ControlAxis.YAW])
 
             # 4. Collective
             # Determine if collective injection is active (VFI is flying,
             # or flaps fallback is checked)
             inject_collective = (
-                self.instructor.control_assignment["collective"] == Authority.VFI
+                self.instructor.control_assignment[ControlAxis.COLLECTIVE] == Authority.VFI
                 or self.use_flaps_collective
             )
 
             if inject_collective:
-                coll_val = final_commands["collective"]
+                coll_val = final_commands[ControlAxis.COLLECTIVE]
                 props = [coll_val] * 8
                 xp.setDatavf(self.dref_prop_ratio, props, 0, 8)
                 xp.setDataf(self.dref_prop_ratio_all, coll_val)
@@ -1124,36 +1130,36 @@ class PythonInterface(object):
             roll_val = (
                 xp.getDataf(self.dref_yoke_roll)
                 if self.dref_yoke_roll
-                else hardware_inputs["roll"]
+                else hardware_inputs[ControlAxis.ROLL]
             )
             pitch_val = (
                 xp.getDataf(self.dref_yoke_pitch)
                 if self.dref_yoke_pitch
-                else hardware_inputs["pitch"]
+                else hardware_inputs[ControlAxis.PITCH]
             )
             yaw_val = (
                 xp.getDataf(self.dref_yoke_heading)
                 if self.dref_yoke_heading
-                else hardware_inputs["yaw"]
+                else hardware_inputs[ControlAxis.YAW]
             )
             coll_val = (
                 xp.getDataf(self.dref_prop_ratio_all)
                 if self.dref_prop_ratio_all
-                else hardware_inputs["collective"]
+                else hardware_inputs[ControlAxis.COLLECTIVE]
             )
 
             self.last_final_commands = {
-                "roll": roll_val,
-                "pitch": pitch_val,
-                "yaw": yaw_val,
-                "collective": coll_val,
+                ControlAxis.ROLL: roll_val,
+                ControlAxis.PITCH: pitch_val,
+                ControlAxis.YAW: yaw_val,
+                ControlAxis.COLLECTIVE: coll_val,
             }
 
             self.last_commands = {
-                "roll": 0.0,
-                "pitch": 0.0,
-                "yaw": 0.0,
-                "collective": 0.5,
+                ControlAxis.ROLL: 0.0,
+                ControlAxis.PITCH: 0.0,
+                ControlAxis.YAW: 0.0,
+                ControlAxis.COLLECTIVE: 0.5,
             }
 
             self.release_all_overrides()
@@ -1218,7 +1224,7 @@ class PythonInterface(object):
             if self.alt_bar_window:
                 is_student_coll = self.ap_enabled and (
                     virtual_instructor.PHASE_CONFIGS[self.instructor.phase][
-                        "collective"
+                        ControlAxis.COLLECTIVE
                     ]
                     == Authority.STUDENT
                 )

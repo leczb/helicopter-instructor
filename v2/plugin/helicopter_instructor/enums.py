@@ -22,6 +22,19 @@ class VFIState(Enum):
     RECOVERY_HOLD = "RECOVERY_HOLD"
 
 
+class ControlAxis(Enum):
+    """Flight control axes.
+
+    Used as dictionary keys in PHASE_CONFIGS, control_assignment,
+    sync_locked, hardware inputs, and VFI outputs.
+    """
+
+    ROLL = "roll"
+    PITCH = "pitch"
+    YAW = "yaw"
+    COLLECTIVE = "collective"
+
+
 class Authority(Enum):
     """Axis control authority assignment.
 

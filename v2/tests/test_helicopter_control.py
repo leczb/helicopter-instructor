@@ -26,7 +26,7 @@ from helicopter_instructor.autopilot import helicopter_control
 from helicopter_instructor import config
 
 # pyrefly: ignore [missing-import]
-from helicopter_instructor.enums import VFIState
+from helicopter_instructor.enums import ControlAxis, VFIState
 
 # pyrefly: ignore [missing-import]
 import PI_helicopter_instructor
@@ -166,8 +166,8 @@ class TestHelicopterControl(unittest.TestCase):
         }
         outputs = controller.update(dt=0.02, state=state)
         self.assertTrue(
-            outputs["pitch"] < 0.0,
-            f"Expected pitch command to be negative (nose down), got {outputs['pitch']}",
+            outputs[ControlAxis.PITCH] < 0.0,
+            f"Expected pitch command to be negative (nose down), got {outputs[ControlAxis.PITCH]}",
         )
         self.assertAlmostEqual(outputs["debug"]["fwd_err"], 2.0)
         self.assertTrue(outputs["debug"]["target_pitch"] < 0.0)
@@ -193,8 +193,8 @@ class TestHelicopterControl(unittest.TestCase):
         }
         outputs = controller.update(dt=0.02, state=state)
         self.assertTrue(
-            outputs["roll"] > 0.0,
-            f"Expected roll command to be positive (roll right), got {outputs['roll']}",
+            outputs[ControlAxis.ROLL] > 0.0,
+            f"Expected roll command to be positive (roll right), got {outputs[ControlAxis.ROLL]}",
         )
         self.assertAlmostEqual(outputs["debug"]["lat_err"], 2.0)
         self.assertTrue(outputs["debug"]["target_roll"] > 0.0)
@@ -219,8 +219,8 @@ class TestHelicopterControl(unittest.TestCase):
         }
         outputs = controller.update(dt=0.02, state=state)
         self.assertTrue(
-            outputs["collective"] > 0.5,
-            f"Expected collective to increase above 0.5, got {outputs['collective']}",
+            outputs[ControlAxis.COLLECTIVE] > 0.5,
+            f"Expected collective to increase above 0.5, got {outputs[ControlAxis.COLLECTIVE]}",
         )
 
     def test_reset_position_hold_pids_clears_cyclic_state(self):
@@ -412,10 +412,10 @@ class TestAutopilotPlugin(unittest.TestCase):
         # Mock controller update
         self.plugin.controller.update = MagicMock(
             return_value={
-                "roll": 0.1,
-                "pitch": 0.2,
-                "yaw": 0.3,
-                "collective": 0.5,
+                ControlAxis.ROLL: 0.1,
+                ControlAxis.PITCH: 0.2,
+                ControlAxis.YAW: 0.3,
+                ControlAxis.COLLECTIVE: 0.5,
                 "debug": {
                     "fwd_err": 0.0,
                     "lat_err": 0.0,
@@ -434,7 +434,7 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         # Mock hardware scanner
         self.plugin.get_hardware_inputs = MagicMock(
-            return_value={"roll": 0.0, "pitch": 0.0, "yaw": 0.0, "collective": 0.5}
+            return_value={ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5}
         )
 
         # Call flight loop callback with normal dt
@@ -652,10 +652,10 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         hw = self.plugin.get_hardware_inputs()
 
-        self.assertAlmostEqual(hw["roll"], 0.2)
-        self.assertAlmostEqual(hw["pitch"], -0.3)
-        self.assertAlmostEqual(hw["yaw"], 0.4)
-        self.assertAlmostEqual(hw["collective"], 0.8)  # Scaled!
+        self.assertAlmostEqual(hw[ControlAxis.ROLL], 0.2)
+        self.assertAlmostEqual(hw[ControlAxis.PITCH], -0.3)
+        self.assertAlmostEqual(hw[ControlAxis.YAW], 0.4)
+        self.assertAlmostEqual(hw[ControlAxis.COLLECTIVE], 0.8)  # Scaled!
 
     def test_hardware_input_scanning_multi_axis(self):
         self.plugin.dref_joystick_axis_assignments = "mock_assignments"
@@ -700,10 +700,10 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         hw = self.plugin.get_hardware_inputs()
 
-        self.assertAlmostEqual(hw["yaw"], 0.5)  # Chooses 0.5 over 0.0
-        self.assertAlmostEqual(hw["pitch"], -0.7)  # Chooses -0.7 over 0.0
-        self.assertAlmostEqual(hw["roll"], 0.8)  # Chooses 0.8 over -0.2
-        self.assertAlmostEqual(hw["collective"], 0.8)  # Scaled!
+        self.assertAlmostEqual(hw[ControlAxis.YAW], 0.5)  # Chooses 0.5 over 0.0
+        self.assertAlmostEqual(hw[ControlAxis.PITCH], -0.7)  # Chooses -0.7 over 0.0
+        self.assertAlmostEqual(hw[ControlAxis.ROLL], 0.8)  # Chooses 0.8 over -0.2
+        self.assertAlmostEqual(hw[ControlAxis.COLLECTIVE], 0.8)  # Scaled!
 
     def test_hardware_input_scanning_high_indices(self):
         self.plugin.dref_joystick_axis_assignments = "mock_assignments"
@@ -747,18 +747,18 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         hw = self.plugin.get_hardware_inputs()
 
-        self.assertAlmostEqual(hw["yaw"], 0.6)
-        self.assertAlmostEqual(hw["pitch"], -0.4)
-        self.assertAlmostEqual(hw["roll"], 0.5)
-        self.assertAlmostEqual(hw["collective"], 0.9)
+        self.assertAlmostEqual(hw[ControlAxis.YAW], 0.6)
+        self.assertAlmostEqual(hw[ControlAxis.PITCH], -0.4)
+        self.assertAlmostEqual(hw[ControlAxis.ROLL], 0.5)
+        self.assertAlmostEqual(hw[ControlAxis.COLLECTIVE], 0.9)
 
     def _make_vfi_output(self):
         """Returns a minimal valid controller.update() return value."""
         return {
-            "roll": 0.0,
-            "pitch": 0.0,
-            "yaw": 0.0,
-            "collective": 0.5,
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
             "debug": {
                 "fwd_err": 0.0,
                 "lat_err": 0.0,
@@ -804,7 +804,7 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         self.plugin.controller.update = capturing_update
         self.plugin.get_hardware_inputs = MagicMock(
-            return_value={"roll": 0.0, "pitch": 0.0, "yaw": 0.0, "collective": 0.5}
+            return_value={ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5}
         )
 
         self.plugin.flight_loop_callback(
@@ -828,7 +828,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         """
         self.plugin.controller.update = MagicMock(return_value=self._make_vfi_output())
         self.plugin.get_hardware_inputs = MagicMock(
-            return_value={"roll": 0.0, "pitch": 0.0, "yaw": 0.0, "collective": 0.5}
+            return_value={ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5}
         )
         self.plugin.controller.reset_position_hold_pids = MagicMock()
 
@@ -876,7 +876,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         """
         self.plugin.controller.update = MagicMock(return_value=self._make_vfi_output())
         self.plugin.get_hardware_inputs = MagicMock(
-            return_value={"roll": 0.0, "pitch": 0.0, "yaw": 0.0, "collective": 0.5}
+            return_value={ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5}
         )
         self.plugin.controller.reset_position_hold_pids = MagicMock()
 
@@ -909,7 +909,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         """
         self.plugin.controller.update = MagicMock(return_value=self._make_vfi_output())
         self.plugin.get_hardware_inputs = MagicMock(
-            return_value={"roll": 0.0, "pitch": 0.0, "yaw": 0.0, "collective": 0.5}
+            return_value={ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5}
         )
         self.plugin.controller.reset_position_hold_pids = MagicMock()
 
