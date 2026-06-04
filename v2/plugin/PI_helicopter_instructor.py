@@ -29,7 +29,6 @@ from helicopter_instructor.enums import Envelope
 from helicopter_instructor.enums import VFIState
 from helicopter_instructor.virtual_instructor import M_S_TO_FT_MIN
 from helicopter_instructor.virtual_instructor import M_S_TO_KNOTS
-from helicopter_instructor.virtual_instructor import PhaseAdvancedEvent
 
 # Explicitly reload submodules to prevent caching issues during X-Plane plugin reloads
 importlib.reload(logger)
@@ -281,7 +280,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.58"
+        self.version = "2.1.59"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -996,7 +995,7 @@ class PythonInterface(object):
                 # --- STEP C4: Handle automatic phase progression ---
                 auto_phase_transition = False
                 for event in getattr(final_commands, "events", []):
-                    if isinstance(event, PhaseAdvancedEvent):
+                    if isinstance(event, virtual_instructor.PhaseAdvancedEvent):
                         auto_phase_transition = True
                         if event.is_final:
                             # Training complete — play only the completion cue.

@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.59 - 2026-06-04
+
+- **Fixed**: Fixed a type-checking bug in the automatic phase progression sequence where `PhaseAdvancedEvent` instances returned by the reloaded `virtual_instructor` module failed type checking via `isinstance` in `PI_helicopter_instructor.py`. Replaced the direct class type check with a namespace-aware check (`virtual_instructor.PhaseAdvancedEvent`) to ensure the transition audio cue ("Phase transition.wav") plays correctly.
+
 ## v2.1.58 - 2026-06-04
 
 - **Fixed**: Reset the student evaluation timer (`excellent_timer`) to `0.0` when the student takes control (`STUDENT_FLIGHT`). This prevents the curriculum from instantly completing a phase after regaining control if they had previously accumulated time before an override or handoff.
