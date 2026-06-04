@@ -8,6 +8,8 @@ margins, proficiency grading, and verbal/visual training cues.
 import collections
 import math
 
+from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import Envelope
 from helicopter_instructor.virtual_instructor import PHASE_CONFIGS
 
 # Conversion Constants
@@ -136,7 +138,7 @@ class PerformanceMetricsEvaluator(object):
         self.precision_score = 100.0
         self.smoothness_score = 100.0
         self.overall_score = 100.0
-        self.envelope = "Excellent"
+        self.envelope = Envelope.EXCELLENT
         self.safety_proximity = 0.0
         self.drift_speed = 0.0
         self.drift_speed_score = 100.0
@@ -190,7 +192,7 @@ class PerformanceMetricsEvaluator(object):
             self.smoothness_score = 100.0
             self.overall_score = 100.0
             self.safety_proximity = 0.0
-            self.envelope = "Excellent"
+            self.envelope = Envelope.EXCELLENT
             self.coaching_tips = "VFI has control. Prepare to sync controls."
             self.pedal_praise_timer = 0.0
             self.cyclic_praise_timer = 0.0
@@ -277,7 +279,7 @@ class PerformanceMetricsEvaluator(object):
 
         # Compute individual deviation (stationkeeping) scores
         comp_hdg = 100.0
-        if phase_config.get("yaw") == "STUDENT":
+        if phase_config.get("yaw") == Authority.STUDENT:
             psi = telemetry.get("psi")
             t_psi = telemetry.get("target_psi")
             if psi is not None and t_psi is not None:
@@ -298,7 +300,7 @@ class PerformanceMetricsEvaluator(object):
                     )
 
         comp_alt = 100.0
-        if phase_config.get("collective") == "STUDENT":
+        if phase_config.get("collective") == Authority.STUDENT:
             y_agl = telemetry.get("y_agl")
             if y_agl is not None:
                 err = abs(y_agl - 6.0)
@@ -319,8 +321,8 @@ class PerformanceMetricsEvaluator(object):
 
         comp_drift = 100.0
         cyclic_active = (
-            phase_config.get("roll") == "STUDENT"
-            and phase_config.get("pitch") == "STUDENT"
+            phase_config.get("roll") == Authority.STUDENT
+            and phase_config.get("pitch") == Authority.STUDENT
         )
         if cyclic_active:
             x = telemetry.get("x")
@@ -364,7 +366,7 @@ class PerformanceMetricsEvaluator(object):
             self.drift_speed_score = 100.0
 
         # Compute vertical speed in m/s and corresponding score component
-        if phase_config.get("collective") == "STUDENT":
+        if phase_config.get("collective") == Authority.STUDENT:
             self.vert_speed = abs(telemetry.get("vy", 0.0))
             if self.vert_speed <= GREEN_ZONE_VERT_SPEED_M_S:
                 self.vert_speed_score = 100.0
@@ -377,7 +379,7 @@ class PerformanceMetricsEvaluator(object):
             self.vert_speed_score = 100.0
 
         # Compute yaw rate in deg/s and corresponding score component
-        if phase_config.get("yaw") == "STUDENT":
+        if phase_config.get("yaw") == Authority.STUDENT:
             self.yaw_speed = abs(telemetry.get("R", 0.0))
             if self.yaw_speed <= GREEN_ZONE_YAW_SPEED_DEG_S:
                 self.yaw_speed_score = 100.0
@@ -393,12 +395,12 @@ class PerformanceMetricsEvaluator(object):
         prec_components = []
 
         # Heading component (Yaw)
-        if phase_config.get("yaw") == "STUDENT":
+        if phase_config.get("yaw") == Authority.STUDENT:
             prec_components.append(comp_hdg)
             prec_components.append(self.yaw_speed_score)
 
         # Altitude component (Collective)
-        if phase_config.get("collective") == "STUDENT":
+        if phase_config.get("collective") == Authority.STUDENT:
             prec_components.append(comp_alt)
             prec_components.append(self.vert_speed_score)
 
@@ -415,7 +417,7 @@ class PerformanceMetricsEvaluator(object):
         # --- B. Smoothness Scoring ---
         smooth_components = []
         for axis in ["roll", "pitch", "yaw", "collective"]:
-            if phase_config.get(axis) == "STUDENT":
+            if phase_config.get(axis) == Authority.STUDENT:
                 # Jerk threshold limit = 1.0 (OCI)
                 score = max(0.0, 100.0 * (1.0 - self.oci[axis]))
                 smooth_components.append(score)
@@ -458,9 +460,9 @@ class PerformanceMetricsEvaluator(object):
 
         # Compute stationkeeping precision factor
         dev_components = []
-        if phase_config.get("yaw") == "STUDENT":
+        if phase_config.get("yaw") == Authority.STUDENT:
             dev_components.append(comp_hdg)
-        if phase_config.get("collective") == "STUDENT":
+        if phase_config.get("collective") == Authority.STUDENT:
             dev_components.append(comp_alt)
         if cyclic_active:
             dev_components.append(comp_drift)
@@ -482,7 +484,7 @@ class PerformanceMetricsEvaluator(object):
     def _evaluate_proficiency_envelope(self, phase):
         """Grades performance (Excellent/Good/Unstable) over sliding window."""
         if not self.history:
-            self.envelope = "Excellent"
+            self.envelope = Envelope.EXCELLENT
             return
 
         phase_config = PHASE_CONFIGS.get(phase, {})
@@ -528,24 +530,24 @@ class PerformanceMetricsEvaluator(object):
 
             # Smoothness stability (OCI > 1.5) on active student axes
             for axis in ["roll", "pitch", "yaw", "collective"]:
-                if phase_config.get(axis) == "STUDENT" and oci.get(axis, 0.0) > 1.5:
+                if phase_config.get(axis) == Authority.STUDENT and oci.get(axis, 0.0) > 1.5:
                     is_unstable = True
 
             # Drift stability (Cyclic STUDENT)
             if (
-                phase_config.get("roll") == "STUDENT"
-                and phase_config.get("pitch") == "STUDENT"
+                phase_config.get("roll") == Authority.STUDENT
+                and phase_config.get("pitch") == Authority.STUDENT
             ):
                 if drift > LIMIT_DRIFT_M or frame_drift_speed > LIMIT_DRIFT_SPEED_M_S:
                     is_unstable = True
 
             # Altitude stability (Collective STUDENT)
-            if phase_config.get("collective") == "STUDENT":
+            if phase_config.get("collective") == Authority.STUDENT:
                 if alt_err > LIMIT_ALT_M or frame_vert_speed > LIMIT_VERT_SPEED_M_S:
                     is_unstable = True
 
             # Heading stability (Yaw STUDENT)
-            if phase_config.get("yaw") == "STUDENT":
+            if phase_config.get("yaw") == Authority.STUDENT:
                 if hdg_err > LIMIT_HDG_DEG or frame_yaw_speed > LIMIT_YAW_SPEED_DEG_S:
                     is_unstable = True
 
@@ -556,8 +558,8 @@ class PerformanceMetricsEvaluator(object):
                 is_excellent = True
 
                 if (
-                    phase_config.get("roll") == "STUDENT"
-                    and phase_config.get("pitch") == "STUDENT"
+                    phase_config.get("roll") == Authority.STUDENT
+                    and phase_config.get("pitch") == Authority.STUDENT
                 ):
                     if (
                         drift >= GREEN_ZONE_DRIFT_M
@@ -567,14 +569,14 @@ class PerformanceMetricsEvaluator(object):
                     ):
                         is_excellent = False
 
-                if phase_config.get("collective") == "STUDENT":
+                if phase_config.get("collective") == Authority.STUDENT:
                     if (
                         alt_err >= GREEN_ZONE_ALT_M
                         or frame_vert_speed >= GREEN_ZONE_VERT_SPEED_M_S
                     ):
                         is_excellent = False
 
-                if phase_config.get("yaw") == "STUDENT":
+                if phase_config.get("yaw") == Authority.STUDENT:
                     if (
                         hdg_err >= GREEN_ZONE_HDG_DEG
                         or frame_yaw_speed >= GREEN_ZONE_YAW_SPEED_DEG_S
@@ -590,11 +592,11 @@ class PerformanceMetricsEvaluator(object):
         excellent_ratio = float(excellent_count) / total_samples
 
         if unstable_ratio > 0.15:
-            self.envelope = "Unstable"
+            self.envelope = Envelope.UNSTABLE
         elif excellent_ratio > 0.60:
-            self.envelope = "Excellent"
+            self.envelope = Envelope.EXCELLENT
         else:
-            self.envelope = "Good"
+            self.envelope = Envelope.GOOD
 
     def _check_feedback_triggers(self, dt, telemetry, phase):
         """Monitors trigger durations and cues instructional warning/praise.
@@ -610,8 +612,8 @@ class PerformanceMetricsEvaluator(object):
 
         # 1. Jerky Cyclic (Roll or Pitch OCI > limit)
         cyclic_student = (
-            phase_config.get("roll") == "STUDENT"
-            and phase_config.get("pitch") == "STUDENT"
+            phase_config.get("roll") == Authority.STUDENT
+            and phase_config.get("pitch") == Authority.STUDENT
         )
         if cyclic_student:
             max_cyclic_oci = max(self.oci["roll"], self.oci["pitch"])
@@ -630,7 +632,7 @@ class PerformanceMetricsEvaluator(object):
             self.jerk_timers["cyclic"] = 0.0
 
         # 2. Jerky Pedals (Yaw OCI > limit)
-        if phase_config.get("yaw") == "STUDENT":
+        if phase_config.get("yaw") == Authority.STUDENT:
             if self.oci["yaw"] > MARGIN_OCI_PEDAL:
                 self.jerk_timers["yaw"] += dt
                 if (
@@ -646,7 +648,7 @@ class PerformanceMetricsEvaluator(object):
             self.jerk_timers["yaw"] = 0.0
 
         # 3. Jerky Collective (Collective OCI > limit)
-        if phase_config.get("collective") == "STUDENT":
+        if phase_config.get("collective") == Authority.STUDENT:
             if self.oci["collective"] > MARGIN_OCI_COLLECTIVE:
                 self.jerk_timers["collective"] += dt
                 if (
@@ -686,7 +688,7 @@ class PerformanceMetricsEvaluator(object):
             self.drift_warning_timer = 0.0
 
         # 5. Altitude warnings (Too High vs Too Low)
-        if phase_config.get("collective") == "STUDENT":
+        if phase_config.get("collective") == Authority.STUDENT:
             y_agl = telemetry.get("y_agl")
             if y_agl is not None:
                 # Too Low (AGL < MARGIN_ALT_LOW)
@@ -723,7 +725,7 @@ class PerformanceMetricsEvaluator(object):
         # --- B. POSITIVE REINFORCEMENT (PRAISE CUES) ---
 
         # 1. "Pedal Master" (heading steady, low rate, and low drift speed)
-        if phase_config.get("yaw") == "STUDENT":
+        if phase_config.get("yaw") == Authority.STUDENT:
             psi = telemetry.get("psi")
             t_psi = telemetry.get("target_psi")
             yaw_rate = abs(telemetry.get("R", 0.0))
@@ -778,7 +780,7 @@ class PerformanceMetricsEvaluator(object):
                 if drift > MARGIN_DRIFT_LIMIT:
                     violating_warning = True
 
-        if phase_config.get("collective") == "STUDENT":
+        if phase_config.get("collective") == Authority.STUDENT:
             y_agl = telemetry.get("y_agl")
             if y_agl is not None:
                 if y_agl < MARGIN_ALT_LOW or y_agl > MARGIN_ALT_HIGH:
@@ -797,7 +799,7 @@ class PerformanceMetricsEvaluator(object):
             self.was_in_warning_zone = False
 
         # 4. "Perfect" stable hover reinforcement (when student maintains Excellent envelope and low drift speed for 10.0s)
-        if self.envelope == "Excellent" and self.drift_speed <= 1.0:
+        if self.envelope == Envelope.EXCELLENT and self.drift_speed <= 1.0:
             self.perfect_hover_timer += dt
             if (
                 self.perfect_hover_timer >= 10.0
@@ -822,8 +824,8 @@ class PerformanceMetricsEvaluator(object):
 
         # 1. Cyclic over-controlling advice
         cyclic_student = (
-            phase_config.get("roll") == "STUDENT"
-            and phase_config.get("pitch") == "STUDENT"
+            phase_config.get("roll") == Authority.STUDENT
+            and phase_config.get("pitch") == Authority.STUDENT
         )
         if cyclic_student:
             if max(self.oci["roll"], self.oci["pitch"]) > 0.8:
@@ -832,14 +834,14 @@ class PerformanceMetricsEvaluator(object):
                 )
 
         # 2. Pedal over-controlling advice
-        if phase_config.get("yaw") == "STUDENT":
+        if phase_config.get("yaw") == Authority.STUDENT:
             if self.oci["yaw"] > 0.6:
                 tips.append(
                     "Avoid rapidly pumping pedals. Push gently and hold to damp yaw rotation."
                 )
 
         # 3. Collective altitude advice
-        if phase_config.get("collective") == "STUDENT":
+        if phase_config.get("collective") == Authority.STUDENT:
             if self.oci["collective"] > 0.6:
                 tips.append(
                     "Altitude corrections should be smooth. Collective changes require corresponding pedal compensation."

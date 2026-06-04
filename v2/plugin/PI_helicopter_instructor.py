@@ -21,6 +21,9 @@ from helicopter_instructor import metrics
 from helicopter_instructor import ui
 from helicopter_instructor import virtual_instructor
 from helicopter_instructor.autopilot import helicopter_control
+from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import Envelope
+from helicopter_instructor.enums import VFIState
 from helicopter_instructor.virtual_instructor import M_S_TO_FT_MIN, M_S_TO_KNOTS
 
 # Explicitly reload submodules to prevent caching issues during X-Plane plugin reloads
@@ -110,12 +113,12 @@ class PluginUIController(object):
                 self._plugin.controller.engage(
                     state["x"], target_alt, state["z"], state["psi"], curr_collective
                 )
-                self._plugin.instructor.system_state = "VFI_FLIGHT"
+                self._plugin.instructor.system_state = VFIState.VFI_FLIGHT
                 self._plugin.instructor.control_assignment = {
-                    "roll": "VFI",
-                    "pitch": "VFI",
-                    "yaw": "VFI",
-                    "collective": "VFI",
+                    "roll": Authority.VFI,
+                    "pitch": Authority.VFI,
+                    "yaw": Authority.VFI,
+                    "collective": Authority.VFI,
                 }
                 self._plugin.instructor.set_hud_caption("VFI ENGAGED - AUTO HOVER")
                 self._plugin.ap_enabled = True
@@ -129,7 +132,7 @@ class PluginUIController(object):
             else:
                 self._plugin.ap_enabled = False
                 self._plugin.release_all_overrides()
-                self._plugin.instructor.system_state = "VFI_FLIGHT"
+                self._plugin.instructor.system_state = VFIState.VFI_FLIGHT
                 self._plugin.instructor.set_hud_caption("INSTRUCTOR DISENGAGED")
 
     @property
@@ -276,7 +279,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.51"
+        self.version = "2.1.52"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -959,7 +962,7 @@ class PythonInterface(object):
             # (PID reset is handled below, after STEP C4 re-read.)
 
             # --- STEP C2: Run Student Performance Metrics ---
-            is_student_flying = curr_state == "STUDENT_FLIGHT"
+            is_student_flying = curr_state == VFIState.STUDENT_FLIGHT
             self.metrics.update(
                 dt, telemetry, hardware_inputs, is_student_flying, curr_phase
             )
@@ -986,9 +989,9 @@ class PythonInterface(object):
                 is_final = self.instructor.training_complete
 
                 # 1. Take back full VFI authority (clears student axis assignments).
-                self.instructor.system_state = "VFI_FLIGHT"
+                self.instructor.system_state = VFIState.VFI_FLIGHT
                 for axis in self.instructor.control_assignment:
-                    self.instructor.control_assignment[axis] = "VFI"
+                    self.instructor.control_assignment[axis] = Authority.VFI
                     self.instructor.sync_locked[axis] = False
 
                 if is_final:
@@ -1027,8 +1030,8 @@ class PythonInterface(object):
             # already reflects any within-frame state change, while
             # last_system_state always holds the previous frame's value.
             if (
-                self.last_system_state == "STUDENT_FLIGHT"
-                and curr_state != "STUDENT_FLIGHT"
+                self.last_system_state == VFIState.STUDENT_FLIGHT
+                and curr_state != VFIState.STUDENT_FLIGHT
             ):
                 self.controller.reset_position_hold_pids()
 
@@ -1042,16 +1045,16 @@ class PythonInterface(object):
                 if phase_changed:
                     # Manual phase change: instructor takes control and
                     # explains the new phase via its intro audio.
-                    if curr_state in ["STUDENT_FLIGHT", "SYNCING"]:
+                    if curr_state in (VFIState.STUDENT_FLIGHT, VFIState.SYNCING):
                         self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
                     self.play_sound(SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase))
                 elif state_changed:
-                    if curr_state == "SYNCING":
-                        if self.last_system_state == "STUDENT_FLIGHT":
+                    if curr_state == VFIState.SYNCING:
+                        if self.last_system_state == VFIState.STUDENT_FLIGHT:
                             self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
                         else:
                             self.play_sound(SOUND_GET_READY)
-                    elif curr_state == "STUDENT_FLIGHT":
+                    elif curr_state == VFIState.STUDENT_FLIGHT:
                         phase = self.instructor.phase
                         if phase == PHASE_PEDALS_ONLY:
                             self.play_sound(SOUND_YOU_HAVE_PEDALS)
@@ -1065,7 +1068,7 @@ class PythonInterface(object):
                             self.play_sound(SOUND_YOU_HAVE_CYCLIC_PEDALS)
                         elif phase == PHASE_ALL_CONTROLS:
                             self.play_sound(SOUND_YOU_HAVE_ALL)
-                    elif curr_state == "OVERRIDE":
+                    elif curr_state == VFIState.OVERRIDE:
                         self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
 
             # Update persistent tracking state
@@ -1074,21 +1077,21 @@ class PythonInterface(object):
 
             # --- STEP D: Perform Intelligent Control Routing ---
             # 1. Roll
-            if self.instructor.control_assignment["roll"] == "STUDENT":
+            if self.instructor.control_assignment["roll"] == Authority.STUDENT:
                 xp.setDatai(self.dref_override_roll, 0)
             else:
                 xp.setDatai(self.dref_override_roll, 1)
                 xp.setDataf(self.dref_yoke_roll, final_commands["roll"])
 
             # 2. Pitch
-            if self.instructor.control_assignment["pitch"] == "STUDENT":
+            if self.instructor.control_assignment["pitch"] == Authority.STUDENT:
                 xp.setDatai(self.dref_override_pitch, 0)
             else:
                 xp.setDatai(self.dref_override_pitch, 1)
                 xp.setDataf(self.dref_yoke_pitch, final_commands["pitch"])
 
             # 3. Yaw
-            if self.instructor.control_assignment["yaw"] == "STUDENT":
+            if self.instructor.control_assignment["yaw"] == Authority.STUDENT:
                 xp.setDatai(self.dref_override_yaw, 0)
             else:
                 xp.setDatai(self.dref_override_yaw, 1)
@@ -1098,7 +1101,7 @@ class PythonInterface(object):
             # Determine if collective injection is active (VFI is flying,
             # or flaps fallback is checked)
             inject_collective = (
-                self.instructor.control_assignment["collective"] == "VFI"
+                self.instructor.control_assignment["collective"] == Authority.VFI
                 or self.use_flaps_collective
             )
 
@@ -1217,7 +1220,7 @@ class PythonInterface(object):
                     virtual_instructor.PHASE_CONFIGS[self.instructor.phase][
                         "collective"
                     ]
-                    == "STUDENT"
+                    == Authority.STUDENT
                 )
                 active_visible = 1 if (self.show_alt_bar and is_student_coll) else 0
                 if xp.getWindowIsVisible(self.alt_bar_window) != active_visible:

@@ -1,5 +1,10 @@
 import math
 
+from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import Envelope
+from helicopter_instructor.enums import HeadingZone
+from helicopter_instructor.enums import VFIState
+
 from helicopter_instructor.envelope_limits import (
     LIMIT_HDG_GREEN_DEG,
     LIMIT_HDG_ORANGE_DEG,
@@ -22,16 +27,41 @@ MAX_PHASE = 6
 # Phase configs mapping (1 to 6)
 # Defines which axes are STUDENT-controlled vs VFI-controlled
 PHASE_CONFIGS = {
-    1: {"roll": "VFI", "pitch": "VFI", "yaw": "STUDENT", "collective": "VFI"},
-    2: {"roll": "VFI", "pitch": "VFI", "yaw": "VFI", "collective": "STUDENT"},
-    3: {"roll": "VFI", "pitch": "VFI", "yaw": "STUDENT", "collective": "STUDENT"},
-    4: {"roll": "STUDENT", "pitch": "STUDENT", "yaw": "VFI", "collective": "VFI"},
-    5: {"roll": "STUDENT", "pitch": "STUDENT", "yaw": "STUDENT", "collective": "VFI"},
+    1: {
+        "roll": Authority.VFI,
+        "pitch": Authority.VFI,
+        "yaw": Authority.STUDENT,
+        "collective": Authority.VFI,
+    },
+    2: {
+        "roll": Authority.VFI,
+        "pitch": Authority.VFI,
+        "yaw": Authority.VFI,
+        "collective": Authority.STUDENT,
+    },
+    3: {
+        "roll": Authority.VFI,
+        "pitch": Authority.VFI,
+        "yaw": Authority.STUDENT,
+        "collective": Authority.STUDENT,
+    },
+    4: {
+        "roll": Authority.STUDENT,
+        "pitch": Authority.STUDENT,
+        "yaw": Authority.VFI,
+        "collective": Authority.VFI,
+    },
+    5: {
+        "roll": Authority.STUDENT,
+        "pitch": Authority.STUDENT,
+        "yaw": Authority.STUDENT,
+        "collective": Authority.VFI,
+    },
     6: {
-        "roll": "STUDENT",
-        "pitch": "STUDENT",
-        "yaw": "STUDENT",
-        "collective": "STUDENT",
+        "roll": Authority.STUDENT,
+        "pitch": Authority.STUDENT,
+        "yaw": Authority.STUDENT,
+        "collective": Authority.STUDENT,
     },
 }
 
@@ -67,7 +97,7 @@ class VirtualInstructor(object):
         # Set to True when phase 6 is mastered; prevents further advancement.
         self.training_complete = False
         # States: VFI_FLIGHT, SYNCING, STUDENT_FLIGHT, OVERRIDE, RECOVERY_HOLD
-        self.system_state = "VFI_FLIGHT"
+        self.system_state = VFIState.VFI_FLIGHT
 
         # Dead-zone matching window configuration
         self.match_tolerance = 0.04  # ±4% matching window
@@ -84,10 +114,10 @@ class VirtualInstructor(object):
 
         # Active control assignments (starts all VFI-controlled)
         self.control_assignment = {
-            "roll": "VFI",
-            "pitch": "VFI",
-            "yaw": "VFI",
-            "collective": "VFI",
+            "roll": Authority.VFI,
+            "pitch": Authority.VFI,
+            "yaw": Authority.VFI,
+            "collective": Authority.VFI,
         }
         self.sync_locked = {
             "roll": False,
@@ -111,7 +141,7 @@ class VirtualInstructor(object):
         self.override_target_z = None
 
         # Heading Safety Zone Detection ("green", "orange", or "red")
-        self.heading_zone = "green"
+        self.heading_zone = HeadingZone.GREEN
 
     def set_hud_caption(self, text, duration=3.0):
         """Sets a visual caption/subtitle to be shown on the HUD."""
@@ -128,14 +158,17 @@ class VirtualInstructor(object):
             self.phase = phase_num
             # If the student is already flying, we should shift to syncing the
             # new phase controls
-            if self.system_state in ["STUDENT_FLIGHT", "SYNCING"]:
+            if self.system_state in (
+            VFIState.STUDENT_FLIGHT,
+            VFIState.SYNCING,
+        ):
                 self.initiate_handoff()
             else:
                 self.set_hud_caption(f"PHASE {self.phase} SELECTED")
 
     def initiate_handoff(self):
         """Triggers the handoff sequence for the current phase."""
-        self.system_state = "SYNCING"
+        self.system_state = VFIState.SYNCING
         self.sync_timer = 0.0
 
         # Determine target axes that belong to the student in this phase
@@ -143,12 +176,12 @@ class VirtualInstructor(object):
         for axis in self.control_assignment:
             # Re-initialize syncing locks. If an axis belongs to VFI, it's
             # immediately "synced" (no sync needed)
-            if phase_config[axis] == "VFI":
-                self.control_assignment[axis] = "VFI"
+            if phase_config[axis] == Authority.VFI:
+                self.control_assignment[axis] = Authority.VFI
                 self.sync_locked[axis] = True
             else:
                 # VFI holds flight authority during matching
-                self.control_assignment[axis] = "VFI"
+                self.control_assignment[axis] = Authority.VFI
                 self.sync_locked[axis] = False
 
         self.set_hud_caption("PREPARE TO TAKE THE CONTROLS", duration=4.0)
@@ -177,7 +210,10 @@ class VirtualInstructor(object):
                 self.hud_caption = ""
 
         # 1. RUN SAFETY AND ENVELOPE CHECKS IF STUDENT HAS OR IS TAKING CONTROLS
-        if self.system_state in ["STUDENT_FLIGHT", "SYNCING"]:
+        if self.system_state in (
+            VFIState.STUDENT_FLIGHT,
+            VFIState.SYNCING,
+        ):
             x = telemetry.get("x", None)
             y = telemetry.get("y", None)
             z = telemetry.get("z", None)
@@ -211,23 +247,23 @@ class VirtualInstructor(object):
                 return self.process_recovery(dt, vfi_inputs, telemetry)
 
         # 2. STATE MACHINE ROUTING
-        if self.system_state == "VFI_FLIGHT":
+        if self.system_state == VFIState.VFI_FLIGHT:
             # 100% VFI flying
             return vfi_inputs
 
-        elif self.system_state == "SYNCING":
+        elif self.system_state == VFIState.SYNCING:
             return self.process_synchronization(dt, hardware, vfi_inputs)
 
-        elif self.system_state == "STUDENT_FLIGHT":
+        elif self.system_state == VFIState.STUDENT_FLIGHT:
             # Check for automatic phase advancement before routing inputs.
             self.maybe_advance_phase(dt)
             return self.process_student_inputs(telemetry, hardware, vfi_inputs)
 
-        elif self.system_state == "OVERRIDE":
+        elif self.system_state == VFIState.OVERRIDE:
             # Direct recovery execution
             return self.process_recovery(dt, vfi_inputs, telemetry)
 
-        elif self.system_state == "RECOVERY_HOLD":
+        elif self.system_state == VFIState.RECOVERY_HOLD:
             # Stage 3: slowly move recovery targets horizontally and vertically towards original
             if self.drift_recovery_active:
                 self._update_recovery_targets(dt)
@@ -289,14 +325,14 @@ class VirtualInstructor(object):
             err = (target_psi - psi + 180.0) % 360.0 - 180.0
             abs_err = abs(err)
             if abs_err <= LIMIT_HDG_GREEN_DEG:
-                self.heading_zone = "green"
+                self.heading_zone = HeadingZone.GREEN
             elif abs_err <= LIMIT_HDG_ORANGE_DEG:
-                self.heading_zone = "orange"
+                self.heading_zone = HeadingZone.ORANGE
             else:
-                self.heading_zone = "red"
+                self.heading_zone = HeadingZone.RED
                 return True
         else:
-            self.heading_zone = "green"
+            self.heading_zone = HeadingZone.GREEN
 
         # Hovering safety distance from target (default: 45 meters)
         x = telemetry.get("x", None)
@@ -331,7 +367,8 @@ class VirtualInstructor(object):
 
         # Check if cyclic controls are student-controlled in this phase
         cyclic_student = (
-            phase_config["roll"] == "STUDENT" and phase_config["pitch"] == "STUDENT"
+            phase_config["roll"] == Authority.STUDENT
+            and phase_config["pitch"] == Authority.STUDENT
         )
 
         # Check cyclic as a circular 2D distance
@@ -353,7 +390,7 @@ class VirtualInstructor(object):
 
         # Check other axes individually (yaw, collective)
         for axis in ["yaw", "collective"]:
-            if phase_config[axis] == "STUDENT":
+            if phase_config[axis] == Authority.STUDENT:
                 delta = abs(hardware[axis] - vfi_inputs[axis])
                 if delta <= self.match_tolerance:
                     self.sync_locked[axis] = True
@@ -370,10 +407,10 @@ class VirtualInstructor(object):
                 # Synchronization lock succeeded!
                 # Hot-swap authority to student
                 for axis in ["roll", "pitch", "yaw", "collective"]:
-                    if phase_config[axis] == "STUDENT":
-                        self.control_assignment[axis] = "STUDENT"
+                    if phase_config[axis] == Authority.STUDENT:
+                        self.control_assignment[axis] = Authority.STUDENT
 
-                self.system_state = "STUDENT_FLIGHT"
+                self.system_state = VFIState.STUDENT_FLIGHT
                 self.set_hud_caption("YOU HAVE THE CONTROLS", duration=3.0)
         else:
             # Reset timer if any axis drifts out of the matching dead-zone
@@ -397,7 +434,7 @@ class VirtualInstructor(object):
         if self.training_complete or self.transition_pending:
             return
 
-        if self.last_envelope == "Excellent":
+        if self.last_envelope == Envelope.EXCELLENT:
             self.excellent_timer += dt
         else:
             self.excellent_timer = 0.0
@@ -425,7 +462,7 @@ class VirtualInstructor(object):
         """
         output = {}
         for axis in ["roll", "pitch", "yaw", "collective"]:
-            if self.control_assignment[axis] == "STUDENT":
+            if self.control_assignment[axis] == Authority.STUDENT:
                 output[axis] = hardware[axis]
             else:
                 output[axis] = vfi_inputs[axis]
@@ -482,10 +519,10 @@ class VirtualInstructor(object):
 
     def trigger_hard_override(self):
         """Instantly severs user authority and starts the recovery state."""
-        self.system_state = "OVERRIDE"
+        self.system_state = VFIState.OVERRIDE
         # Revoke all student authority immediately
         for axis in self.control_assignment:
-            self.control_assignment[axis] = "VFI"
+            self.control_assignment[axis] = Authority.VFI
             self.sync_locked[axis] = False
 
         self.set_hud_caption("I HAVE THE CONTROLS", duration=4.0)
@@ -530,10 +567,10 @@ class VirtualInstructor(object):
 
         is_stable = phi < 2.0 and theta < 2.0 and vy > -50.0 and gs_knots < 1.0
 
-        if self.system_state == "OVERRIDE":
+        if self.system_state == VFIState.OVERRIDE:
             if is_stable:
                 # Transition to Step 4: Cool-down Hold for 3 seconds / Target Translation
-                self.system_state = "RECOVERY_HOLD"
+                self.system_state = VFIState.RECOVERY_HOLD
                 self.recovery_timer = self.recovery_hold_duration
 
         # Return VFI inputs

@@ -16,6 +16,7 @@ from helicopter_instructor import envelope_limits
 
 # pyrefly: ignore [missing-import]
 from helicopter_instructor import metrics
+from helicopter_instructor.enums import Envelope
 
 PerformanceMetricsEvaluator = metrics.PerformanceMetricsEvaluator
 M_S_TO_FT_MIN = metrics.M_S_TO_FT_MIN
@@ -57,7 +58,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.assertEqual(self.metrics.precision_score, 100.0)
         self.assertEqual(self.metrics.smoothness_score, 100.0)
         self.assertEqual(self.metrics.overall_score, 100.0)
-        self.assertEqual(self.metrics.envelope, "Excellent")
+        self.assertEqual(self.metrics.envelope, Envelope.EXCELLENT)
         self.assertEqual(self.metrics.safety_proximity, 0.0)
         self.assertFalse(self.metrics.was_student_flying_last_frame)
 
@@ -255,7 +256,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             self.metrics.history.append(frame)
 
         self.metrics._evaluate_proficiency_envelope(6)
-        self.assertEqual(self.metrics.envelope, "Excellent")
+        self.assertEqual(self.metrics.envelope, Envelope.EXCELLENT)
 
     def test_sliding_window_unstable_envelope(self):
         """Verifies Unstable grade when window contains significant errors."""
@@ -278,7 +279,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
 
         # 3 unstable frames out of 10 = 30% unstable ratio (> 15% limit)
         self.metrics._evaluate_proficiency_envelope(6)
-        self.assertEqual(self.metrics.envelope, "Unstable")
+        self.assertEqual(self.metrics.envelope, Envelope.UNSTABLE)
 
     def test_jerk_feedback_warnings(self):
         """Verifies that OCI threshold jerks prompt warning WAV cues."""
@@ -351,7 +352,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         # Prevent update() from overwriting manually mocked envelope evaluations
         self.metrics._evaluate_proficiency_envelope = lambda phase: None
 
-        self.metrics.envelope = "Excellent"
+        self.metrics.envelope = Envelope.EXCELLENT
         self.metrics.perfect_hover_timer = 9.5
 
         # 1. Excellent envelope for 0.6s -> triggers Perfect.wav
@@ -363,7 +364,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.metrics.audio_queue.clear()
 
         # 2. Resets timer if envelope is Good, not Excellent
-        self.metrics.envelope = "Good"
+        self.metrics.envelope = Envelope.GOOD
         self.metrics.perfect_hover_timer = 5.0
         self.metrics.update(0.1, self.nominal_telemetry, self.nominal_inputs, True, 6)
         self.assertEqual(self.metrics.perfect_hover_timer, 0.0)
@@ -377,7 +378,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         """Verifies praise is blocked/reset when drift speed is > 1.0 m/s."""
         # 1. Block Perfect hover praise
         self.metrics._evaluate_proficiency_envelope = lambda phase: None
-        self.metrics.envelope = "Excellent"
+        self.metrics.envelope = Envelope.EXCELLENT
         self.metrics.perfect_hover_timer = 9.5
 
         # Telemetry with high drift speed (vx = 1.0, vz = 1.0 -> speed = sqrt(2) ~ 1.41 m/s > 1.0)
@@ -502,7 +503,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
 
         # Evaluate envelope -> should not be Excellent since yaw rate > 4.0 limit
         self.metrics._evaluate_proficiency_envelope(6)
-        self.assertNotEqual(self.metrics.envelope, "Excellent")
+        self.assertNotEqual(self.metrics.envelope, Envelope.EXCELLENT)
 
         # 2. Populate history with frames having low yaw rate (< 4.0 deg/s limit)
         self.metrics.history.clear()
@@ -523,7 +524,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
 
         # Evaluate envelope -> should be Excellent
         self.metrics._evaluate_proficiency_envelope(6)
-        self.assertEqual(self.metrics.envelope, "Excellent")
+        self.assertEqual(self.metrics.envelope, Envelope.EXCELLENT)
 
     def test_envelope_evaluation_ignores_vfi_controlled_axes(self):
         """Verifies envelope ignores errors/OCI on VFI-controlled axes in Phase 1."""
@@ -552,11 +553,11 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
 
         # Evaluate envelope in Phase 1 -> should be Excellent (as yaw is excellent and cyclic is ignored)
         self.metrics._evaluate_proficiency_envelope(1)
-        self.assertEqual(self.metrics.envelope, "Excellent")
+        self.assertEqual(self.metrics.envelope, Envelope.EXCELLENT)
 
         # In Phase 6 (all axes under student control), the same frames must be Unstable
         self.metrics._evaluate_proficiency_envelope(6)
-        self.assertEqual(self.metrics.envelope, "Unstable")
+        self.assertEqual(self.metrics.envelope, Envelope.UNSTABLE)
 
     def test_gated_precision_speeds_and_scores_when_not_student_controlled(self):
         """Verifies speeds and scores are forced to 0/100 when VFI-controlled."""

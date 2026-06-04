@@ -1,5 +1,13 @@
 # Release Notes
 
+## v2.1.52 - 2026-06-04
+
+- **Refactor**: Replaced all raw string comparisons for state machine states,
+  axis authority, proficiency envelope, and heading zones with Python `Enum`
+  types (`VFIState`, `Authority`, `Envelope`, `HeadingZone`). This eliminates
+  an entire class of silent typo bugs and enables IDE autocompletion across
+  the codebase. New central module: `helicopter_instructor/enums.py`.
+
 ## v2.1.51 - 2026-06-03
 
 - **Docs**: Wired curriculum phase screenshots, target safety zones, and external view images into the top-level README.md.

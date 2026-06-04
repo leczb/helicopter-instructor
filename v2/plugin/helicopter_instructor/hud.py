@@ -6,6 +6,9 @@ import math
 import xp
 
 from helicopter_instructor import virtual_instructor
+from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import Envelope
+from helicopter_instructor.enums import VFIState
 from helicopter_instructor.envelope_limits import (
     LIMIT_ALT_GREEN_M,
     LIMIT_ALT_ORANGE_M,
@@ -233,7 +236,7 @@ def draw_hud(view_model, window_id):
     color_green = COLOR_GREEN
     color_red = COLOR_RED
     color_vfi = COLOR_VFI
-    draw_vfi = view_model.system_state != "STUDENT_FLIGHT"
+    draw_vfi = view_model.system_state != VFIState.STUDENT_FLIGHT
 
     y_cursor = box_top - 45
 
@@ -272,20 +275,20 @@ def draw_hud(view_model, window_id):
     if not view_model.ap_enabled:
         state_color = color_orange
         state_label = "STANDBY (DISENGAGED)"
-    elif state_str == "VFI_FLIGHT":
+    elif state_str == VFIState.VFI_FLIGHT:
         state_color = color_title
         state_label = "AUTO HOVER ACTIVE"
-    elif state_str == "SYNCING":
+    elif state_str == VFIState.SYNCING:
         state_color = color_orange
         ratio = view_model.sync_timer / view_model.sync_hold_duration
         state_label = f"ALIGNING CONTROLS... ({int(ratio * 100)}%)"
-    elif state_str == "STUDENT_FLIGHT":
+    elif state_str == VFIState.STUDENT_FLIGHT:
         state_color = color_green
         state_label = "STUDENT IN CONTROL"
-    elif state_str == "OVERRIDE":
+    elif state_str == VFIState.OVERRIDE:
         state_color = color_red
         state_label = "TAKEBACK TAKEOVER ACTIVE!"
-    elif state_str == "RECOVERY_HOLD":
+    elif state_str == VFIState.RECOVERY_HOLD:
         state_color = color_title
         time_left = int(view_model.recovery_timer)
         state_label = f"STABILIZING HOVER... ({time_left}s)"
@@ -295,7 +298,7 @@ def draw_hud(view_model, window_id):
     )
 
     # --- 3b. Student Performance Metrics ---
-    if view_model.ap_enabled and view_model.system_state == "STUDENT_FLIGHT":
+    if view_model.ap_enabled and view_model.system_state == VFIState.STUDENT_FLIGHT:
         y_cursor -= 22
         draw_string_scaled(
             color_white,
@@ -308,7 +311,7 @@ def draw_hud(view_model, window_id):
             f"{view_model.envelope} (Stability: {int(view_model.overall_score)}%)"
         )
         grade_color = (
-            color_green if view_model.envelope in ["Excellent", "Good"] else color_red
+            color_green if view_model.envelope in (Envelope.EXCELLENT, Envelope.GOOD) else color_red
         )
         draw_string_scaled(
             grade_color,
@@ -336,7 +339,7 @@ def draw_hud(view_model, window_id):
         from helicopter_instructor.virtual_instructor import PHASE_CONFIGS
 
         phase_config = PHASE_CONFIGS.get(view_model.phase, {})
-        if view_model.show_envelope_debug and phase_config.get("yaw") == "STUDENT":
+        if view_model.show_envelope_debug and phase_config.get("yaw") == Authority.STUDENT:
             y_cursor -= 20
             draw_string_scaled(
                 COLOR_DARK_GREY,
@@ -764,7 +767,7 @@ def draw_alt_bar(view_model, window_id):
 
     # Only show when autopilot is enabled and Lesson collective is STUDENT
     is_student_coll = (
-        virtual_instructor.PHASE_CONFIGS[view_model.phase]["collective"] == "STUDENT"
+        virtual_instructor.PHASE_CONFIGS[view_model.phase]["collective"] == Authority.STUDENT
     )
     active_visible = new_show_alt_bar and view_model.ap_enabled and is_student_coll
 

@@ -12,6 +12,10 @@ sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
 # pyrefly: ignore [missing-import]
 from helicopter_instructor import virtual_instructor
+from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import Envelope
+from helicopter_instructor.enums import HeadingZone
+from helicopter_instructor.enums import VFIState
 
 VirtualInstructor = virtual_instructor.VirtualInstructor
 PHASE_CONFIGS = virtual_instructor.PHASE_CONFIGS
@@ -43,21 +47,29 @@ class TestVirtualInstructor(unittest.TestCase):
 
     def test_init_state(self):
         self.assertEqual(self.instructor.phase, 1)
-        self.assertEqual(self.instructor.system_state, "VFI_FLIGHT")
+        self.assertEqual(self.instructor.system_state, VFIState.VFI_FLIGHT)
         for axis in ["roll", "pitch", "yaw", "collective"]:
-            self.assertEqual(self.instructor.control_assignment[axis], "VFI")
+            self.assertEqual(
+                self.instructor.control_assignment[axis], Authority.VFI
+            )
 
     def test_initiate_handoff_phase1(self):
         # Phase 1: Yaw Pedals Only
         self.instructor.phase = 1
         self.instructor.initiate_handoff()
 
-        self.assertEqual(self.instructor.system_state, "SYNCING")
-        self.assertEqual(self.instructor.control_assignment["roll"], "VFI")
-        self.assertEqual(self.instructor.control_assignment["pitch"], "VFI")
-        self.assertEqual(self.instructor.control_assignment["collective"], "VFI")
+        self.assertEqual(self.instructor.system_state, VFIState.SYNCING)
         self.assertEqual(
-            self.instructor.control_assignment["yaw"], "VFI"
+            self.instructor.control_assignment["roll"], Authority.VFI
+        )
+        self.assertEqual(
+            self.instructor.control_assignment["pitch"], Authority.VFI
+        )
+        self.assertEqual(
+            self.instructor.control_assignment["collective"], Authority.VFI
+        )
+        self.assertEqual(
+            self.instructor.control_assignment["yaw"], Authority.VFI,
         )  # VFI flies yaw until synced
 
         self.assertTrue(self.instructor.sync_locked["roll"])
@@ -79,12 +91,12 @@ class TestVirtualInstructor(unittest.TestCase):
         out = self.instructor.update(
             0.2, self.nominal_telemetry, self.hardware, self.vfi
         )
-        self.assertEqual(self.instructor.system_state, "SYNCING")
+        self.assertEqual(self.instructor.system_state, VFIState.SYNCING)
         self.assertTrue(
             self.instructor.sync_locked["yaw"]
         )  # Real-time match indicator is True because within tolerance
         self.assertEqual(
-            self.instructor.control_assignment["yaw"], "VFI"
+            self.instructor.control_assignment["yaw"], Authority.VFI,
         )  # Flight authority is NOT yet student
         self.assertEqual(out["yaw"], self.vfi["yaw"])  # Still VFI output during syncing
 
@@ -93,8 +105,10 @@ class TestVirtualInstructor(unittest.TestCase):
         out = self.instructor.update(
             0.4, self.nominal_telemetry, self.hardware, self.vfi
         )
-        self.assertEqual(self.instructor.system_state, "STUDENT_FLIGHT")
-        self.assertEqual(self.instructor.control_assignment["yaw"], "STUDENT")
+        self.assertEqual(self.instructor.system_state, VFIState.STUDENT_FLIGHT)
+        self.assertEqual(
+            self.instructor.control_assignment["yaw"], Authority.STUDENT
+        )
         self.assertTrue(self.instructor.sync_locked["yaw"])
         self.assertEqual(out["yaw"], self.vfi["yaw"])
 
@@ -121,13 +135,13 @@ class TestVirtualInstructor(unittest.TestCase):
 
         # Timer should be reset to 0.0 and state remains SYNCING
         self.assertEqual(self.instructor.sync_timer, 0.0)
-        self.assertEqual(self.instructor.system_state, "SYNCING")
+        self.assertEqual(self.instructor.system_state, VFIState.SYNCING)
 
     def test_safety_envelope_triggers_hard_override(self):
         # Student flying Phase 1
         self.instructor.phase = 1
-        self.instructor.system_state = "STUDENT_FLIGHT"
-        self.instructor.control_assignment["yaw"] = "STUDENT"
+        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor.control_assignment["yaw"] = Authority.STUDENT
 
         # Telemetry is safe
         self.assertFalse(self.instructor.check_safety_limits(self.nominal_telemetry))
@@ -142,17 +156,17 @@ class TestVirtualInstructor(unittest.TestCase):
 
         # Update should trigger hard override and keep in OVERRIDE due to unstable roll
         out = self.instructor.update(0.02, telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "OVERRIDE")
+        self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
         self.assertEqual(
-            self.instructor.control_assignment["yaw"], "VFI"
+            self.instructor.control_assignment["yaw"], Authority.VFI,
         )  # Stripped student authority
         self.assertEqual(out["yaw"], self.vfi["yaw"])  # Returns VFI stabilization
 
     def test_ground_agl_safety_trigger(self):
         # Student flying Phase 1
         self.instructor.phase = 1
-        self.instructor.system_state = "STUDENT_FLIGHT"
-        self.instructor.control_assignment["yaw"] = "STUDENT"
+        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor.control_assignment["yaw"] = Authority.STUDENT
 
         # AGL falls to 1.8 meters (< 2.0 limit)
         telem = self.nominal_telemetry.copy()
@@ -163,12 +177,14 @@ class TestVirtualInstructor(unittest.TestCase):
 
         # Check update initiates takeover and remains in OVERRIDE due to unstable attitude
         self.instructor.update(0.02, telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "OVERRIDE")
-        self.assertEqual(self.instructor.control_assignment["yaw"], "VFI")
+        self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
+        self.assertEqual(
+            self.instructor.control_assignment["yaw"], Authority.VFI
+        )
 
         # Reset state for high AGL test
-        self.instructor.system_state = "STUDENT_FLIGHT"
-        self.instructor.control_assignment["yaw"] = "STUDENT"
+        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor.control_assignment["yaw"] = Authority.STUDENT
 
         # AGL climbs to 12.0 meters (> 10.0 limit)
         telem_high = self.nominal_telemetry.copy()
@@ -177,15 +193,17 @@ class TestVirtualInstructor(unittest.TestCase):
 
         self.assertTrue(self.instructor.check_safety_limits(telem_high))
         self.instructor.update(0.02, telem_high, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "OVERRIDE")
-        self.assertEqual(self.instructor.control_assignment["yaw"], "VFI")
+        self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
+        self.assertEqual(
+            self.instructor.control_assignment["yaw"], Authority.VFI
+        )
 
     def test_student_flight_direct_routing(self):
         # Phase 4: Cyclic is student
         self.instructor.phase = 4
-        self.instructor.system_state = "STUDENT_FLIGHT"
-        self.instructor.control_assignment["roll"] = "STUDENT"
-        self.instructor.control_assignment["pitch"] = "STUDENT"
+        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor.control_assignment["roll"] = Authority.STUDENT
+        self.instructor.control_assignment["pitch"] = Authority.STUDENT
 
         telem = self.nominal_telemetry.copy()
         telem["theta"] = 12.0  # In caution zone
@@ -197,37 +215,39 @@ class TestVirtualInstructor(unittest.TestCase):
     def test_recovery_hold_and_reset_loop(self):
         # Trigger takeover
         self.instructor.phase = 1
-        self.instructor.system_state = "STUDENT_FLIGHT"
-        self.instructor.control_assignment["yaw"] = "STUDENT"
+        self.instructor.system_state = VFIState.STUDENT_FLIGHT
+        self.instructor.control_assignment["yaw"] = Authority.STUDENT
 
         telem = self.nominal_telemetry.copy()
         telem["phi"] = 16.0  # Exceeds limit
 
         # 1. Update -> triggers takeover, sets state to OVERRIDE (keeps it there because phi=16 is unstable)
         self.instructor.update(0.02, telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "OVERRIDE")
-        self.assertEqual(self.instructor.control_assignment["yaw"], "VFI")
+        self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
+        self.assertEqual(
+            self.instructor.control_assignment["yaw"], Authority.VFI
+        )
 
         # 2. Update with unstable telemetry -> should remain in OVERRIDE
         self.instructor.update(0.02, telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "OVERRIDE")
+        self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
 
         # 3. Update with stable telemetry -> should transition to RECOVERY_HOLD
         stable_telem = (
             self.nominal_telemetry.copy()
         )  # Safe (phi=0, theta=0, vx=0, vz=0, vy=0)
         self.instructor.update(0.02, stable_telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
+        self.assertEqual(self.instructor.system_state, VFIState.RECOVERY_HOLD)
         self.assertAlmostEqual(self.instructor.recovery_timer, 3.0)
 
         # 4. Update in RECOVERY_HOLD -> counts down
         self.instructor.update(1.0, stable_telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
+        self.assertEqual(self.instructor.system_state, VFIState.RECOVERY_HOLD)
         self.assertAlmostEqual(self.instructor.recovery_timer, 2.0)
 
         # 5. Countdown expires -> transitions back to SYNCING
         self.instructor.update(2.1, stable_telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "SYNCING")
+        self.assertEqual(self.instructor.system_state, VFIState.SYNCING)
         self.assertEqual(self.instructor.sync_timer, 0.0)
 
     def test_positive_vertical_speed_limits(self):
@@ -270,7 +290,7 @@ class TestVirtualInstructor(unittest.TestCase):
 
     def test_safety_takeover_target_override_and_restore(self):
         # 1. Student is flying and is at target coordinates target_x = 10, target_y = 6.0, target_z = 20
-        self.instructor.system_state = "STUDENT_FLIGHT"
+        self.instructor.system_state = VFIState.STUDENT_FLIGHT
         telem = self.nominal_telemetry.copy()
         telem.update(
             {
@@ -291,7 +311,7 @@ class TestVirtualInstructor(unittest.TestCase):
         # override_target_x: 57.0 - 2.0 * 0.02 = 56.96
         self.instructor.update(0.02, telem, self.hardware, self.vfi)
 
-        self.assertEqual(self.instructor.system_state, "OVERRIDE")
+        self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
         self.assertTrue(self.instructor.drift_recovery_active)
         self.assertEqual(self.instructor.original_target_x, 10.0)
         self.assertEqual(self.instructor.original_target_y, 6.0)
@@ -303,7 +323,7 @@ class TestVirtualInstructor(unittest.TestCase):
         # 3. Stage 2 & 3 Settlement: Target y moves towards 6.0 at 1.0 m/s, target x moves towards 10.0 at 2.0 m/s
         # 1.0 second elapsed -> moves y by 1.0m (4.02 -> 5.02), moves x by 2.0m (56.96 -> 54.96)
         self.instructor.update(1.0, telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "OVERRIDE")
+        self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
         self.assertTrue(self.instructor.drift_recovery_active)
         self.assertAlmostEqual(self.instructor.override_target_x, 54.96)
         self.assertAlmostEqual(self.instructor.override_target_y, 5.02)
@@ -322,7 +342,7 @@ class TestVirtualInstructor(unittest.TestCase):
             }
         )
         self.instructor.update(1.0, stable_telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
+        self.assertEqual(self.instructor.system_state, VFIState.RECOVERY_HOLD)
         self.assertTrue(self.instructor.drift_recovery_active)
         self.assertAlmostEqual(self.instructor.override_target_x, 52.96)
         self.assertEqual(self.instructor.override_target_y, 6.0)
@@ -330,13 +350,13 @@ class TestVirtualInstructor(unittest.TestCase):
         # 4. Target translation in RECOVERY_HOLD
         # 10.0 seconds elapsed -> moves x by 20.0m (52.96 -> 32.96)
         self.instructor.update(10.0, stable_telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
+        self.assertEqual(self.instructor.system_state, VFIState.RECOVERY_HOLD)
         self.assertTrue(self.instructor.drift_recovery_active)
         self.assertAlmostEqual(self.instructor.override_target_x, 32.96)
 
         # 22.0 seconds elapsed -> remaining distance fully covered (22 * 2 = 44.0m)
         self.instructor.update(22.0, stable_telem, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "RECOVERY_HOLD")
+        self.assertEqual(self.instructor.system_state, VFIState.RECOVERY_HOLD)
         self.assertFalse(self.instructor.drift_recovery_active)
         self.assertTrue(self.instructor.was_drift_recovery_active)
         self.assertIsNone(self.instructor.override_target_x)
@@ -348,7 +368,7 @@ class TestVirtualInstructor(unittest.TestCase):
         telem_green = self.nominal_telemetry.copy()
         telem_green.update({"psi": 15.0, "target_psi": 0.0})
         self.assertFalse(self.instructor.check_safety_limits(telem_green))
-        self.assertEqual(self.instructor.heading_zone, "green")
+        self.assertEqual(self.instructor.heading_zone, HeadingZone.GREEN)
 
         # 2. Heading error = 45 deg (Orange Zone)
         telem_orange = self.nominal_telemetry.copy()
@@ -356,20 +376,20 @@ class TestVirtualInstructor(unittest.TestCase):
             {"psi": 315.0, "target_psi": 0.0}
         )  # -45 deg error -> 45 wrapped
         self.assertFalse(self.instructor.check_safety_limits(telem_orange))
-        self.assertEqual(self.instructor.heading_zone, "orange")
+        self.assertEqual(self.instructor.heading_zone, HeadingZone.ORANGE)
 
         # 3. Heading error = 75 deg (Red Zone / Unsafe)
         telem_red = self.nominal_telemetry.copy()
         telem_red.update({"psi": 75.0, "target_psi": 0.0})
         self.assertTrue(self.instructor.check_safety_limits(telem_red))
-        self.assertEqual(self.instructor.heading_zone, "red")
+        self.assertEqual(self.instructor.heading_zone, HeadingZone.RED)
 
     def test_cyclic_circular_synchronization_success(self):
         # Phase 4: Cyclic (roll and pitch) are student controlled
         self.instructor.phase = 4
         self.instructor.initiate_handoff()
 
-        self.assertEqual(self.instructor.system_state, "SYNCING")
+        self.assertEqual(self.instructor.system_state, VFIState.SYNCING)
         self.assertFalse(self.instructor.sync_locked["roll"])
         self.assertFalse(self.instructor.sync_locked["pitch"])
 
@@ -383,15 +403,19 @@ class TestVirtualInstructor(unittest.TestCase):
 
         # First update: 200ms -> still syncing but cyclic axes should show locked/aligned
         self.instructor.update(0.2, self.nominal_telemetry, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "SYNCING")
+        self.assertEqual(self.instructor.system_state, VFIState.SYNCING)
         self.assertTrue(self.instructor.sync_locked["roll"])
         self.assertTrue(self.instructor.sync_locked["pitch"])
 
         # Second update: 400ms -> total 600ms >= 500ms sync duration -> transitions to STUDENT_FLIGHT
         self.instructor.update(0.4, self.nominal_telemetry, self.hardware, self.vfi)
-        self.assertEqual(self.instructor.system_state, "STUDENT_FLIGHT")
-        self.assertEqual(self.instructor.control_assignment["roll"], "STUDENT")
-        self.assertEqual(self.instructor.control_assignment["pitch"], "STUDENT")
+        self.assertEqual(self.instructor.system_state, VFIState.STUDENT_FLIGHT)
+        self.assertEqual(
+            self.instructor.control_assignment["roll"], Authority.STUDENT
+        )
+        self.assertEqual(
+            self.instructor.control_assignment["pitch"], Authority.STUDENT
+        )
 
     def test_cyclic_circular_synchronization_boundary(self):
         # Phase 4: Cyclic (roll and pitch) are student controlled
@@ -431,22 +455,22 @@ class TestMaybeAdvancePhase(unittest.TestCase):
 
     def setUp(self):
         self.instructor = VirtualInstructor()
-        self.instructor.system_state = "STUDENT_FLIGHT"
+        self.instructor.system_state = VFIState.STUDENT_FLIGHT
 
     def test_excellent_timer_accumulates(self):
         """Excellent envelope increments the timer without triggering transition."""
-        self.instructor.last_envelope = "Excellent"
+        self.instructor.last_envelope = Envelope.EXCELLENT
         self.instructor.maybe_advance_phase(10.0)
         self.assertAlmostEqual(self.instructor.excellent_timer, 10.0)
         self.assertFalse(self.instructor.transition_pending)
 
     def test_non_excellent_resets_timer(self):
         """Non-Excellent envelope resets the excellent timer."""
-        self.instructor.last_envelope = "Excellent"
+        self.instructor.last_envelope = Envelope.EXCELLENT
         self.instructor.maybe_advance_phase(15.0)
         self.assertAlmostEqual(self.instructor.excellent_timer, 15.0)
 
-        self.instructor.last_envelope = "Good"
+        self.instructor.last_envelope = Envelope.GOOD
         self.instructor.maybe_advance_phase(5.0)
         self.assertAlmostEqual(self.instructor.excellent_timer, 0.0)
         self.assertFalse(self.instructor.transition_pending)
@@ -454,7 +478,7 @@ class TestMaybeAdvancePhase(unittest.TestCase):
     def test_thirty_seconds_sets_transition_pending(self):
         """30 s of Excellent sets transition_pending for a mid-course phase."""
         self.instructor.phase = 3
-        self.instructor.last_envelope = "Excellent"
+        self.instructor.last_envelope = Envelope.EXCELLENT
 
         # Accumulate just under the threshold
         self.instructor.maybe_advance_phase(34.9)
@@ -471,7 +495,7 @@ class TestMaybeAdvancePhase(unittest.TestCase):
     def test_final_phase_sets_training_complete(self):
         """Completing phase 6 sets training_complete instead of advancing."""
         self.instructor.phase = 6
-        self.instructor.last_envelope = "Excellent"
+        self.instructor.last_envelope = Envelope.EXCELLENT
 
         self.instructor.maybe_advance_phase(35.1)
         self.assertTrue(self.instructor.transition_pending)
@@ -482,14 +506,14 @@ class TestMaybeAdvancePhase(unittest.TestCase):
     def test_transition_does_not_fire_twice(self):
         """Once transition_pending is set, further calls are no-ops."""
         self.instructor.phase = 2
-        self.instructor.last_envelope = "Excellent"
+        self.instructor.last_envelope = Envelope.EXCELLENT
 
         self.instructor.maybe_advance_phase(36.0)
         self.assertTrue(self.instructor.transition_pending)
         target_before = self.instructor.transition_target_phase
 
         # Further Excellent time should not change state
-        self.instructor.last_envelope = "Excellent"
+        self.instructor.last_envelope = Envelope.EXCELLENT
         self.instructor.maybe_advance_phase(60.0)
         self.assertEqual(self.instructor.transition_target_phase, target_before)
 
@@ -497,7 +521,7 @@ class TestMaybeAdvancePhase(unittest.TestCase):
         """After training_complete is set, maybe_advance_phase is a no-op."""
         self.instructor.phase = 6
         self.instructor.training_complete = True
-        self.instructor.last_envelope = "Excellent"
+        self.instructor.last_envelope = Envelope.EXCELLENT
 
         self.instructor.maybe_advance_phase(60.0)
         self.assertFalse(self.instructor.transition_pending)

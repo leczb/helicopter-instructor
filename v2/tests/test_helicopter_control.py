@@ -26,6 +26,9 @@ from helicopter_instructor.autopilot import helicopter_control
 from helicopter_instructor import config
 
 # pyrefly: ignore [missing-import]
+from helicopter_instructor.enums import VFIState
+
+# pyrefly: ignore [missing-import]
 import PI_helicopter_instructor
 
 # Local module level definitions to keep test compatibility without breaking style
@@ -785,7 +788,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         self.plugin.controller.target_z = 50.0
 
         # Simulate instructor already in OVERRIDE with a live drift recovery.
-        self.plugin.instructor.system_state = "OVERRIDE"
+        self.plugin.instructor.system_state = VFIState.OVERRIDE
         self.plugin.instructor.drift_recovery_active = True
         self.plugin.instructor.override_target_x = 1.0  # near current position
         self.plugin.instructor.override_target_y = None
@@ -830,11 +833,11 @@ class TestAutopilotPlugin(unittest.TestCase):
         self.plugin.controller.reset_position_hold_pids = MagicMock()
 
         # --- Frame 1: STUDENT_FLIGHT → OVERRIDE (inside instructor.update) ---
-        self.plugin.last_system_state = "STUDENT_FLIGHT"
-        self.plugin.instructor.system_state = "STUDENT_FLIGHT"
+        self.plugin.last_system_state = VFIState.STUDENT_FLIGHT
+        self.plugin.instructor.system_state = VFIState.STUDENT_FLIGHT
 
         def override_on_call(dt, telemetry, hardware, vfi_inputs):
-            self.plugin.instructor.system_state = "OVERRIDE"
+            self.plugin.instructor.system_state = VFIState.OVERRIDE
             self.plugin.instructor.drift_recovery_active = True
             self.plugin.instructor.override_target_x = 0.0
             self.plugin.instructor.override_target_y = None
@@ -879,8 +882,8 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         # Simulate: previous frame was STUDENT_FLIGHT; a command handler has
         # already flipped the instructor to SYNCING before this frame runs.
-        self.plugin.last_system_state = "STUDENT_FLIGHT"
-        self.plugin.instructor.system_state = "SYNCING"
+        self.plugin.last_system_state = VFIState.STUDENT_FLIGHT
+        self.plugin.instructor.system_state = VFIState.SYNCING
 
         # instructor.update() in SYNCING just returns vfi_inputs.
         self.plugin.instructor.update = lambda dt, tel, hw, vfi: vfi
@@ -911,8 +914,8 @@ class TestAutopilotPlugin(unittest.TestCase):
         self.plugin.controller.reset_position_hold_pids = MagicMock()
 
         # Previous frame was STUDENT_FLIGHT.
-        self.plugin.last_system_state = "STUDENT_FLIGHT"
-        self.plugin.instructor.system_state = "STUDENT_FLIGHT"
+        self.plugin.last_system_state = VFIState.STUDENT_FLIGHT
+        self.plugin.instructor.system_state = VFIState.STUDENT_FLIGHT
         self.plugin.instructor.phase = 4
 
         # instructor.update() still returns STUDENT_FLIGHT this frame, but
@@ -932,7 +935,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         # After STEP C4, state must be SYNCING and reset must have fired.
         self.assertEqual(
             self.plugin.instructor.system_state,
-            "SYNCING",
+            VFIState.SYNCING,
             "STEP C4 must have advanced the instructor to SYNCING.",
         )
         self.assertEqual(

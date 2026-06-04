@@ -4,6 +4,9 @@
 import imgui
 
 from helicopter_instructor import virtual_instructor
+from helicopter_instructor.enums import Authority
+from helicopter_instructor.enums import Envelope
+from helicopter_instructor.enums import VFIState
 
 # Symbolic curriculum phase constants to avoid magic numbers
 PHASE_PEDALS_ONLY = 1
@@ -122,15 +125,15 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.text("System State: ")
         imgui.same_line()
         state_str = ui_controller.system_state
-        if state_str == "VFI_FLIGHT":
+        if state_str == VFIState.VFI_FLIGHT:
             imgui.text_colored("VFI AUTO-HOVER", 0.2, 0.6, 1.0, 1.0)
-        elif state_str == "SYNCING":
+        elif state_str == VFIState.SYNCING:
             imgui.text_colored("SYNCHRONIZING...", 1.0, 0.6, 0.1, 1.0)
-        elif state_str == "STUDENT_FLIGHT":
+        elif state_str == VFIState.STUDENT_FLIGHT:
             imgui.text_colored("STUDENT FLYING", 0.1, 0.9, 0.1, 1.0)
-        elif state_str == "OVERRIDE":
+        elif state_str == VFIState.OVERRIDE:
             imgui.text_colored("HARD TAKEOVER ACTIVE!", 1.0, 0.2, 0.2, 1.0)
-        elif state_str == "RECOVERY_HOLD":
+        elif state_str == VFIState.RECOVERY_HOLD:
             imgui.text_colored("STABILIZING COOL-DOWN...", 0.9, 0.5, 0.2, 1.0)
 
         imgui.spacing()
@@ -152,7 +155,7 @@ def draw_window(ui_controller, window_id, ref_con):
             imgui.text(name)
             imgui.next_column()
             auth = ui_controller.get_axis_authority(axis_key)
-            if auth == "STUDENT":
+            if auth == Authority.STUDENT:
                 imgui.text_colored("STUDENT", 0.1, 0.9, 0.1, 1.0)
             else:
                 imgui.text_colored("VFI", 0.2, 0.6, 1.0, 1.0)
@@ -216,9 +219,9 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.text("Proficiency Envelope: ")
         imgui.same_line()
         envelope_str = metrics.envelope
-        if envelope_str == "Excellent":
+        if envelope_str == Envelope.EXCELLENT:
             imgui.text_colored("EXCELLENT HOVER", 0.1, 0.9, 0.1, 1.0)
-        elif envelope_str == "Good":
+        elif envelope_str == Envelope.GOOD:
             imgui.text_colored("GOOD HOVER", 0.9, 0.6, 0.1, 1.0)
         else:
             imgui.text_colored("UNSTABLE / OVER-CONTROLLING", 1.0, 0.2, 0.2, 1.0)
