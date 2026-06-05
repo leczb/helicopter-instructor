@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.66 - 2026-06-05
+
+- **Docs**: Updated `v2/docs/state_machine_diagram.md` to reflect the current state of the virtual instructor state machine, adding the `CELEBRATING` transitional state and documenting the delayed control handoff behavior (which waits for the phase explanation audio to finish).
+
 ## v2.1.65 - 2026-06-05
 
 - **Refactor**: Cleaned up the codebase to ensure 100% style and docstring consistency.

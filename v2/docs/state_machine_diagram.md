@@ -10,7 +10,7 @@ This document contains a detailed state-machine visualization for the **Virtual 
 stateDiagram-v2
     [*] --> VFI_FLIGHT : Plugin Start / Autopilot Engaged
 
-    VFI_FLIGHT --> SYNCING : initiate_handoff() / Phase Selected
+    VFI_FLIGHT --> SYNCING : initiate_handoff() / Phase Selected / Intro Audio Finished
     note right of VFI_FLIGHT
         • VFI has 100% control of all axes.
         • Stabilizing aircraft at original hover target.
@@ -23,9 +23,17 @@ stateDiagram-v2
         • Scans hardware deflections vs. VFI outputs (±4% dead-zone).
     end note
 
+    STUDENT_FLIGHT --> CELEBRATING : Maintain Excellent grade for >= 25.0s (Phase Completed)
     STUDENT_FLIGHT --> OVERRIDE : Safety Limit Violated OR Drift > 45.0m
     note left of STUDENT_FLIGHT
         • Student has physical flight authority on assigned axes.
+    end note
+
+    CELEBRATING --> VFI_FLIGHT : Celebration delay timer expires (6.0s)
+    CELEBRATING --> OVERRIDE : Safety Limit Violated OR Drift > 45.0m
+    note left of CELEBRATING
+        • Student remains in control on assigned axes.
+        • Plays celebration transition audio.
     end note
 
     OVERRIDE --> RECOVERY_HOLD : Helicopter Stabilized (Attitude < 2°, Speed < 1 knot, vy > -50 ft/min)
@@ -45,6 +53,7 @@ stateDiagram-v2
     VFI_FLIGHT --> [*] : Autopilot Disengaged
     SYNCING --> [*] : Autopilot Disengaged
     STUDENT_FLIGHT --> [*] : Autopilot Disengaged
+    CELEBRATING --> [*] : Autopilot Disengaged
     OVERRIDE --> [*] : Autopilot Disengaged
     RECOVERY_HOLD --> [*] : Autopilot Disengaged
 ```
@@ -64,8 +73,16 @@ stateDiagram-v2
 ### 3. `STUDENT_FLIGHT` (Student Flying)
 * **Description**: The student has direct physical control over the assigned axes for the active phase. The remaining axes are held by the VFI.
 
+### 4. `CELEBRATING` (Phase Completion Celebration)
+* **Description**: Triggered when the student maintains an `Excellent` performance grade for at least **25.0 seconds** (`PHASE_EXCELLENT_REQUIRED_S`) in a mid-curriculum phase.
+* **Celebration Actions**:
+  1. Keeps the student in control of the assigned axes for the active phase.
+  2. Plays the celebration transition audio (`SOUND_PHASE_TRANSITION`, approximately **6.0s** duration).
+  3. Continues to run safety envelope checks; a safety breach triggers an immediate transition to `OVERRIDE`.
+* **Exit Action**: Once the celebration delay timer expires, the state transitions to `VFI_FLIGHT` to prepare for the next phase.
+
 ### 5. `OVERRIDE` (Emergency Takeover & Local Stabilization)
-* **Description**: Triggered immediately if the student violates any safety envelope (attitude > 15°, climb/sink > 300 ft/min, AGL < 2.0m or > 10.0m, ground speed > 12 knots) or drifts past the **45.0 meters** safety radius.
+* **Description**: Triggered immediately if the student violates any safety envelope (attitude > 15°, climb/sink > 300 ft/min, AGL < 2.0m or > 10.0m, ground speed > 12 knots) or drifts past the **45.0 meters** safety radius while in `STUDENT_FLIGHT`, `SYNCING`, or `CELEBRATING`.
 * **Takeover Actions**:
   1. Instantly severs student authority and takes 100% VFI control.
   2. Saves the original hover target point (`original_target_x`, `original_target_z`).
