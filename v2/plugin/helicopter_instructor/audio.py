@@ -28,10 +28,15 @@ class AudioManager(object):
         self.active_channel = None
 
     def preload_sounds(self):
-        """Eagerly loads all WAV files in the assets directory into the sound registry to avoid synchronous disk I/O stutters."""
+        """Preloads WAV files in the assets directory to avoid disk stutters.
+
+        Eagerly loads WAV files into the sound registry during startup, avoiding
+        synchronous disk I/O on the main flight loop thread.
+        """
         if not os.path.exists(self.assets_dir):
             log.warning(
-                f"Assets directory {self.assets_dir} not found. Preloading skipped."
+                f"Assets directory {self.assets_dir} not found. "
+                "Preloading skipped."
             )
             return
 
@@ -53,7 +58,9 @@ class AudioManager(object):
                         num_frames = wav.getnframes()
                         frame_rate = wav.getframerate()
                         data = wav.readframes(num_frames)
-                        duration_s = num_frames / frame_rate if frame_rate > 0 else 0.0
+                        duration_s = (
+                            num_frames / frame_rate if frame_rate > 0 else 0.0
+                        )
                         self.sound_registry[filename] = {
                             "data": data,
                             "data_size": len(data),
@@ -84,7 +91,8 @@ class AudioManager(object):
 
         if not sound_info:
             log.error(
-                f"Sound Error: Failed to play {filename}. Sound is not preloaded in memory."
+                f"Sound Error: Failed to play {filename}. "
+                "Sound is not preloaded in memory."
             )
             return 0.0
 
@@ -111,8 +119,10 @@ class AudioManager(object):
 
             if channel:
                 self.active_channel = channel
+                duration_s = sound_info["duration_s"]
                 log.info(
-                    f"Started playing audio: {filename} (duration: {sound_info['duration_s']:.2f}s)"
+                    f"Started playing audio: {filename} "
+                    f"(duration: {duration_s:.2f}s)"
                 )
                 try:
                     xp.setAudioVolume(channel, self.voice_volume)

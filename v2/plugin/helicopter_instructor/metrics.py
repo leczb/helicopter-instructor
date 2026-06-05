@@ -19,7 +19,6 @@ from helicopter_instructor.virtual_instructor import PHASE_CONFIGS
 log = logging.getLogger("helicopter_instructor")
 
 
-
 # Symbolic audio cue constants to avoid raw filenames
 SOUND_RELAX_CYCLIC = "Relax cyclic.wav"
 SOUND_STEADY_PEDALS = "Steady pedals.wav"
@@ -48,7 +47,7 @@ from helicopter_instructor.envelope_limits import (
 )
 
 # Safety and Performance warning margin constants
-# Warn as soon as the student exits the green zone (target 6.0m ± LIMIT_ALT_GREEN_M)
+# Warn as soon as student exits green zone (target 6.0m ± LIMIT_ALT_GREEN_M)
 MARGIN_ALT_LOW = 6.0 - LIMIT_ALT_GREEN_M  # Lower green edge: 4.0m AGL
 MARGIN_ALT_HIGH = 6.0 + LIMIT_ALT_GREEN_M  # Upper green edge: 8.0m AGL
 # Warn as soon as the student gets near the edge of the green zone
@@ -186,7 +185,9 @@ class PerformanceMetricsEvaluator(object):
         # 1. Update cooldown timers
         for sound in self.audio_cooldowns:
             if self.audio_cooldowns[sound] > 0.0:
-                self.audio_cooldowns[sound] = max(0.0, self.audio_cooldowns[sound] - dt)
+                self.audio_cooldowns[sound] = max(
+                    0.0, self.audio_cooldowns[sound] - dt
+                )
 
         # 2. Track Takeovers and flight duration
         self._track_session_state(dt, is_student_flying)
@@ -338,7 +339,12 @@ class PerformanceMetricsEvaluator(object):
             z = telemetry.get("z")
             tx = telemetry.get("target_x")
             tz = telemetry.get("target_z")
-            if x is not None and z is not None and tx is not None and tz is not None:
+            if (
+                x is not None
+                and z is not None
+                and tx is not None
+                and tz is not None
+            ):
                 drift = math.sqrt((x - tx) ** 2 + (z - tz) ** 2)
                 # Track drift stats
                 self.total_drift_sum += drift
@@ -432,7 +438,9 @@ class PerformanceMetricsEvaluator(object):
                 smooth_components.append(score)
 
         if smooth_components:
-            self.smoothness_score = sum(smooth_components) / len(smooth_components)
+            self.smoothness_score = sum(smooth_components) / len(
+                smooth_components
+            )
         else:
             self.smoothness_score = 100.0
 
@@ -447,7 +455,12 @@ class PerformanceMetricsEvaluator(object):
         tx = telemetry.get("target_x")
         tz = telemetry.get("target_z")
         drift = 0.0
-        if x is not None and z is not None and tx is not None and tz is not None:
+        if (
+            x is not None
+            and z is not None
+            and tx is not None
+            and tz is not None
+        ):
             drift = math.sqrt((x - tx) ** 2 + (z - tz) ** 2)
 
         prox_pitch = theta / 15.0
@@ -483,7 +496,9 @@ class PerformanceMetricsEvaluator(object):
 
         # --- D. Overall Weighted Score ---
         # Calculate raw overall score first
-        raw_overall = (self.precision_score * 0.6) + (self.smoothness_score * 0.4)
+        raw_overall = (
+            (self.precision_score * 0.6) + (self.smoothness_score * 0.4)
+        )
 
         # Scale precision and overall scores by stationkeeping precision
         factor = stationkeeping_score / 100.0
@@ -511,7 +526,12 @@ class PerformanceMetricsEvaluator(object):
             tx = telemetry.get("target_x")
             tz = telemetry.get("target_z")
             drift = 0.0
-            if x is not None and z is not None and tx is not None and tz is not None:
+            if (
+                x is not None
+                and z is not None
+                and tx is not None
+                and tz is not None
+            ):
                 drift = math.sqrt((x - tx) ** 2 + (z - tz) ** 2)
 
             y_agl = telemetry.get("y_agl", 6.0)
@@ -539,7 +559,8 @@ class PerformanceMetricsEvaluator(object):
 
             # Smoothness stability (OCI > 1.5) on active student axes
             for axis in ControlAxis:
-                if phase_config.get(axis) == Authority.STUDENT and oci.get(axis, 0.0) > 1.5:
+                is_student = phase_config.get(axis) == Authority.STUDENT
+                if is_student and oci.get(axis, 0.0) > 1.5:
                     is_unstable = True
 
             # Drift stability (Cyclic STUDENT)
@@ -547,17 +568,26 @@ class PerformanceMetricsEvaluator(object):
                 phase_config.get(ControlAxis.ROLL) == Authority.STUDENT
                 and phase_config.get(ControlAxis.PITCH) == Authority.STUDENT
             ):
-                if drift > LIMIT_DRIFT_M or frame_drift_speed > LIMIT_DRIFT_SPEED_M_S:
+                if (
+                    drift > LIMIT_DRIFT_M
+                    or frame_drift_speed > LIMIT_DRIFT_SPEED_M_S
+                ):
                     is_unstable = True
 
             # Altitude stability (Collective STUDENT)
             if phase_config.get(ControlAxis.COLLECTIVE) == Authority.STUDENT:
-                if alt_err > LIMIT_ALT_M or frame_vert_speed > LIMIT_VERT_SPEED_M_S:
+                if (
+                    alt_err > LIMIT_ALT_M
+                    or frame_vert_speed > LIMIT_VERT_SPEED_M_S
+                ):
                     is_unstable = True
 
             # Heading stability (Yaw STUDENT)
             if phase_config.get(ControlAxis.YAW) == Authority.STUDENT:
-                if hdg_err > LIMIT_HDG_DEG or frame_yaw_speed > LIMIT_YAW_SPEED_DEG_S:
+                if (
+                    hdg_err > LIMIT_HDG_DEG
+                    or frame_yaw_speed > LIMIT_YAW_SPEED_DEG_S
+                ):
                     is_unstable = True
 
             if is_unstable:
@@ -578,7 +608,10 @@ class PerformanceMetricsEvaluator(object):
                     ):
                         is_excellent = False
 
-                if phase_config.get(ControlAxis.COLLECTIVE) == Authority.STUDENT:
+                if (
+                    phase_config.get(ControlAxis.COLLECTIVE)
+                    == Authority.STUDENT
+                ):
                     if (
                         alt_err >= GREEN_ZONE_ALT_M
                         or frame_vert_speed >= GREEN_ZONE_VERT_SPEED_M_S
@@ -634,7 +667,9 @@ class PerformanceMetricsEvaluator(object):
             and phase_config.get(ControlAxis.PITCH) == Authority.STUDENT
         )
         if cyclic_student:
-            max_cyclic_oci = max(self.oci[ControlAxis.ROLL], self.oci[ControlAxis.PITCH])
+            max_cyclic_oci = max(
+                self.oci[ControlAxis.ROLL], self.oci[ControlAxis.PITCH]
+            )
             if max_cyclic_oci > MARGIN_OCI_CYCLIC:
                 self.jerk_timers["cyclic"] += dt
                 if (
@@ -687,7 +722,12 @@ class PerformanceMetricsEvaluator(object):
             z = telemetry.get("z")
             tx = telemetry.get("target_x")
             tz = telemetry.get("target_z")
-            if x is not None and z is not None and tx is not None and tz is not None:
+            if (
+                x is not None
+                and z is not None
+                and tx is not None
+                and tz is not None
+            ):
                 drift = math.sqrt((x - tx) ** 2 + (z - tz) ** 2)
 
                 if drift > MARGIN_DRIFT_LIMIT:
@@ -767,7 +807,9 @@ class PerformanceMetricsEvaluator(object):
 
         # 2. "Smooth Hands" (Cyclic OCI steady, low drift speed)
         if cyclic_student:
-            max_cyclic_oci = max(self.oci[ControlAxis.ROLL], self.oci[ControlAxis.PITCH])
+            max_cyclic_oci = max(
+                self.oci[ControlAxis.ROLL], self.oci[ControlAxis.PITCH]
+            )
             if (
                 max_cyclic_oci < 0.2
                 and self.precision_score >= 70.0
@@ -793,7 +835,12 @@ class PerformanceMetricsEvaluator(object):
             z = telemetry.get("z")
             tx = telemetry.get("target_x")
             tz = telemetry.get("target_z")
-            if x is not None and z is not None and tx is not None and tz is not None:
+            if (
+                x is not None
+                and z is not None
+                and tx is not None
+                and tz is not None
+            ):
                 drift = math.sqrt((x - tx) ** 2 + (z - tz) ** 2)
                 if drift > MARGIN_DRIFT_LIMIT:
                     violating_warning = True
@@ -816,7 +863,7 @@ class PerformanceMetricsEvaluator(object):
                 self.audio_cooldowns[SOUND_NICE_RECOVERY] = 30.0
             self.was_in_warning_zone = False
 
-        # 4. "Perfect" stable hover reinforcement (when student maintains Excellent envelope for 10.0s)
+        # 4. "Perfect" stable hover reinforcement (maintained Excellent for 10s)
         if self.envelope == Envelope.EXCELLENT:
             self.perfect_hover_timer += dt
             if (
@@ -846,34 +893,42 @@ class PerformanceMetricsEvaluator(object):
             and phase_config.get(ControlAxis.PITCH) == Authority.STUDENT
         )
         if cyclic_student:
-            if max(self.oci[ControlAxis.ROLL], self.oci[ControlAxis.PITCH]) > 0.8:
+            if (
+                max(self.oci[ControlAxis.ROLL], self.oci[ControlAxis.PITCH])
+                > 0.8
+            ):
                 tips.append(
-                    "Cyclic inputs too large. Make tiny, 1-millimeter tweaks and wait for the aircraft response."
+                    "Cyclic inputs too large. Make tiny, 1-millimeter tweaks "
+                    "and wait for the aircraft response."
                 )
 
         # 2. Pedal over-controlling advice
         if phase_config.get(ControlAxis.YAW) == Authority.STUDENT:
             if self.oci[ControlAxis.YAW] > 0.6:
                 tips.append(
-                    "Avoid rapidly pumping pedals. Push gently and hold to damp yaw rotation."
+                    "Avoid rapidly pumping pedals. Push gently and hold to "
+                    "damp yaw rotation."
                 )
 
         # 3. Collective altitude advice
         if phase_config.get(ControlAxis.COLLECTIVE) == Authority.STUDENT:
             if self.oci[ControlAxis.COLLECTIVE] > 0.6:
                 tips.append(
-                    "Altitude corrections should be smooth. Collective changes require corresponding pedal compensation."
+                    "Altitude corrections should be smooth. Collective "
+                    "changes require corresponding pedal compensation."
                 )
 
         # 4. Success tips
         if not tips:
             if self.precision_score >= 90.0:
                 tips.append(
-                    "Excellent station-keeping. Keep looking ahead and hold this nominal attitude."
+                    "Excellent station-keeping. Keep looking ahead and "
+                    "hold this nominal attitude."
                 )
             else:
                 tips.append(
-                    "Steady, tiny adjustments. Anticipate drift rather than chasing it."
+                    "Steady, tiny adjustments. Anticipate drift rather than "
+                    "chasing it."
                 )
 
         self.coaching_tips = tips[0] if tips else "Keep wings level."

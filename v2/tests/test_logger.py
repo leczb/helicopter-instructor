@@ -9,7 +9,9 @@ import unittest
 from unittest import mock
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor"))
+sys.path.insert(
+    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor")
+)
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
 # Conditionally mock xp
@@ -47,7 +49,7 @@ class TestLogger(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def test_setup_logging_registers_handlers(self):
-        """Verify setup_logging registers RotatingFileHandler and XPLogHandler."""
+        """Verify setup_logging registers correct handlers."""
         logger.setup_logging(self.temp_dir.name)
 
         handlers = self.package_logger.handlers
@@ -65,11 +67,15 @@ class TestLogger(unittest.TestCase):
         self.assertIsNotNone(xp_handler)
 
         # Check that file handler writes to the correct path
-        expected_log_path = os.path.join(self.temp_dir.name, "helicopter_instructor.log")
-        self.assertEqual(file_handler.baseFilename, os.path.abspath(expected_log_path))
+        expected_log_path = os.path.join(
+            self.temp_dir.name, "helicopter_instructor.log"
+        )
+        self.assertEqual(
+            file_handler.baseFilename, os.path.abspath(expected_log_path)
+        )
 
     def test_multiple_calls_clear_old_handlers(self):
-        """Verify multiple calls to setup_logging clean up and reload handlers correctly."""
+        """Verify multiple calls to setup_logging clean up handlers."""
         logger.setup_logging(self.temp_dir.name)
         first_handlers = list(self.package_logger.handlers)
 
@@ -92,22 +98,25 @@ class TestLogger(unittest.TestCase):
         mock_xp.log.assert_any_call("[INFO] Test message for XPLogHandler")
 
     def test_fallback_when_xp_log_is_unavailable(self):
-        """Verify that logging doesn't raise exceptions if xp.log raises an error or is missing."""
+        """Verify logging handles missing or failing xp.log silently."""
         # 1. Test when xp.log raises an exception
         with mock.patch("xp.log", side_effect=Exception("X-Plane log failure")):
             logger.setup_logging(self.temp_dir.name)
-            # This should log to file, try to call xp.log, and handle failure silently
+            # This should log to file and handle failure silently
             self.package_logger.info("Silent failure test")
 
-        # 2. Test when xp has no log attribute (spec=[] ensures no log attribute)
+        # 2. Test when xp has no log attribute (spec=[] ensures no log)
         mock_xp_no_log = mock.MagicMock(spec=[])
         with mock.patch.dict(sys.modules, {"xp": mock_xp_no_log}):
             try:
                 logger.setup_logging(self.temp_dir.name)
-                # Re-fetch package logger as it uses dynamically imported xp inside emit()
+                # Re-fetch package logger (uses dynamic xp inside emit())
                 self.package_logger.info("Missing attribute test")
             except Exception as e:
-                self.fail(f"setup_logging raised an exception when xp.log was missing: {e}")
+                self.fail(
+                    "setup_logging raised exception with missing xp.log: "
+                    f"{e}"
+                )
 
 
 if __name__ == "__main__":

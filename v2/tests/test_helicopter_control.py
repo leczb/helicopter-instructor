@@ -6,9 +6,14 @@ from unittest import mock
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(
-    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor", "autopilot")
+    0,
+    os.path.join(
+        base_dir, "..", "plugin", "helicopter_instructor", "autopilot"
+    ),
 )
-sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor"))
+sys.path.insert(
+    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor")
+)
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
 # Mock xp, xp_imgui, and imgui modules before importing PI_helicopter_instructor
@@ -31,7 +36,8 @@ from helicopter_instructor.enums import ControlAxis, VFIState
 # pyrefly: ignore [missing-import]
 import PI_helicopter_instructor
 
-# Local module level definitions to keep test compatibility without breaking style
+# Local module level definitions to keep test compatibility without
+# breaking style
 wrap_180 = helicopter_control.wrap_180
 PID = helicopter_control.PID
 CoordinateTransformer = helicopter_control.CoordinateTransformer
@@ -67,7 +73,8 @@ class TestHelicopterControl(unittest.TestCase):
         self.assertAlmostEqual(output, 6.0)
 
     def test_pid_derivative_error(self):
-        # kd = 1.5, error goes from 2.0 to 4.0 in 0.1s -> derivative term = 1.5 * (4 - 2) / 0.1 = 30.0
+        # kd = 1.5, error goes from 2.0 to 4.0 in 0.1s ->
+        # derivative term = 1.5 * (4 - 2) / 0.1 = 30.0
         pid = PID(kp=0.0, ki=0.0, kd=1.5, output_min=-50.0, output_max=50.0)
         output1 = pid.update(
             error=2.0, dt=0.1
@@ -90,13 +97,15 @@ class TestHelicopterControl(unittest.TestCase):
         output1 = pid.update(error=1.0, dt=0.5)
         self.assertAlmostEqual(output1, 0.8)
 
-        # Because we hit the clamp, the update function should undo the integral addition
+        # Because we hit the clamp, the update function should undo the
+        # integral addition
         # so integral remains 0.0, not 0.5.
         self.assertAlmostEqual(pid.integral, 0.0)
 
     def test_coordinate_transformer_facing_north(self):
         # Facing North (heading = 0)
-        # target_x = 10, target_z = -5, current = 0 -> delta_x = 10 (East), delta_z = -5 (North)
+        # target_x = 10, target_z = -5, current = 0 ->
+        # delta_x = 10 (East), delta_z = -5 (North)
         # Forward is North, which is -Z, so fwd_err should be +5.
         # Right is East, which is +X, so right_err should be +10.
         fwd, right = CoordinateTransformer.rotate_local_to_body_error(
@@ -109,7 +118,8 @@ class TestHelicopterControl(unittest.TestCase):
         # Facing East (heading = 90)
         # delta_x = 10 (East), delta_z = -5 (North)
         # Forward is East (+X), so fwd_err should be +10.
-        # Right is South (+Z), so right_err should be -5 (since North is to the left).
+        # Right is South (+Z), so right_err should be -5 (since North is
+        # to the left).
         fwd, right = CoordinateTransformer.rotate_local_to_body_error(
             delta_x=10.0, delta_z=-5.0, heading_deg=90.0
         )
@@ -119,7 +129,8 @@ class TestHelicopterControl(unittest.TestCase):
     def test_coordinate_transformer_velocity(self):
         # Facing North (heading = 0)
         # vx = 3.0 (East), vz = 4.0 (South) -> v_east = 3, v_north = -4
-        # v_forward should be -4 (moving backward), v_right should be 3 (moving right)
+        # v_forward should be -4 (moving backward), v_right should be 3
+        # (moving right)
         fwd, right = CoordinateTransformer.rotate_local_to_body_velocity(
             vx=3.0, vz=4.0, heading_deg=0.0
         )
@@ -149,7 +160,8 @@ class TestHelicopterControl(unittest.TestCase):
         # delta_z = 0.0 - 2.0 = -2.0 (target is 2m North / ahead).
         # We expect a forward error of +2.0m.
         # To go forward, we want target pitch to be negative (nose down).
-        # The att_pitch_pid will see negative target pitch - 0 current pitch = negative error -> negative pitch command.
+        # The att_pitch_pid will see negative target pitch - 0 current
+        # pitch = negative error -> negative pitch command.
         state = {
             "x": 0.0,
             "y": 0.0,
@@ -167,7 +179,8 @@ class TestHelicopterControl(unittest.TestCase):
         outputs = controller.update(dt=0.02, state=state)
         self.assertTrue(
             outputs[ControlAxis.PITCH] < 0.0,
-            f"Expected pitch command to be negative (nose down), got {outputs[ControlAxis.PITCH]}",
+            f"Expected pitch command to be negative (nose down), "
+            f"got {outputs[ControlAxis.PITCH]}",
         )
         self.assertAlmostEqual(outputs["debug"]["fwd_err"], 2.0)
         self.assertTrue(outputs["debug"]["target_pitch"] < 0.0)
@@ -194,7 +207,8 @@ class TestHelicopterControl(unittest.TestCase):
         outputs = controller.update(dt=0.02, state=state)
         self.assertTrue(
             outputs[ControlAxis.ROLL] > 0.0,
-            f"Expected roll command to be positive (roll right), got {outputs[ControlAxis.ROLL]}",
+            f"Expected roll command to be positive (roll right), "
+            f"got {outputs[ControlAxis.ROLL]}",
         )
         self.assertAlmostEqual(outputs["debug"]["lat_err"], 2.0)
         self.assertTrue(outputs["debug"]["target_roll"] > 0.0)
@@ -220,7 +234,8 @@ class TestHelicopterControl(unittest.TestCase):
         outputs = controller.update(dt=0.02, state=state)
         self.assertTrue(
             outputs[ControlAxis.COLLECTIVE] > 0.5,
-            f"Expected collective to increase above 0.5, got {outputs[ControlAxis.COLLECTIVE]}",
+            f"Expected collective to increase above 0.5, "
+            f"got {outputs[ControlAxis.COLLECTIVE]}",
         )
 
     def test_reset_position_hold_pids_clears_cyclic_state(self):
@@ -267,7 +282,9 @@ class TestHelicopterControl(unittest.TestCase):
             controller.vel_lon_pid,
             controller.att_pitch_pid,
         ):
-            self.assertAlmostEqual(pid.integral, 0.0, msg=f"{pid} integral not reset")
+            self.assertAlmostEqual(
+                pid.integral, 0.0, msg=f"{pid} integral not reset"
+            )
             self.assertAlmostEqual(
                 pid.last_error, 0.0, msg=f"{pid} last_error not reset"
             )
@@ -313,12 +330,18 @@ class TestHelicopterControl(unittest.TestCase):
         self.assertAlmostEqual(
             controller.yaw_pid.integral,
             yaw_integral_before,
-            msg="yaw_pid integral must not be touched by " "reset_position_hold_pids()",
+            msg=(
+                "yaw_pid integral must not be touched by "
+                "reset_position_hold_pids()"
+            ),
         )
         self.assertAlmostEqual(
             controller.alt_pid.integral,
             alt_integral_before,
-            msg="alt_pid integral must not be touched by " "reset_position_hold_pids()",
+            msg=(
+                "alt_pid integral must not be touched by "
+                "reset_position_hold_pids()"
+            ),
         )
 
     def test_reset_position_hold_pids_safe_on_fresh_controller(self):
@@ -346,7 +369,8 @@ class TestAutopilotPlugin(unittest.TestCase):
         mock_xp.reset_mock()
         mock_xp_imgui.reset_mock()
 
-        # Set default return value to avoid unpacking errors during initialization
+        # Set default return value to avoid unpacking errors during
+        # initialization
         mock_xp.getNthAircraftModel.return_value = (None, None)
         mock_xp.getScreenBoundsGlobal.return_value = (0, 1080, 1920, 0)
 
@@ -434,7 +458,12 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         # Mock hardware scanner
         self.plugin.get_hardware_inputs = MagicMock(
-            return_value={ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5}
+            return_value={
+                ControlAxis.ROLL: 0.0,
+                ControlAxis.PITCH: 0.0,
+                ControlAxis.YAW: 0.0,
+                ControlAxis.COLLECTIVE: 0.5,
+            }
         )
 
         # Call flight loop callback with normal dt
@@ -451,7 +480,9 @@ class TestAutopilotPlugin(unittest.TestCase):
     @patch("os.path.exists")
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("json.load")
-    def test_load_gains_new_format(self, mock_json_load, mock_open, mock_exists):
+    def test_load_gains_new_format(
+        self, mock_json_load, mock_open, mock_exists
+    ):
         mock_exists.return_value = True
         # Mock new format gains
         mock_json_load.return_value = {
@@ -490,7 +521,8 @@ class TestAutopilotPlugin(unittest.TestCase):
 
     def test_draw_hud_early_exit_conditions(self):
         # 1. HUD is disabled (show_hud = False)
-        # Should return 1 immediately and not call screen bounds regardless of ap_enabled
+        # Should return 1 immediately and not call screen bounds regardless
+        # of ap_enabled
         self.plugin.ap_enabled = True
         self.plugin.show_hud = False
         mock_xp.getWindowGeometry.reset_mock()
@@ -547,7 +579,8 @@ class TestAutopilotPlugin(unittest.TestCase):
     def test_cmd_handler_hud_toggle(self):
         self.plugin.show_hud = True
 
-        # Call toggle command handler with phase 0 (CommandBegin) -> Toggles to False
+        # Call toggle command handler with phase 0 (CommandBegin) ->
+        # Toggles to False
         self.plugin.cmd_handler_hud_toggle(None, 0, None)
         self.assertFalse(self.plugin.show_hud)
 
@@ -580,8 +613,10 @@ class TestAutopilotPlugin(unittest.TestCase):
             "/path/to/Cessna-172SP (Custom).acf",
         )
         filepath = config.get_gains_filepath(self.plugin.plugin_dir)
-        # Non-alphanumeric/underscore characters should be replaced with underscores
-        self.assertTrue(filepath.endswith("autopilot_gains_Cessna_172SP__Custom_.json"))
+        # Non-alphanumeric/underscore chars should be replaced with underscores
+        self.assertTrue(
+            filepath.endswith("autopilot_gains_Cessna_172SP__Custom_.json")
+        )
 
     def test_get_gains_filepath_fallback_exception(self):
         mock_xp.getNthAircraftModel.side_effect = Exception("X-Plane error")
@@ -625,7 +660,8 @@ class TestAutopilotPlugin(unittest.TestCase):
         self.plugin.dref_joystick_axis_assignments = "mock_assignments"
         self.plugin.dref_joy_mapped_axis_value = "mock_mapped"
 
-        # Set up mock assignments: index 10 is Roll (2), index 15 is Pitch (1), index 20 is Yaw (3), index 25 is Collective (5)
+        # Set up mock assignments: index 10 is Roll (2), index 15 is Pitch (1),
+        # index 20 is Yaw (3), index 25 is Collective (5)
         def mock_get_datavi(dref, array_out, offset=0, count=-1):
             if count < 0:
                 count = 100
@@ -636,7 +672,8 @@ class TestAutopilotPlugin(unittest.TestCase):
             array_out[25] = 5  # Collective
             return count
 
-        # Set up mock physical values: Roll = 0.2, Pitch = -0.3, Yaw = 0.4, Collective = 0.6 (maps to (0.6 + 1.0)/2 = 0.8)
+        # Set up mock physical values: Roll = 0.2, Pitch = -0.3, Yaw = 0.4,
+        # Collective = 0.6 (maps to (0.6 + 1.0)/2 = 0.8)
         def mock_get_datavf(dref, array_out, offset=0, count=-1):
             if count < 0:
                 count = 100
@@ -700,9 +737,9 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         hw = self.plugin.get_hardware_inputs()
 
-        self.assertAlmostEqual(hw[ControlAxis.YAW], 0.5)  # Chooses 0.5 over 0.0
-        self.assertAlmostEqual(hw[ControlAxis.PITCH], -0.7)  # Chooses -0.7 over 0.0
-        self.assertAlmostEqual(hw[ControlAxis.ROLL], 0.8)  # Chooses 0.8 over -0.2
+        self.assertAlmostEqual(hw[ControlAxis.YAW], 0.5)  # Chooses 0.5
+        self.assertAlmostEqual(hw[ControlAxis.PITCH], -0.7)  # Chooses -0.7
+        self.assertAlmostEqual(hw[ControlAxis.ROLL], 0.8)  # Chooses 0.8
         self.assertAlmostEqual(hw[ControlAxis.COLLECTIVE], 0.8)  # Scaled!
 
     def test_hardware_input_scanning_high_indices(self):
@@ -804,7 +841,12 @@ class TestAutopilotPlugin(unittest.TestCase):
 
         self.plugin.controller.update = capturing_update
         self.plugin.get_hardware_inputs = MagicMock(
-            return_value={ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5}
+            return_value={
+                ControlAxis.ROLL: 0.0,
+                ControlAxis.PITCH: 0.0,
+                ControlAxis.YAW: 0.0,
+                ControlAxis.COLLECTIVE: 0.5,
+            }
         )
 
         self.plugin.flight_loop_callback(
@@ -826,9 +868,16 @@ class TestAutopilotPlugin(unittest.TestCase):
         instructor.update() (Step C), so the check in the POST-C4 re-read
         block must catch it via last_system_state == STUDENT_FLIGHT.
         """
-        self.plugin.controller.update = MagicMock(return_value=self._make_vfi_output())
+        self.plugin.controller.update = MagicMock(
+            return_value=self._make_vfi_output()
+        )
         self.plugin.get_hardware_inputs = MagicMock(
-            return_value={ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5}
+            return_value={
+                ControlAxis.ROLL: 0.0,
+                ControlAxis.PITCH: 0.0,
+                ControlAxis.YAW: 0.0,
+                ControlAxis.COLLECTIVE: 0.5,
+            }
         )
         self.plugin.controller.reset_position_hold_pids = MagicMock()
 
@@ -874,9 +923,16 @@ class TestAutopilotPlugin(unittest.TestCase):
         flight loop, so on the next frame last_system_state is STUDENT_FLIGHT
         but curr_state (read after Step C) is already SYNCING.
         """
-        self.plugin.controller.update = MagicMock(return_value=self._make_vfi_output())
+        self.plugin.controller.update = MagicMock(
+            return_value=self._make_vfi_output()
+        )
         self.plugin.get_hardware_inputs = MagicMock(
-            return_value={ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5}
+            return_value={
+                ControlAxis.ROLL: 0.0,
+                ControlAxis.PITCH: 0.0,
+                ControlAxis.YAW: 0.0,
+                ControlAxis.COLLECTIVE: 0.5,
+            }
         )
         self.plugin.controller.reset_position_hold_pids = MagicMock()
 
@@ -907,9 +963,16 @@ class TestAutopilotPlugin(unittest.TestCase):
         after the STEP C4 re-read must fire because last_system_state is
         STUDENT_FLIGHT and the final curr_state is SYNCING.
         """
-        self.plugin.controller.update = MagicMock(return_value=self._make_vfi_output())
+        self.plugin.controller.update = MagicMock(
+            return_value=self._make_vfi_output()
+        )
         self.plugin.get_hardware_inputs = MagicMock(
-            return_value={ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5}
+            return_value={
+                ControlAxis.ROLL: 0.0,
+                ControlAxis.PITCH: 0.0,
+                ControlAxis.YAW: 0.0,
+                ControlAxis.COLLECTIVE: 0.5,
+            }
         )
         self.plugin.controller.reset_position_hold_pids = MagicMock()
 
@@ -977,7 +1040,7 @@ class TestHoverTargetAdjustment(unittest.TestCase):
 
     def test_adjust_hover_target_forward_north(self):
         # Heading = 0.0 (North)
-        # Shift forward 5m -> target_z should decrease by 5.0 (since North is -Z)
+        # Shift forward 5m -> target_z should decrease by 5.0 (North is -Z)
         self.plugin.adjust_hover_target(forward=5.0)
         self.assertAlmostEqual(self.plugin.controller.target_z, -5.0)
         self.assertAlmostEqual(self.plugin.controller.target_x, 0.0)

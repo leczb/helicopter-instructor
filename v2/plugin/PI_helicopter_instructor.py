@@ -31,7 +31,7 @@ from helicopter_instructor.enums import VFIState
 from helicopter_instructor.constants import M_S_TO_FT_MIN
 from helicopter_instructor.constants import M_S_TO_KNOTS
 
-# Explicitly reload submodules to prevent caching issues during X-Plane plugin reloads
+# Explicitly reload submodules to prevent caching issues during reloads
 importlib.reload(logger)
 importlib.reload(audio)
 importlib.reload(config)
@@ -88,7 +88,7 @@ PLANE_USER_IDX = 0
 
 
 class PluginUIController(object):
-    """Facade / Presenter class that exposes properties and actions for ui.py."""
+    """Facade / Presenter class that exposes properties/actions for ui.py."""
 
     def __init__(self, plugin):
         """Initializes the PluginUIController instance.
@@ -100,14 +100,29 @@ class PluginUIController(object):
 
     @property
     def version(self):
+        """Gets the version string of the plugin.
+
+        Returns:
+            str: The version string.
+        """
         return self._plugin.version
 
     @property
     def ap_enabled(self):
+        """Gets whether the autopilot / virtual instructor is enabled.
+
+        Returns:
+            bool: True if autopilot is enabled, False otherwise.
+        """
         return self._plugin.ap_enabled
 
     @ap_enabled.setter
     def ap_enabled(self, value):
+        """Sets the autopilot / virtual instructor enabled state.
+
+        Args:
+            value (bool): The new enabled state.
+        """
         if value != self._plugin.ap_enabled:
             if value:
                 state = self._plugin.get_current_state()
@@ -120,10 +135,16 @@ class PluginUIController(object):
                 )
                 target_alt = state["y"] - y_agl + 6.0
                 self._plugin.controller.engage(
-                    state["x"], target_alt, state["z"], state["psi"], curr_collective
+                    state["x"],
+                    target_alt,
+                    state["z"],
+                    state["psi"],
+                    curr_collective,
                 )
                 self._plugin.instructor.reset_to_vfi_flight()
-                self._plugin.instructor.set_hud_caption("VFI ENGAGED - AUTO HOVER")
+                self._plugin.instructor.set_hud_caption(
+                    "VFI ENGAGED - AUTO HOVER"
+                )
                 self._plugin.ap_enabled = True
                 self._plugin.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
                 # Queue the intro for the current phase so the student learns
@@ -131,7 +152,9 @@ class PluginUIController(object):
                 # intro is played on first engagement (there is no preceding
                 # phase to trigger it automatically).
                 phase = self._plugin.instructor.phase
-                self._plugin.play_sound(SOUND_PHASE_INTRO_TEMPLATE.format(phase))
+                self._plugin.play_sound(
+                    SOUND_PHASE_INTRO_TEMPLATE.format(phase)
+                )
             else:
                 self._plugin.ap_enabled = False
                 self._plugin.release_all_overrides()
@@ -141,77 +164,176 @@ class PluginUIController(object):
 
     @property
     def phase(self):
+        """Gets the current training curriculum phase number.
+
+        Returns:
+            int: The active phase number.
+        """
         return self._plugin.instructor.phase
 
     def set_phase(self, phase_num):
+        """Sets the active training curriculum phase.
+
+        Args:
+            phase_num (int): The curriculum phase number to activate.
+        """
         self._plugin.instructor.set_phase(phase_num)
 
     def initiate_handoff(self):
+        """Initiates control handoff to the student student."""
         self._plugin.instructor.initiate_handoff()
 
     @property
     def show_hud(self):
+        """Gets whether the HUD display is visible.
+
+        Returns:
+            bool: True if the HUD is visible, False otherwise.
+        """
         return self._plugin.show_hud
 
     @show_hud.setter
     def show_hud(self, value):
+        """Sets the HUD visibility state.
+
+        Args:
+            value (bool): The HUD visibility value.
+        """
         self._plugin.show_hud = value
         if self._plugin.hud_window:
             xp.setWindowIsVisible(self._plugin.hud_window, 1 if value else 0)
 
     @property
     def show_alt_bar(self):
+        """Gets whether the altitude guide bar is visible.
+
+        Returns:
+            bool: True if the altitude bar is visible, False otherwise.
+        """
         return self._plugin.show_alt_bar
 
     @show_alt_bar.setter
     def show_alt_bar(self, value):
+        """Sets the altitude guide bar visibility state.
+
+        Args:
+            value (bool): The altitude bar visibility value.
+        """
         self._plugin.show_alt_bar = value
         if self._plugin.alt_bar_window:
-            xp.setWindowIsVisible(self._plugin.alt_bar_window, 1 if value else 0)
+            xp.setWindowIsVisible(
+                self._plugin.alt_bar_window, 1 if value else 0
+            )
 
     @property
     def show_3d_boundaries(self):
+        """Gets whether the 3D target boundary rings are visible.
+
+        Returns:
+            bool: True if the 3D boundaries are visible, False otherwise.
+        """
         return self._plugin.show_3d_boundaries
 
     @show_3d_boundaries.setter
     def show_3d_boundaries(self, value):
+        """Sets the 3D target boundary rings visibility state.
+
+        Args:
+            value (bool): The 3D boundaries visibility value.
+        """
         self._plugin.show_3d_boundaries = value
 
     @property
     def show_3d_disks(self):
+        """Gets whether the 3D visual target disks are visible.
+
+        Returns:
+            bool: True if the 3D disks are visible, False otherwise.
+        """
         return self._plugin.show_3d_disks
 
     @show_3d_disks.setter
     def show_3d_disks(self, value):
+        """Sets the 3D visual target disks visibility state.
+
+        Args:
+            value (bool): The 3D disks visibility value.
+        """
         self._plugin.show_3d_disks = value
 
     @property
     def show_3d_arcs(self):
+        """Gets whether the 3D visual heading arcs are visible.
+
+        Returns:
+            bool: True if the 3D arcs are visible, False otherwise.
+        """
         return self._plugin.show_3d_arcs
 
     @show_3d_arcs.setter
     def show_3d_arcs(self, value):
+        """Sets the 3D visual heading arcs visibility state.
+
+        Args:
+            value (bool): The 3D arcs visibility value.
+        """
         self._plugin.show_3d_arcs = value
 
     @property
     def show_envelope_debug(self):
+        """Gets whether the envelope limit debug UI details are shown.
+
+        Returns:
+            bool: True if envelope debug details are shown, False otherwise.
+        """
         return self._plugin.show_envelope_debug
 
     @show_envelope_debug.setter
     def show_envelope_debug(self, value):
+        """Sets the envelope limit debug UI visibility state.
+
+        Args:
+            value (bool): The envelope debug UI visibility value.
+        """
         self._plugin.show_envelope_debug = value
 
     @property
     def system_state(self):
+        """Gets the current virtual flight instructor state.
+
+        Returns:
+            VFIState: The active VFI state.
+        """
         return self._plugin.instructor.system_state
 
     def get_axis_authority(self, axis_key):
+        """Gets the authority role (STUDENT/VFI) for a specific axis.
+
+        Args:
+            axis_key (ControlAxis): The axis key.
+
+        Returns:
+            Authority: The active authority role.
+        """
         return self._plugin.instructor.control_assignment[axis_key]
 
     def get_axis_sync_locked(self, axis_key):
+        """Gets whether a specific control axis is sync-locked.
+
+        Args:
+            axis_key (ControlAxis): The axis key.
+
+        Returns:
+            bool: True if sync-locked, False otherwise.
+        """
         return self._plugin.instructor.sync_locked[axis_key]
 
     def get_drift_m(self):
+        """Calculates horizontal drift distance from target in meters.
+
+        Returns:
+            float: Horizontal drift distance in meters.
+        """
         state = self._plugin.get_current_state()
         return math.sqrt(
             (state["x"] - self._plugin.controller.target_x) ** 2
@@ -220,47 +342,105 @@ class PluginUIController(object):
 
     @property
     def hover_safety_radius(self):
+        """Gets the hover safety takeover radius threshold.
+
+        Returns:
+            float: Safety radius limit in meters.
+        """
         return self._plugin.instructor.hover_safety_radius
 
     @property
     def hover_soft_radius(self):
+        """Gets the hover soft boundary radius threshold.
+
+        Returns:
+            float: Soft boundary radius in meters.
+        """
         return self._plugin.instructor.hover_soft_radius
 
     def get_y_agl(self):
-        return xp.getDataf(self._plugin.dref_y_agl) if self._plugin.dref_y_agl else 10.0
+        """Gets the current helicopter height above ground level (AGL).
+
+        Returns:
+            float: Height above ground level in meters.
+        """
+        dref = self._plugin.dref_y_agl
+        return xp.getDataf(dref) if dref else 10.0
 
     def get_gains(self):
+        """Gets the active PID controller gains dictionary.
+
+        Returns:
+            dict: The controller gains map.
+        """
         return self._plugin.controller.get_gains()
 
     def set_gains(self, gains):
+        """Sets the active PID controller gains.
+
+        Args:
+            gains (dict): The target gains map.
+        """
         self._plugin.controller.set_gains(gains)
 
     def save_gains(self):
+        """Saves current PID gains to the local JSON configuration file."""
         self._plugin.save_gains()
 
     def load_gains(self):
+        """Loads PID gains from the local JSON configuration file."""
         self._plugin.load_gains()
 
     @property
     def target_x(self):
+        """Gets the target X coordinate for the hover position.
+
+        Returns:
+            float: Target X coordinate in meters.
+        """
         return self._plugin.controller.target_x
 
     @property
     def target_y(self):
+        """Gets the target Y coordinate (altitude) for the hover position.
+
+        Returns:
+            float: Target Y coordinate in meters.
+        """
         return self._plugin.controller.target_y
 
     @property
     def target_z(self):
+        """Gets the target Z coordinate for the hover position.
+
+        Returns:
+            float: Target Z coordinate in meters.
+        """
         return self._plugin.controller.target_z
 
     @property
     def target_psi(self):
+        """Gets the target yaw heading for the hover position.
+
+        Returns:
+            float: Target heading in degrees.
+        """
         return self._plugin.controller.target_psi
 
     def adjust_hover_target(self, forward=0.0, right=0.0, up=0.0, heading=0.0):
+        """Adjusts the hover target position relative to current target.
+
+        Args:
+            forward (float): Forward adjustment distance in meters.
+            right (float): Rightward adjustment distance in meters.
+            up (float): Upward adjustment distance in meters.
+            heading (float): Heading adjustment in degrees (positive is right/
+                clockwise, negative is left/counter-clockwise).
+        """
         self._plugin.adjust_hover_target(forward, right, up, heading)
 
     def reset_target_to_current(self):
+        """Resets the hover target to the helicopter's current position."""
         state = self._plugin.get_current_state()
         curr_collective = xp.getDataf(self._plugin.dref_prop_ratio_all)
         self._plugin.controller.engage(
@@ -283,12 +463,12 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.64"
+        self.version = "2.1.65"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
-            "Version {self.version} - An intelligent virtual flight instructor that helps you learn "
-            f"how to hover a helicopter."
+            "Version {self.version} - An intelligent virtual flight "
+            "instructor that helps you learn how to hover a helicopter."
         )
 
         # Core VFI (Virtual Flight Instructor) States
@@ -452,8 +632,12 @@ class PythonInterface(object):
         self.dref_override_yaw = xp.findDataRef(
             "sim/operation/override/override_joystick_heading"
         )
-        self.dref_yoke_pitch = xp.findDataRef("sim/cockpit2/controls/yoke_pitch_ratio")
-        self.dref_yoke_roll = xp.findDataRef("sim/cockpit2/controls/yoke_roll_ratio")
+        self.dref_yoke_pitch = xp.findDataRef(
+            "sim/cockpit2/controls/yoke_pitch_ratio"
+        )
+        self.dref_yoke_roll = xp.findDataRef(
+            "sim/cockpit2/controls/yoke_roll_ratio"
+        )
         self.dref_yoke_heading = xp.findDataRef(
             "sim/cockpit2/controls/yoke_heading_ratio"
         )
@@ -596,7 +780,8 @@ class PythonInterface(object):
             "Helicopter Instructor: Toggle Master Engage",
         )
         self.cmd_hud_toggle = xp.createCommand(
-            "helicopter_instructor/hud_toggle", "Helicopter Instructor: Toggle HUD"
+            "helicopter_instructor/hud_toggle",
+            "Helicopter Instructor: Toggle HUD"
         )
         self.cmd_alt_bar_toggle = xp.createCommand(
             "helicopter_instructor/alt_bar_toggle",
@@ -648,10 +833,10 @@ class PythonInterface(object):
         )
         self.cmd_hover_reset_current = xp.createCommand(
             "helicopter_instructor/hover_set_current",
-            "Helicopter Instructor: Set the current location as the hover target",
+            "Helicopter Instructor: Set current location as hover target",
         )
 
-        # Preload all audio assets into memory cache to prevent runtime disk stutters
+        # Preload audio assets to prevent runtime disk stutters
         try:
             self.audio.preload_sounds()
         except Exception as preload_err:
@@ -686,7 +871,10 @@ class PythonInterface(object):
         # Register command handlers
         if self.cmd_instructor_toggle:
             xp.registerCommandHandler(
-                self.cmd_instructor_toggle, self.cmd_handler_instructor_toggle, 1, None
+                self.cmd_instructor_toggle,
+                self.cmd_handler_instructor_toggle,
+                1,
+                None
             )
         if self.cmd_hud_toggle:
             xp.registerCommandHandler(
@@ -694,7 +882,10 @@ class PythonInterface(object):
             )
         if self.cmd_alt_bar_toggle:
             xp.registerCommandHandler(
-                self.cmd_alt_bar_toggle, self.cmd_handler_alt_bar_toggle, 1, None
+                self.cmd_alt_bar_toggle,
+                self.cmd_handler_alt_bar_toggle,
+                1,
+                None
             )
         if self.cmd_next_phase:
             xp.registerCommandHandler(
@@ -706,7 +897,10 @@ class PythonInterface(object):
             )
         if self.cmd_handoff_trigger:
             xp.registerCommandHandler(
-                self.cmd_handoff_trigger, self.cmd_handler_handoff_trigger, 1, None
+                self.cmd_handoff_trigger,
+                self.cmd_handler_handoff_trigger,
+                1,
+                None
             )
 
         def reg_cmd(cmd, handler):
@@ -719,9 +913,15 @@ class PythonInterface(object):
         reg_cmd(self.cmd_hover_right, self.cmd_handler_hover_right)
         reg_cmd(self.cmd_hover_up, self.cmd_handler_hover_up)
         reg_cmd(self.cmd_hover_down, self.cmd_handler_hover_down)
-        reg_cmd(self.cmd_hover_heading_left, self.cmd_handler_hover_heading_left)
-        reg_cmd(self.cmd_hover_heading_right, self.cmd_handler_hover_heading_right)
-        reg_cmd(self.cmd_hover_reset_current, self.cmd_handler_hover_reset_current)
+        reg_cmd(
+            self.cmd_hover_heading_left, self.cmd_handler_hover_heading_left
+        )
+        reg_cmd(
+            self.cmd_hover_heading_right, self.cmd_handler_hover_heading_right
+        )
+        reg_cmd(
+            self.cmd_hover_reset_current, self.cmd_handler_hover_reset_current
+        )
 
         # Load and instantiate 3D Vulkan/Metal-native wireframe objects
         self.load_objects()
@@ -744,7 +944,10 @@ class PythonInterface(object):
         # Unregister command handlers
         if self.cmd_instructor_toggle:
             xp.unregisterCommandHandler(
-                self.cmd_instructor_toggle, self.cmd_handler_instructor_toggle, 1, None
+                self.cmd_instructor_toggle,
+                self.cmd_handler_instructor_toggle,
+                1,
+                None
             )
         if self.cmd_hud_toggle:
             xp.unregisterCommandHandler(
@@ -752,7 +955,10 @@ class PythonInterface(object):
             )
         if self.cmd_alt_bar_toggle:
             xp.unregisterCommandHandler(
-                self.cmd_alt_bar_toggle, self.cmd_handler_alt_bar_toggle, 1, None
+                self.cmd_alt_bar_toggle,
+                self.cmd_handler_alt_bar_toggle,
+                1,
+                None
             )
         if self.cmd_next_phase:
             xp.unregisterCommandHandler(
@@ -764,7 +970,10 @@ class PythonInterface(object):
             )
         if self.cmd_handoff_trigger:
             xp.unregisterCommandHandler(
-                self.cmd_handoff_trigger, self.cmd_handler_handoff_trigger, 1, None
+                self.cmd_handoff_trigger,
+                self.cmd_handler_handoff_trigger,
+                1,
+                None
             )
 
         def unreg_cmd(cmd, handler):
@@ -777,12 +986,18 @@ class PythonInterface(object):
         unreg_cmd(self.cmd_hover_right, self.cmd_handler_hover_right)
         unreg_cmd(self.cmd_hover_up, self.cmd_handler_hover_up)
         unreg_cmd(self.cmd_hover_down, self.cmd_handler_hover_down)
-        unreg_cmd(self.cmd_hover_heading_left, self.cmd_handler_hover_heading_left)
-        unreg_cmd(self.cmd_hover_heading_right, self.cmd_handler_hover_heading_right)
-        unreg_cmd(self.cmd_hover_reset_current, self.cmd_handler_hover_reset_current)
+        unreg_cmd(
+            self.cmd_hover_heading_left, self.cmd_handler_hover_heading_left
+        )
+        unreg_cmd(
+            self.cmd_hover_heading_right, self.cmd_handler_hover_heading_right
+        )
+        unreg_cmd(
+            self.cmd_hover_reset_current, self.cmd_handler_hover_reset_current
+        )
 
     def release_all_overrides(self):
-        """Releases all overridden joystick and collective datarefs in X-Plane."""
+        """Releases all overridden joystick/collective datarefs in X-Plane."""
         xp.setDatai(self.dref_override_roll, 0)
         xp.setDatai(self.dref_override_pitch, 0)
         xp.setDatai(self.dref_override_yaw, 0)
@@ -816,11 +1031,15 @@ class PythonInterface(object):
     def get_hardware_inputs(self):
         """Reads raw physical hardware stick deflections."""
         assignments = []
-        count_assign = xp.getDatavi(self.dref_joystick_axis_assignments, assignments)
+        count_assign = xp.getDatavi(
+            self.dref_joystick_axis_assignments, assignments
+        )
         assignments = assignments[:count_assign]
 
         mapped_values = []
-        count_mapped = xp.getDatavf(self.dref_joy_mapped_axis_value, mapped_values)
+        count_mapped = xp.getDatavf(
+            self.dref_joy_mapped_axis_value, mapped_values
+        )
         mapped_values = mapped_values[:count_mapped]
 
         # Save raw values to self for HUD dynamic engineering panel
@@ -865,7 +1084,7 @@ class PythonInterface(object):
             elif func == 5:
                 hw[ControlAxis.COLLECTIVE] = (val + 1.0) / 2.0
 
-        # Smart per-axis fallback if assignments are not detected in X-Plane DataRef
+        # Smart per-axis fallback if assignments are not detected in DataRef
         # Pitch: Fall back to standard Axis 1
         if hw[ControlAxis.PITCH] == 0.0 and len(mapped_values) > 1:
             hw[ControlAxis.PITCH] = mapped_values[1]
@@ -878,7 +1097,7 @@ class PythonInterface(object):
         if hw[ControlAxis.YAW] == 0.0 and len(mapped_values) > 3:
             hw[ControlAxis.YAW] = mapped_values[3]
 
-        # Collective: Always use the physical flaps axis input for collective control
+        # Collective: Always use physical flaps axis for collective control
         if self.use_flaps_collective:
             flap_input = xp.getDataf(self.dref_flap_ratio)
             hw[ControlAxis.COLLECTIVE] = max(0.0, min(1.0, flap_input))
@@ -918,7 +1137,7 @@ class PythonInterface(object):
             }
 
             if self.ap_enabled:
-                # Sanitize dt to prevent integrator spikes during unpauses/reloads
+                # Sanitize dt to prevent integrator spikes during reloads
                 dt = last_call if (0.0 < last_call < 0.1) else 0.02
 
                 # --- Update automatic phase transition delay timer ---
@@ -927,16 +1146,20 @@ class PythonInterface(object):
                     self.phase_transition_delay_timer -= dt
                     if self.phase_transition_delay_timer <= 0.0:
                         self.phase_transition_delay_timer = 0.0
-                        # Auto transition timer expired! Take control and advance.
+                        # Auto transition timer expired! Take control.
                         auto_phase_transition = True
                         self.instructor.reset_to_vfi_flight()
                         if self.pending_is_final:
                             self.instructor.training_complete = True
-                            self.play_sound(SOUND_TRAINING_COMPLETE, clear_queue=True)
+                            self.play_sound(
+                                SOUND_TRAINING_COMPLETE, clear_queue=True
+                            )
                         else:
                             self.instructor.phase = self.pending_next_phase
                             self.pending_handoff = True
-                            self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                            self.play_sound(
+                                SOUND_I_HAVE_CONTROL, clear_queue=True
+                            )
                             intro_sound = SOUND_PHASE_INTRO_TEMPLATE.format(
                                 self.pending_next_phase
                             )
@@ -944,7 +1167,7 @@ class PythonInterface(object):
                         self.pending_next_phase = None
 
                 # --- Snap autopilot target to override position ---
-                # This MUST run before controller.update() so that the PID cascade
+                # This MUST run before controller.update() for the PID cascade
                 # always sees the correct hover target.  Running it after Step A
                 # would mean the autopilot computes one full frame of commands
                 # against a stale position error the instant an override fires,
@@ -952,13 +1175,17 @@ class PythonInterface(object):
                 if self.instructor.drift_recovery_active:
                     self.controller.target_x = self.instructor.override_target_x
                     if self.instructor.override_target_y is not None:
-                        self.controller.target_y = self.instructor.override_target_y
+                        self.controller.target_y = (
+                            self.instructor.override_target_y
+                        )
                     self.controller.target_z = self.instructor.override_target_z
                 elif self.instructor.was_drift_recovery_active:
-                    # Recovery interpolation has finished: restore original target.
+                    # Recovery interpolation finished: restore original target.
                     self.controller.target_x = self.instructor.original_target_x
                     if self.instructor.original_target_y is not None:
-                        self.controller.target_y = self.instructor.original_target_y
+                        self.controller.target_y = (
+                            self.instructor.original_target_y
+                        )
                     self.controller.target_z = self.instructor.original_target_z
                     self.instructor.was_drift_recovery_active = False
                     self.instructor.original_target_x = None
@@ -974,7 +1201,7 @@ class PythonInterface(object):
                 self.controller.collective_active = True
 
                 # Note: vfi_outputs = self.controller.update(dt, state)
-                # But state is dictionary returned by get_current_state(), which is indeed 'state' in scope.
+                # state is dictionary returned by get_current_state()
                 vfi_outputs = self.controller.update(dt, state)
                 vfi_inputs = {
                     ControlAxis.ROLL: vfi_outputs[ControlAxis.ROLL],
@@ -997,12 +1224,20 @@ class PythonInterface(object):
                 curr_state = self.instructor.system_state
                 curr_phase = self.instructor.phase
 
-                # Cancel the transition timer if the state transitions out of student control
-                if curr_state not in (VFIState.STUDENT_FLIGHT, VFIState.CELEBRATING):
+                # Cancel timer if state transitions out of student control
+                is_student_ctrl = curr_state in (
+                    VFIState.STUDENT_FLIGHT,
+                    VFIState.CELEBRATING,
+                )
+                if not is_student_ctrl:
                     if self.phase_transition_delay_timer > 0.0:
-                        last_state_name = getattr(self, "last_system_state", curr_state).name
+                        prev_state = getattr(
+                            self, "last_system_state", curr_state
+                        )
+                        last_state_name = prev_state.name
                         log.info(
-                            f"Automatic phase transition delay cancelled because state transitioned "
+                            "Automatic phase transition delay cancelled "
+                            "because state transitioned "
                             f"from {last_state_name} to {curr_state.name}."
                         )
                     self.phase_transition_delay_timer = 0.0
@@ -1019,7 +1254,11 @@ class PythonInterface(object):
                 # --- Run Student Performance Metrics ---
                 is_student_flying = curr_state == VFIState.STUDENT_FLIGHT
                 self.metrics.update(
-                    dt, telemetry, hardware_inputs, is_student_flying, curr_phase
+                    dt,
+                    telemetry,
+                    hardware_inputs,
+                    is_student_flying,
+                    curr_phase,
                 )
 
                 # Feed current envelope grade back to instructor so that
@@ -1043,13 +1282,16 @@ class PythonInterface(object):
                                 SOUND_TRAINING_COMPLETE, clear_queue=True
                             )
                         else:
-                            # Delay the takeover: play transition chime and set the timer
+                            # Delay takeover: play end of phase celebration
+                            # audio and set timer
                             duration = self.audio.sound_registry.get(
                                 SOUND_PHASE_TRANSITION, {}
                             ).get("duration_s", 2.0)
                             log.info(
-                                f"Automatic phase transition initiated. Starting celebration chime delay "
-                                f"timer for {duration:.2f}s before advancing to Phase {event.to_phase}."
+                                "Automatic phase transition initiated. "
+                                f"Starting celebration delay timer "
+                                f"for {duration:.2f}s before advancing "
+                                f"to Phase {event.to_phase}."
                             )
                             self.phase_transition_delay_timer = duration
                             self.pending_next_phase = event.to_phase
@@ -1059,7 +1301,7 @@ class PythonInterface(object):
                                 SOUND_PHASE_TRANSITION, clear_queue=True
                             )
 
-                # Re-read state/phase after auto-transition may have changed them
+                # Re-read state/phase after auto-transition
 
                 curr_state = self.instructor.system_state
                 curr_phase = self.instructor.phase
@@ -1071,18 +1313,24 @@ class PythonInterface(object):
                 # on the first VFI-commanded frame.  Resetting here covers all
                 # three transition paths:
                 #   • Safety override  (state set inside instructor.update())
-                #   • Manual phase change  (command handler fired between frames)
+                #   • Manual phase change (command handler fired between frames)
                 #   • Automatic phase advance  (state set inside STEP C4)
                 # Placing the check after the STEP C4 re-read means curr_state
                 # already reflects any within-frame state change, while
                 # last_system_state always holds the previous frame's value.
                 if (
-                    self.last_system_state in (VFIState.STUDENT_FLIGHT, VFIState.CELEBRATING)
-                    and curr_state not in (VFIState.STUDENT_FLIGHT, VFIState.CELEBRATING)
+                    self.last_system_state in (
+                        VFIState.STUDENT_FLIGHT,
+                        VFIState.CELEBRATING,
+                    )
+                    and curr_state not in (
+                        VFIState.STUDENT_FLIGHT,
+                        VFIState.CELEBRATING,
+                    )
                 ):
                     self.controller.reset_position_hold_pids()
 
-                # Detect state and phase transitions to play audio announcements.
+                # Detect state/phase transitions to play audio announcements.
                 # Skip if this was an automatic phase transition (audio already
                 # scheduled above).
                 phase_changed = curr_phase != self.last_phase
@@ -1095,13 +1343,23 @@ class PythonInterface(object):
                             VFIState.SYNCING,
                             VFIState.CELEBRATING,
                         ):
-                            self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                            self.play_sound(
+                                SOUND_I_HAVE_CONTROL, clear_queue=True
+                            )
                             self.pending_handoff = True
-                        self.play_sound(SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase))
+                        self.play_sound(
+                            SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase)
+                        )
                     elif state_changed:
                         if curr_state == VFIState.SYNCING:
-                            if self.last_system_state == VFIState.STUDENT_FLIGHT:
-                                self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                            is_prev_student = (
+                                self.last_system_state
+                                == VFIState.STUDENT_FLIGHT
+                            )
+                            if is_prev_student:
+                                self.play_sound(
+                                SOUND_I_HAVE_CONTROL, clear_queue=True
+                            )
                             else:
                                 self.play_sound(SOUND_GET_READY)
                         elif curr_state == VFIState.STUDENT_FLIGHT:
@@ -1111,7 +1369,9 @@ class PythonInterface(object):
                             elif phase == PHASE_COLLECTIVE_ONLY:
                                 self.play_sound(SOUND_YOU_HAVE_COLLECTIVE)
                             elif phase == PHASE_COLLECTIVE_PEDALS:
-                                self.play_sound(SOUND_YOU_HAVE_COLLECTIVE_PEDALS)
+                                self.play_sound(
+                                    SOUND_YOU_HAVE_COLLECTIVE_PEDALS
+                                )
                             elif phase == PHASE_CYCLIC_ONLY:
                                 self.play_sound(SOUND_YOU_HAVE_CYCLIC)
                             elif phase == PHASE_CYCLIC_PEDALS:
@@ -1119,7 +1379,9 @@ class PythonInterface(object):
                             elif phase == PHASE_ALL_CONTROLS:
                                 self.play_sound(SOUND_YOU_HAVE_ALL)
                         elif curr_state == VFIState.OVERRIDE:
-                            self.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
+                            self.play_sound(
+                                SOUND_I_HAVE_CONTROL, clear_queue=True
+                            )
 
                 # Update persistent tracking state
                 self.last_system_state = curr_state
@@ -1127,31 +1389,48 @@ class PythonInterface(object):
 
                 # --- Perform Intelligent Control Routing ---
                 # 1. Roll
-                if self.instructor.control_assignment[ControlAxis.ROLL] == Authority.STUDENT:
+                axis_roll_auth = self.instructor.control_assignment[
+                    ControlAxis.ROLL
+                ]
+                if axis_roll_auth == Authority.STUDENT:
                     xp.setDatai(self.dref_override_roll, 0)
                 else:
                     xp.setDatai(self.dref_override_roll, 1)
-                    xp.setDataf(self.dref_yoke_roll, final_commands[ControlAxis.ROLL])
+                    xp.setDataf(
+                        self.dref_yoke_roll, final_commands[ControlAxis.ROLL]
+                    )
 
                 # 2. Pitch
-                if self.instructor.control_assignment[ControlAxis.PITCH] == Authority.STUDENT:
+                axis_pitch_auth = self.instructor.control_assignment[
+                    ControlAxis.PITCH
+                ]
+                if axis_pitch_auth == Authority.STUDENT:
                     xp.setDatai(self.dref_override_pitch, 0)
                 else:
                     xp.setDatai(self.dref_override_pitch, 1)
-                    xp.setDataf(self.dref_yoke_pitch, final_commands[ControlAxis.PITCH])
+                    xp.setDataf(
+                        self.dref_yoke_pitch, final_commands[ControlAxis.PITCH]
+                    )
 
                 # 3. Yaw
-                if self.instructor.control_assignment[ControlAxis.YAW] == Authority.STUDENT:
+                axis_yaw_auth = self.instructor.control_assignment[
+                    ControlAxis.YAW
+                ]
+                if axis_yaw_auth == Authority.STUDENT:
                     xp.setDatai(self.dref_override_yaw, 0)
                 else:
                     xp.setDatai(self.dref_override_yaw, 1)
-                    xp.setDataf(self.dref_yoke_heading, final_commands[ControlAxis.YAW])
+                    xp.setDataf(
+                        self.dref_yoke_heading, final_commands[ControlAxis.YAW]
+                    )
 
                 # 4. Collective
                 # Determine if collective injection is active (VFI is flying,
                 # or flaps fallback is checked)
                 inject_collective = (
-                    self.instructor.control_assignment[ControlAxis.COLLECTIVE] == Authority.VFI
+                    self.instructor.control_assignment[
+                        ControlAxis.COLLECTIVE
+                    ] == Authority.VFI
                     or self.use_flaps_collective
                 )
 
@@ -1210,13 +1489,21 @@ class PythonInterface(object):
 
                 # --- Reset Performance Metrics Evaluator ---
                 self.metrics.update(
-                    0.02, telemetry, hardware_inputs, False, self.instructor.phase
+                    0.02,
+                    telemetry,
+                    hardware_inputs,
+                    False,
+                    self.instructor.phase,
                 )
 
             # --- Update 3D Object Instances ---
             try:
                 # 2. Update Disks and Arcs centered on the hover target
-                show_any = self.show_3d_boundaries and self.ap_enabled and self.controller
+                show_any = (
+                    self.show_3d_boundaries
+                    and self.ap_enabled
+                    and self.controller
+                )
                 if show_any:
                     tx = (
                         self.instructor.original_target_x
@@ -1264,7 +1551,7 @@ class PythonInterface(object):
                 )
 
                 # Dynamic visibility for standalone altitude bar window
-                # Only show the altitude box when user is in control of collective
+                # Only show altitude box when user is in control of collective
                 if self.alt_bar_window:
                     is_student_coll = self.ap_enabled and (
                         virtual_instructor.PHASE_CONFIGS[self.instructor.phase][
@@ -1272,16 +1559,23 @@ class PythonInterface(object):
                         ]
                         == Authority.STUDENT
                     )
-                    active_visible = 1 if (self.show_alt_bar and is_student_coll) else 0
-                    if xp.getWindowIsVisible(self.alt_bar_window) != active_visible:
-                        xp.setWindowIsVisible(self.alt_bar_window, active_visible)
+                    active_visible = (
+                        1 if (self.show_alt_bar and is_student_coll) else 0
+                    )
+                    if (
+                        xp.getWindowIsVisible(self.alt_bar_window)
+                        != active_visible
+                    ):
+                        xp.setWindowIsVisible(
+                            self.alt_bar_window, active_visible
+                        )
             except Exception as inst_err:
                 if not hasattr(self, "_inst_update_failed_logged"):
                     self._inst_update_failed_logged = True
                     log.error(f"Failed to update 3D instances: {inst_err}")
 
             # --- Run Sequential Audio Playback Queue ---
-            # Spaced out playbacks by tracking length of files and adding a 0.3s pause.
+            # Spaced out playbacks by tracking length and adding a 0.3s pause.
             loop_dt = last_call if (0.0 < last_call < 0.1) else 0.02
             if self.audio_playback_timer > 0.0:
                 self.audio_playback_timer -= loop_dt
@@ -1293,7 +1587,13 @@ class PythonInterface(object):
                 self.audio_playback_timer = duration_s + 0.3
 
             # --- Handle Pending Control Handoff ---
-            if self.ap_enabled and self.pending_handoff and self.audio_playback_timer <= 0.0 and not self.audio_queue:
+            is_ready = (
+                self.ap_enabled
+                and self.pending_handoff
+                and self.audio_playback_timer <= 0.0
+                and not self.audio_queue
+            )
+            if is_ready:
                 self.instructor.initiate_handoff()
                 self.pending_handoff = False
         except Exception as e:
@@ -1317,106 +1617,273 @@ class PythonInterface(object):
             self.controller.set_gains(gains)
 
     def XPluginReceiveMessage(self, in_from_who, in_message, in_param):
-        """Called by X-Plane when a message is received by the plugin."""
+        """Called by X-Plane when a message is received by the plugin.
+
+        Args:
+            in_from_who (int): The plugin ID that sent the message.
+            in_message (int): The message ID.
+            in_param (any): Message parameter.
+        """
         if in_message == MSG_PLANE_LOADED and in_param == PLANE_USER_IDX:
             log.info("User aircraft loaded. Reloading PID gains.")
             self.load_gains()
 
     # --- COMMAND HANDLERS ---
-    # Note: cmd_phase represents the X-Plane command event state (0 = Begin, 1 = Continue, 2 = End),
+    # Note: cmd_phase represents X-Plane command event state
+    # (0 = Begin, 1 = Continue, 2 = End),
     # NOT the curriculum lesson phase.
     def cmd_handler_instructor_toggle(self, command_ref, cmd_phase, refcon):
-        """Handler for Master Engage toggle command."""
-        if cmd_phase == 0:  # Trigger exactly once on button press (CommandBegin)
+        """Handler for Master Engage toggle command.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
+        # Trigger exactly once on button press (CommandBegin)
+        if cmd_phase == 0:
             self.ui_controller.ap_enabled = not self.ap_enabled
         return 1
 
     def cmd_handler_hud_toggle(self, command_ref, cmd_phase, refcon):
-        """Toggles the HUD visibility."""
+        """Toggles the HUD visibility.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
             self.ui_controller.show_hud = not self.show_hud
         return 1
 
     def cmd_handler_alt_bar_toggle(self, command_ref, cmd_phase, refcon):
-        """Toggles the altitude bar visibility."""
+        """Toggles the altitude bar visibility.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
             self.ui_controller.show_alt_bar = not self.show_alt_bar
         return 1
 
     def cmd_handler_next_phase(self, command_ref, cmd_phase, refcon):
-        """Advances the lesson to the next phase."""
+        """Advances the lesson to the next phase.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0 and self.instructor.phase < PHASE_ALL_CONTROLS:
             self.instructor.set_phase(self.instructor.phase + 1)
         return 1
 
     def cmd_handler_prev_phase(self, command_ref, cmd_phase, refcon):
-        """Regresses the lesson to the previous phase."""
+        """Regresses the lesson to the previous phase.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0 and self.instructor.phase > PHASE_PEDALS_ONLY:
             self.instructor.set_phase(self.instructor.phase - 1)
         return 1
 
     def cmd_handler_handoff_trigger(self, command_ref, cmd_phase, refcon):
-        """Initiates the control handoff sequence if VFI is engaged."""
+        """Initiates the control handoff sequence if VFI is engaged.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0 and self.ap_enabled:
             self.instructor.initiate_handoff()
         return 1
 
     def cmd_handler_hover_forward(self, command_ref, cmd_phase, refcon):
-        """Shifts hover target forward by 1 meter."""
+        """Shifts hover target forward by 1 meter.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
-            self.adjust_hover_target(forward=1.0, right=0.0, up=0.0, heading=0.0)
+            self.adjust_hover_target(
+                forward=1.0, right=0.0, up=0.0, heading=0.0
+            )
         return 1
 
     def cmd_handler_hover_backward(self, command_ref, cmd_phase, refcon):
-        """Shifts hover target backward by 1 meter."""
+        """Shifts hover target backward by 1 meter.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
-            self.adjust_hover_target(forward=-1.0, right=0.0, up=0.0, heading=0.0)
+            self.adjust_hover_target(
+                forward=-1.0, right=0.0, up=0.0, heading=0.0
+            )
         return 1
 
     def cmd_handler_hover_left(self, command_ref, cmd_phase, refcon):
-        """Shifts hover target left by 1 meter."""
+        """Shifts hover target left by 1 meter.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
-            self.adjust_hover_target(forward=0.0, right=-1.0, up=0.0, heading=0.0)
+            self.adjust_hover_target(
+                forward=0.0, right=-1.0, up=0.0, heading=0.0
+            )
         return 1
 
     def cmd_handler_hover_right(self, command_ref, cmd_phase, refcon):
-        """Shifts hover target right by 1 meter."""
+        """Shifts hover target right by 1 meter.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
-            self.adjust_hover_target(forward=0.0, right=1.0, up=0.0, heading=0.0)
+            self.adjust_hover_target(
+                forward=0.0, right=1.0, up=0.0, heading=0.0
+            )
         return 1
 
     def cmd_handler_hover_up(self, command_ref, cmd_phase, refcon):
-        """Increases hover target altitude by 0.5 meters."""
+        """Increases hover target altitude by 0.5 meters.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
-            self.adjust_hover_target(forward=0.0, right=0.0, up=0.5, heading=0.0)
+            self.adjust_hover_target(
+                forward=0.0, right=0.0, up=0.5, heading=0.0
+            )
         return 1
 
     def cmd_handler_hover_down(self, command_ref, cmd_phase, refcon):
-        """Decreases hover target altitude by 0.5 meters."""
+        """Decreases hover target altitude by 0.5 meters.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
-            self.adjust_hover_target(forward=0.0, right=0.0, up=-0.5, heading=0.0)
+            self.adjust_hover_target(
+                forward=0.0, right=0.0, up=-0.5, heading=0.0
+            )
         return 1
 
     def cmd_handler_hover_heading_left(self, command_ref, cmd_phase, refcon):
-        """Adjusts hover target heading left by 5 degrees."""
+        """Adjusts hover target heading left by 5 degrees.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
-            self.adjust_hover_target(forward=0.0, right=0.0, up=0.0, heading=-5.0)
+            self.adjust_hover_target(
+                forward=0.0, right=0.0, up=0.0, heading=-5.0
+            )
         return 1
 
     def cmd_handler_hover_heading_right(self, command_ref, cmd_phase, refcon):
-        """Adjusts hover target heading right by 5 degrees."""
+        """Adjusts hover target heading right by 5 degrees.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
-            self.adjust_hover_target(forward=0.0, right=0.0, up=0.0, heading=5.0)
+            self.adjust_hover_target(
+                forward=0.0, right=0.0, up=0.0, heading=5.0
+            )
         return 1
 
     def cmd_handler_hover_reset_current(self, command_ref, cmd_phase, refcon):
-        """Resets hover target to current position."""
+        """Resets hover target to current position.
+
+        Args:
+            command_ref: X-Plane command reference.
+            cmd_phase (int): The X-Plane command phase (0, 1, or 2).
+            refcon: Pointer to user reference data.
+
+        Returns:
+            int: 1 to consume command, 0 to pass it to X-Plane.
+        """
         if cmd_phase == 0:
             self.ui_controller.reset_target_to_current()
         return 1
 
     def adjust_hover_target(self, forward=0.0, right=0.0, up=0.0, heading=0.0):
-        """Adjusts the hover location target relative to the current target heading/altitude."""
+        """Adjusts hover target relative to current target heading/altitude.
+
+        Args:
+            forward (float): Forward shift in meters.
+            right (float): Rightward shift in meters.
+            up (float): Vertical shift in meters.
+            heading (float): Heading change in degrees (positive is right/
+                clockwise, negative is left/counter-clockwise).
+        """
         # Convert target heading to radians for coordinate rotation
         psi_rad = math.radians(self.controller.target_psi)
         cos_psi = math.cos(psi_rad)
@@ -1447,15 +1914,21 @@ class PythonInterface(object):
         if self.instructor.override_target_z is not None:
             self.instructor.override_target_z += delta_z
 
-        self.controller.target_psi = (self.controller.target_psi + heading) % 360.0
+        self.controller.target_psi = (
+            self.controller.target_psi + heading
+        ) % 360.0
 
         log.info(
-            f"Adjusted hover target by forward={forward}m, right={right}m, up={up}m, heading={heading}deg. "
-            f"New target: x={self.controller.target_x:.2f}, y={self.controller.target_y:.2f}, z={self.controller.target_z:.2f}, psi={self.controller.target_psi:.1f}"
+            f"Adjusted hover target by forward={forward}m, right={right}m, "
+            f"up={up}m, heading={heading}deg. New target: "
+            f"x={self.controller.target_x:.2f}, "
+            f"y={self.controller.target_y:.2f}, "
+            f"z={self.controller.target_z:.2f}, "
+            f"psi={self.controller.target_psi:.1f}"
         )
 
     def draw_hud(self, window_id, refcon):
-        """Draws the HUD graphics including flight telemetry and matching guide."""
+        """Draws HUD graphics including telemetry and matching guide."""
         state = self.get_current_state()
         y_agl = xp.getDataf(self.dref_y_agl) if self.dref_y_agl else 10.0
 
@@ -1541,8 +2014,12 @@ class PythonInterface(object):
             clear_queue: If True, clears all currently queued audio cues and
               resets the playback timer to play the new sound immediately.
         """
-        # If the requested sound is currently playing, ignore it to prevent repetition/glitching
-        if self.last_played_sound == filename and self.audio_playback_timer > 0.3:
+        # If sound is currently playing, ignore it to prevent repetition
+        is_playing = (
+            self.last_played_sound == filename
+            and self.audio_playback_timer > 0.3
+        )
+        if is_playing:
             return
 
         if clear_queue:

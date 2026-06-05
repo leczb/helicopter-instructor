@@ -5,7 +5,9 @@ from unittest import mock
 
 # Set up paths so we can import helicopter_instructor
 base_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor"))
+sys.path.insert(
+    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor")
+)
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
 # Mock the modules before importing PI_helicopter_instructor or audio
@@ -32,7 +34,8 @@ from helicopter_instructor import audio
 class TestAudio(unittest.TestCase):
 
     def setUp(self):
-        # Dynamically align with the active mock in sys.modules to prevent importlib.reload caching mismatches
+        # Dynamically align with the active mock in sys.modules to prevent
+        # importlib.reload caching mismatches.
         global mock_xp
         import sys
 
@@ -42,7 +45,9 @@ class TestAudio(unittest.TestCase):
 
         # Mock the logger
         self.mock_log = mock.MagicMock()
-        self.log_patcher = mock.patch("helicopter_instructor.audio.log", self.mock_log)
+        self.log_patcher = mock.patch(
+            "helicopter_instructor.audio.log", self.mock_log
+        )
         self.log_patcher.start()
 
         # Set up an AudioManager instance
@@ -81,7 +86,9 @@ class TestAudio(unittest.TestCase):
         # Verify registration in sound_registry
         self.assertIn("Perfect.wav", self.audio_manager.sound_registry)
         self.assertIn("I have control.wav", self.audio_manager.sound_registry)
-        self.assertNotIn("unrelated_file.txt", self.audio_manager.sound_registry)
+        self.assertNotIn(
+            "unrelated_file.txt", self.audio_manager.sound_registry
+        )
 
         sound_info = self.audio_manager.sound_registry["Perfect.wav"]
         self.assertEqual(sound_info["data"], b"\x00\x00" * 100)
@@ -91,7 +98,9 @@ class TestAudio(unittest.TestCase):
         self.assertEqual(sound_info["num_channels"], 1)
 
         # Verify log output
-        self.mock_log.info.assert_any_call("Preloaded 2 audio assets into memory.")
+        self.mock_log.info.assert_any_call(
+            "Preloaded 2 audio assets into memory."
+        )
 
     def test_play_sound_success(self):
         # Manually register a mock sound in sound_registry
@@ -111,7 +120,8 @@ class TestAudio(unittest.TestCase):
         # Play the sound
         self.audio_manager.play_sound("Perfect.wav")
 
-        # Verify correct buffers are kept alive in AudioManager to prevent GC issues
+        # Verify correct buffers are kept alive in AudioManager to prevent
+        # GC issues.
         self.assertIn(mock_data, self.audio_manager.active_sound_buffers)
 
         # Verify xp.playPCMOnBus arguments
@@ -132,7 +142,8 @@ class TestAudio(unittest.TestCase):
 
         # Assert: Error log is written
         self.mock_log.error.assert_called_once_with(
-            "Sound Error: Failed to play MissingSound.wav. Sound is not preloaded in memory."
+            "Sound Error: Failed to play MissingSound.wav. "
+            "Sound is not preloaded in memory."
         )
 
     def test_stop_sound(self):
@@ -193,7 +204,8 @@ class TestPluginAudio(unittest.TestCase):
         self.assertIn("Perfect.wav", self.plugin.audio_queue)
 
     def test_play_sound_duplicate_check(self):
-        # Set last played sound to "I have control.wav" and playback timer active (e.g. 1.0s)
+        # Set last played sound to "I have control.wav" and playback timer
+        # active (e.g. 1.0s)
         self.plugin.last_played_sound = "I have control.wav"
         self.plugin.audio_playback_timer = 1.0
 
@@ -203,7 +215,8 @@ class TestPluginAudio(unittest.TestCase):
         self.assertNotIn("I have control.wav", self.plugin.audio_queue)
 
     def test_play_sound_duplicate_timer_expired(self):
-        # Set last played sound to "I have control.wav" but playback timer is expired/pause-only (e.g. 0.2s)
+        # Set last played sound to "I have control.wav" but playback timer is
+        # expired/pause-only (e.g. 0.2s)
         self.plugin.last_played_sound = "I have control.wav"
         self.plugin.audio_playback_timer = 0.2
 
@@ -230,7 +243,8 @@ class TestPluginAudio(unittest.TestCase):
         # Call play_sound with clear_queue = True
         self.plugin.play_sound("I have control.wav", clear_queue=True)
 
-        # Verify the underlying audio manager's stop_sound was invoked (xp.stopAudio called)
+        # Verify the underlying audio manager's stop_sound was invoked
+        # (xp.stopAudio called)
         mock_xp.stopAudio.assert_called_once_with(88)
         self.assertIsNone(self.plugin.audio.active_channel)
 
@@ -246,22 +260,42 @@ class TestPluginAudio(unittest.TestCase):
 
         # Mock the controller, instructor, and metrics update dependencies
         self.plugin.get_current_state = mock.MagicMock(return_value={
-            "x": 0.0, "y": 0.0, "z": 0.0, "vx": 0.0, "vy": 0.0, "vz": 0.0,
-            "phi": 0.0, "theta": 0.0, "psi": 0.0, "P": 0.0, "Q": 0.0, "R": 0.0, "g_side": 0.0
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "vx": 0.0,
+            "vy": 0.0,
+            "vz": 0.0,
+            "phi": 0.0,
+            "theta": 0.0,
+            "psi": 0.0,
+            "P": 0.0,
+            "Q": 0.0,
+            "R": 0.0,
+            "g_side": 0.0,
         })
         self.plugin.controller = mock.MagicMock()
         self.plugin.controller.update.return_value = {
-            ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
         }
         self.plugin.get_hardware_inputs = mock.MagicMock(return_value={
-            ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
         })
 
         self.plugin.instructor = mock.MagicMock()
         self.plugin.instructor.system_state = VFIState.VFI_FLIGHT
         self.plugin.instructor.phase = 2
         self.plugin.instructor.update.return_value = {
-            ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0, ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.5
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
         }
         self.plugin.metrics = mock.MagicMock()
         self.plugin.metrics.pop_audio_queue.return_value = None

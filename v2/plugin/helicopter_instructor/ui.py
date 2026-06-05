@@ -80,7 +80,8 @@ def draw_window(ui_controller, window_id, ref_con):
     if ui_controller.show_hud:
         imgui.indent()
         changed_dbg, new_show_dbg = imgui.checkbox(
-            "Show Excellent Criteria Debug Info", ui_controller.show_envelope_debug
+            "Show Excellent Criteria Debug Info",
+            ui_controller.show_envelope_debug
         )
         if changed_dbg:
             ui_controller.show_envelope_debug = new_show_dbg
@@ -193,7 +194,9 @@ def draw_window(ui_controller, window_id, ref_con):
                 drift_str + " (WARNING - SOFT INTERVENTION)", 1.0, 0.6, 0.0, 1.0
             )
         else:
-            imgui.text_colored(drift_str + " (SAFE - NORMAL)", 0.1, 0.9, 0.1, 1.0)
+            imgui.text_colored(
+                drift_str + " (SAFE - NORMAL)", 0.1, 0.9, 0.1, 1.0
+            )
 
         # AGL Altitude
         y_agl = ui_controller.get_y_agl()
@@ -225,7 +228,9 @@ def draw_window(ui_controller, window_id, ref_con):
         elif envelope_str == Envelope.GOOD:
             imgui.text_colored("GOOD HOVER", 0.9, 0.6, 0.1, 1.0)
         else:
-            imgui.text_colored("UNSTABLE / OVER-CONTROLLING", 1.0, 0.2, 0.2, 1.0)
+            imgui.text_colored(
+                "UNSTABLE / OVER-CONTROLLING", 1.0, 0.2, 0.2, 1.0
+            )
 
         # Overall Score progress bar
         imgui.spacing()
@@ -295,11 +300,17 @@ def draw_window(ui_controller, window_id, ref_con):
             imgui.next_column()
             clamped = max(0.0, min(1.0, oci_val))
             if oci_val > threshold:
-                imgui.push_style_color(imgui.COLOR_PLOT_HISTOGRAM, 1.0, 0.4, 0.1, 1.0)
+                imgui.push_style_color(
+                    imgui.COLOR_PLOT_HISTOGRAM, 1.0, 0.4, 0.1, 1.0
+                )
             else:
-                imgui.push_style_color(imgui.COLOR_PLOT_HISTOGRAM, 0.1, 0.7, 0.2, 1.0)
+                imgui.push_style_color(
+                    imgui.COLOR_PLOT_HISTOGRAM, 0.1, 0.7, 0.2, 1.0
+                )
             imgui.progress_bar(
-                clamped, size=(220, 20), overlay=f"{oci_val:.2f} / {threshold:.1f}"
+                clamped,
+                size=(220, 20),
+                overlay=f"{oci_val:.2f} / {threshold:.1f}",
             )
             imgui.pop_style_color(1)
             imgui.next_column()
@@ -307,16 +318,24 @@ def draw_window(ui_controller, window_id, ref_con):
         draw_oci_row("Cyclic Roll L/R", metrics.oci[ControlAxis.ROLL], 1.0)
         draw_oci_row("Cyclic Pitch F/B", metrics.oci[ControlAxis.PITCH], 1.0)
         draw_oci_row("Anti-Torque Pedals", metrics.oci[ControlAxis.YAW], 0.8)
-        draw_oci_row("Collective Altitude", metrics.oci[ControlAxis.COLLECTIVE], 0.8)
+        draw_oci_row(
+            "Collective Altitude",
+            metrics.oci[ControlAxis.COLLECTIVE],
+            0.8,
+        )
         imgui.columns(1)
 
         # Session Stats
         imgui.spacing()
         imgui.separator()
         imgui.text("Training Session Statistics:")
-        imgui.text(f"  Longest Student Flight: {metrics.longest_flight_time:.1f} s")
+        imgui.text(
+            f"  Longest Student Flight: {metrics.longest_flight_time:.1f} s"
+        )
         imgui.text(f"  Total Safety Takeovers: {metrics.total_takeovers}")
-        imgui.text(f"  Average Target Drift: {metrics.get_average_drift():.2f} m")
+        imgui.text(
+            f"  Average Target Drift: {metrics.get_average_drift():.2f} m"
+        )
         imgui.text(f"  Current Drift Speed: {metrics.drift_speed:.2f} m/s")
         imgui.text(f"  Current Vertical Speed: {metrics.vert_speed:.2f} m/s")
         imgui.text(f"  Current Yaw Rate: {metrics.yaw_speed:.2f} deg/s")
@@ -510,7 +529,10 @@ def draw_window(ui_controller, window_id, ref_con):
                     0.0,
                     1.0,
                 )
-                if changed1 or changed2 or changed3 or changed4 or changed5 or changed6:
+                if (
+                    changed1 or changed2 or changed3 or changed4 or
+                    changed5 or changed6
+                ):
                     gains_changed = True
                 imgui.end_tab_item()
 

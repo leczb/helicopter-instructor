@@ -1,5 +1,13 @@
 # Release Notes
 
+## v2.1.65 - 2026-06-05
+
+- **Refactor**: Cleaned up the codebase to ensure 100% style and docstring consistency.
+  - Standardized all string literals to use double quotes (`"`) across both the plugin and test suites.
+  - Formatted all long lines to strictly fit within the 80-character limit.
+  - Completed Google-style docstrings with descriptive `Args:` and `Returns:` sections for all public functions, classes, properties, and command handlers.
+  - Verified code style and AST docstring checkers report zero violations.
+
 ## v2.1.64 - 2026-06-04
 
 - **Fixed**: Resolved a bug where control handoffs during automatic and manual phase transitions would happen too quickly if user inputs happened to match target values, skipping the "Get ready to take control" audio cue. Handoff synchronization is now delayed until after the phase explanation/intro audio finishes playing.

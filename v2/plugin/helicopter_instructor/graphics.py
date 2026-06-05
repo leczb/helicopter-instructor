@@ -87,7 +87,7 @@ def write_flat_arc_obj_file(
         start_angle_deg: Starting angle in degrees.
         end_angle_deg: Ending angle in degrees.
         num_segments: Subdivision segment count.
-        vertical_offset: Height coordinate of the horizontal arc (meters above ground).
+        vertical_offset: Height of the arc (meters above ground).
     """
     r, g, b = color
     total_vertices = 2 * (num_segments + 1)
@@ -208,7 +208,7 @@ def write_flat_disk_obj_file(
         "",
     ]
 
-    # Float slightly above ground level to avoid z-fighting (meters above ground)
+    # Float slightly above ground level to avoid z-fighting
     vertical_offset = 0.02
 
     # 1. Define Triangle Vertices (VT)
@@ -290,7 +290,7 @@ def write_flat_disk_obj_file(
 def write_spokes_obj_file(
     filepath, filename_base, num_spokes=8, spoke_length=45.0, spoke_width=0.1
 ):
-    """Generates a native X-Plane OBJ8 file for spokes emanating from the center.
+    """Generates an OBJ8 file for spokes emanating from the center.
 
     Args:
         filepath: Path to save the generated OBJ8 file.
@@ -369,11 +369,11 @@ def write_spokes_obj_file(
     indices = []
     for i in range(num_spokes):
         base = 4 * i
-        # Triangle 1 (counter-clockwise winding from above: inner-left -> outer-left -> inner-right)
+        # Triangle 1 (winding: inner-left -> outer-left -> inner-right)
         indices.append(base)
         indices.append(base + 2)
         indices.append(base + 1)
-        # Triangle 2 (counter-clockwise winding from above: inner-right -> outer-left -> outer-right)
+        # Triangle 2 (winding: inner-right -> outer-left -> outer-right)
         indices.append(base + 1)
         indices.append(base + 2)
         indices.append(base + 3)
@@ -399,7 +399,7 @@ def write_spokes_obj_file(
 
 
 class GraphicsAssetManager(object):
-    """Manages programmatic 3D OBJ8 generation, loading, and positioning of world boundaries."""
+    """Manages 3D OBJ8 generation, loading, and world boundary positioning."""
 
     def __init__(self, plugin_dir):
         """Initializes the GraphicsAssetManager.
@@ -434,7 +434,12 @@ class GraphicsAssetManager(object):
         self.inst_arc_target = None
 
     def load_objects(self, green_limit=30.0, orange_limit=60.0):
-        """Generates the 3D OBJ8 objects, loads them, and creates rendering instances."""
+        """Generates OBJ8 objects, loads them, and creates rendering instances.
+
+        Args:
+            green_limit: The green zone heading limit in degrees.
+            orange_limit: The orange zone heading limit in degrees.
+        """
         # 1. Programmatically write the PNG textures and OBJ8 files
         try:
             gen_dir = os.path.join(self.plugin_dir, "assets", "generated")
@@ -452,21 +457,24 @@ class GraphicsAssetManager(object):
                 os.path.join(gen_dir, "disk_15m_a15.png"), 0.0, 1.0, 0.3, 0.15
             )
             generate_solid_png(
-                os.path.join(gen_dir, "disk_15m_a15_LIT.png"), 0.0, 1.0, 0.3, 0.15
+                os.path.join(gen_dir, "disk_15m_a15_LIT.png"),
+                0.0, 1.0, 0.3, 0.15
             )
 
             generate_solid_png(
                 os.path.join(gen_dir, "disk_30m_a15.png"), 1.0, 0.6, 0.0, 0.15
             )
             generate_solid_png(
-                os.path.join(gen_dir, "disk_30m_a15_LIT.png"), 1.0, 0.6, 0.0, 0.15
+                os.path.join(gen_dir, "disk_30m_a15_LIT.png"),
+                1.0, 0.6, 0.0, 0.15
             )
 
             generate_solid_png(
                 os.path.join(gen_dir, "disk_45m_a15.png"), 1.0, 0.1, 0.1, 0.15
             )
             generate_solid_png(
-                os.path.join(gen_dir, "disk_45m_a15_LIT.png"), 1.0, 0.1, 0.1, 0.15
+                os.path.join(gen_dir, "disk_45m_a15_LIT.png"),
+                1.0, 0.1, 0.1, 0.15
             )
 
             # Generate solid white textures for spokes (0.8 alpha)
@@ -474,7 +482,8 @@ class GraphicsAssetManager(object):
                 os.path.join(gen_dir, "spokes_white.png"), 1.0, 1.0, 1.0, 0.8
             )
             generate_solid_png(
-                os.path.join(gen_dir, "spokes_white_LIT.png"), 1.0, 1.0, 1.0, 0.8
+                os.path.join(gen_dir, "spokes_white_LIT.png"),
+                1.0, 1.0, 1.0, 0.8
             )
 
             # Generate disk OBJ8 files
@@ -512,7 +521,8 @@ class GraphicsAssetManager(object):
                 spoke_width=0.1,
             )
 
-            # Generate target heading white arc (+/- 3 deg, color white, vertical_offset=0.04 to float on green arc)
+            # Generate target heading white arc (+/- 3 deg, color white,
+            # vertical_offset=0.04 to float on green arc)
             write_flat_arc_obj_file(
                 os.path.join(gen_dir, "arc_target.obj"),
                 "spokes_white",
@@ -578,7 +588,8 @@ class GraphicsAssetManager(object):
             )
 
             log.info(
-                "Programmatic OBJ8 files and PNG textures generated successfully in assets/generated."
+                "Programmatic OBJ8 files and PNG textures generated "
+                "successfully in assets/generated."
             )
         except Exception as err:
             log.error(f"Failed to generate OBJ8 files/textures: {err}")
@@ -594,29 +605,22 @@ class GraphicsAssetManager(object):
 
         # 3. Load the objects and create instances
         try:
-            self.obj_15m = xp.loadObject(f"{rel_dir}/assets/generated/disk_15m.obj")
-            self.obj_30m = xp.loadObject(f"{rel_dir}/assets/generated/disk_30m.obj")
-            self.obj_45m = xp.loadObject(f"{rel_dir}/assets/generated/disk_45m.obj")
-            self.obj_spokes = xp.loadObject(f"{rel_dir}/assets/generated/spokes.obj")
-            self.obj_arc_target = xp.loadObject(
-                f"{rel_dir}/assets/generated/arc_target.obj"
-            )
-
-            self.obj_arc_green = xp.loadObject(
-                f"{rel_dir}/assets/generated/arc_green.obj"
-            )
-            self.obj_arc_orange_l = xp.loadObject(
-                f"{rel_dir}/assets/generated/arc_orange_l.obj"
-            )
-            self.obj_arc_orange_r = xp.loadObject(
-                f"{rel_dir}/assets/generated/arc_orange_r.obj"
-            )
-            self.obj_arc_red_l = xp.loadObject(
-                f"{rel_dir}/assets/generated/arc_red_l.obj"
-            )
-            self.obj_arc_red_r = xp.loadObject(
-                f"{rel_dir}/assets/generated/arc_red_r.obj"
-            )
+            def load_gen_obj(name):
+                return xp.loadObject(
+                    f"{rel_dir}/assets/generated/{name}.obj"
+                )
+ 
+            self.obj_15m = load_gen_obj("disk_15m")
+            self.obj_30m = load_gen_obj("disk_30m")
+            self.obj_45m = load_gen_obj("disk_45m")
+            self.obj_spokes = load_gen_obj("spokes")
+            self.obj_arc_target = load_gen_obj("arc_target")
+ 
+            self.obj_arc_green = load_gen_obj("arc_green")
+            self.obj_arc_orange_l = load_gen_obj("arc_orange_l")
+            self.obj_arc_orange_r = load_gen_obj("arc_orange_r")
+            self.obj_arc_red_l = load_gen_obj("arc_red_l")
+            self.obj_arc_red_r = load_gen_obj("arc_red_r")
 
             if self.obj_15m:
                 self.inst_15m = xp.createInstance(self.obj_15m)
@@ -632,34 +636,61 @@ class GraphicsAssetManager(object):
             if self.obj_arc_green:
                 self.inst_arc_green = xp.createInstance(self.obj_arc_green)
             if self.obj_arc_orange_l:
-                self.inst_arc_orange_l = xp.createInstance(self.obj_arc_orange_l)
+                self.inst_arc_orange_l = xp.createInstance(
+                    self.obj_arc_orange_l
+                )
             if self.obj_arc_orange_r:
-                self.inst_arc_orange_r = xp.createInstance(self.obj_arc_orange_r)
+                self.inst_arc_orange_r = xp.createInstance(
+                    self.obj_arc_orange_r
+                )
             if self.obj_arc_red_l:
                 self.inst_arc_red_l = xp.createInstance(self.obj_arc_red_l)
             if self.obj_arc_red_r:
                 self.inst_arc_red_r = xp.createInstance(self.obj_arc_red_r)
 
-            log.info("3D Object instances created successfully under Vulkan/Metal.")
+            log.info(
+                "3D Object instances created successfully "
+                "under Vulkan/Metal."
+            )
         except Exception as err:
             log.error(f"Failed to load 3D objects or create instances: {err}")
 
-    def set_instance_positions(self, tx, ty, tz, t_heading, draw_disks, draw_arcs):
-        """Positions disk and heading arc instances dynamically in the 3D world."""
+    def set_instance_positions(
+        self, tx, ty, tz, t_heading, draw_disks, draw_arcs
+    ):
+        """Positions disk and heading arc instances dynamically in the 3D world.
+
+        Args:
+            tx: Target X coordinate in local OpenGL space.
+            ty: Target Y coordinate in local OpenGL space.
+            tz: Target Z coordinate in local OpenGL space.
+            t_heading: Target heading in degrees.
+            draw_disks: True to make drift disks visible.
+            draw_arcs: True to make heading arcs visible.
+        """
         # Position disks
         dx, dy, dz = (tx, ty, tz) if draw_disks else (0.0, -9999.0, 0.0)
         if self.inst_15m:
-            xp.instanceSetPosition(self.inst_15m, (dx, dy, dz, 0.0, 0.0, 0.0), None)
+            xp.instanceSetPosition(
+                self.inst_15m, (dx, dy, dz, 0.0, 0.0, 0.0), None
+            )
         if self.inst_30m:
-            xp.instanceSetPosition(self.inst_30m, (dx, dy, dz, 0.0, 0.0, 0.0), None)
+            xp.instanceSetPosition(
+                self.inst_30m, (dx, dy, dz, 0.0, 0.0, 0.0), None
+            )
         if self.inst_45m:
-            xp.instanceSetPosition(self.inst_45m, (dx, dy, dz, 0.0, 0.0, 0.0), None)
+            xp.instanceSetPosition(
+                self.inst_45m, (dx, dy, dz, 0.0, 0.0, 0.0), None
+            )
 
-        # Position spokes (rotated clockwise by t_heading, sharing visibility with disks)
+        # Position spokes (rotated clockwise by t_heading, sharing
+        # visibility with disks)
         sx, sy, sz = (tx, ty, tz) if draw_disks else (0.0, -9999.0, 0.0)
         sh = t_heading if draw_disks else 0.0
         if self.inst_spokes:
-            xp.instanceSetPosition(self.inst_spokes, (sx, sy, sz, 0.0, sh, 0.0), None)
+            xp.instanceSetPosition(
+                self.inst_spokes, (sx, sy, sz, 0.0, sh, 0.0), None
+            )
 
         # Position arcs
         ax, ay, az = (tx, ty, tz) if draw_arcs else (0.0, -9999.0, 0.0)
@@ -685,7 +716,8 @@ class GraphicsAssetManager(object):
                 self.inst_arc_red_r, (ax, ay, az, 0.0, ah, 0.0), None
             )
 
-        # Position target heading arc (pointing straight forward, sharing visibility with arcs)
+        # Position target heading arc (pointing straight forward,
+        # sharing visibility with arcs)
         if self.inst_arc_target:
             xp.instanceSetPosition(
                 self.inst_arc_target, (ax, ay, az, 0.0, ah, 0.0), None

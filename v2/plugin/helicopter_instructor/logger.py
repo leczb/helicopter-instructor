@@ -12,6 +12,11 @@ class XPLogHandler(logging.Handler):
     """Custom logging Handler that mirrors records to X-Plane's xp.log."""
 
     def emit(self, record):
+        """Emits a log record to X-Plane's log.
+
+        Args:
+            record: The logging.LogRecord instance to emit.
+        """
         try:
             msg = self.format(record)
             # Safely import xp at runtime so tests run without XPLM
@@ -31,7 +36,7 @@ def setup_logging(plugin_dir, level=logging.INFO):
     """
     logger.setLevel(level)
 
-    # Remove existing handlers to avoid duplicates when X-Plane reloads the plugin
+    # Remove existing handlers to avoid duplicates on plugin reload
     for handler in list(logger.handlers):
         logger.removeHandler(handler)
         handler.close()
@@ -59,7 +64,10 @@ def setup_logging(plugin_dir, level=logging.INFO):
         try:
             import xp
             if hasattr(xp, "log") and callable(xp.log):
-                xp.log(f"Helicopter Instructor: Failed to create log file at {log_file}: {e}")
+                xp.log(
+                    "Helicopter Instructor: Failed to create log file "
+                    f"at {log_file}: {e}"
+                )
         except Exception:
             pass
 

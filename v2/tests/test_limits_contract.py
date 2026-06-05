@@ -1,4 +1,4 @@
-"""Automated unit tests to verify consistency of limits and boundaries across modules."""
+"""Automated unit tests to verify consistency of limits and boundaries."""
 
 import os
 import sys
@@ -7,12 +7,18 @@ from unittest import mock
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(
-    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor", "autopilot")
+    0,
+    os.path.join(
+        base_dir, "..", "plugin", "helicopter_instructor", "autopilot"
+    ),
 )
-sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor"))
+sys.path.insert(
+    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor")
+)
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
-# Mock the modules conditionally to prevent process pollution across different test modules
+# Mock the modules conditionally to prevent process pollution across
+# different test modules
 if "xp" not in sys.modules:
     mock_xp = mock.MagicMock()
     sys.modules["xp"] = mock_xp
@@ -45,41 +51,53 @@ class TestLimitsContract(unittest.TestCase):
     """Verifies all safety and scoring zones match between submodules."""
 
     def test_precision_scoring_limits_match_instructor_safety_limits(self):
-        """Ensures telemetry limits, visual rings, and metrics remain strictly synchronized."""
+        """Ensures telemetry limits, visual rings, and metrics match."""
         # 1. Heading Scoring zones must equal State Machine safety boundaries
         self.assertEqual(
             metrics.GREEN_ZONE_HDG_DEG, envelope_limits.LIMIT_HDG_GREEN_DEG
         )
-        self.assertEqual(metrics.LIMIT_HDG_DEG, envelope_limits.LIMIT_HDG_ORANGE_DEG)
+        self.assertEqual(
+            metrics.LIMIT_HDG_DEG, envelope_limits.LIMIT_HDG_ORANGE_DEG
+        )
 
-        # 2. Drift scoring boundaries must equal 3D disc ring properties and safety takeover radius
+        # 2. Drift scoring boundaries must equal 3D disc ring properties
+        # and safety takeover radius
         vfi = virtual_instructor.VirtualInstructor()
         self.assertEqual(metrics.LIMIT_DRIFT_M, vfi.hover_safety_radius)
-        self.assertEqual(metrics.LIMIT_DRIFT_M, envelope_limits.LIMIT_DRIFT_RED_M)
+        self.assertEqual(
+            metrics.LIMIT_DRIFT_M, envelope_limits.LIMIT_DRIFT_RED_M
+        )
         self.assertEqual(
             metrics.GREEN_ZONE_DRIFT_M, envelope_limits.LIMIT_DRIFT_GREEN_M
         )
 
-        # 3. Altitude scoring boundaries must equal HUD altitude color bands and AGL safety limits
-        self.assertEqual(metrics.GREEN_ZONE_ALT_M, envelope_limits.LIMIT_ALT_GREEN_M)
-        self.assertEqual(metrics.LIMIT_ALT_M, envelope_limits.LIMIT_ALT_ORANGE_M)
+        # 3. Altitude scoring boundaries must equal HUD altitude color bands
+        # and AGL safety limits
+        self.assertEqual(
+            metrics.GREEN_ZONE_ALT_M, envelope_limits.LIMIT_ALT_GREEN_M
+        )
+        self.assertEqual(
+            metrics.LIMIT_ALT_M, envelope_limits.LIMIT_ALT_ORANGE_M
+        )
 
-        # 4. Drift speed scoring boundaries must equal centralized envelope limits
+        # 4. Drift speed scoring boundaries must equal centralized limits
         self.assertEqual(
             metrics.GREEN_ZONE_DRIFT_SPEED_M_S,
             envelope_limits.LIMIT_DRIFT_SPEED_GREEN_M_S,
         )
         self.assertEqual(
-            metrics.LIMIT_DRIFT_SPEED_M_S, envelope_limits.LIMIT_DRIFT_SPEED_ORANGE_M_S
+            metrics.LIMIT_DRIFT_SPEED_M_S,
+            envelope_limits.LIMIT_DRIFT_SPEED_ORANGE_M_S,
         )
 
-        # 5. Vertical speed scoring boundaries must equal centralized envelope limits
+        # 5. Vertical speed scoring boundaries must equal centralized limits
         self.assertEqual(
             metrics.GREEN_ZONE_VERT_SPEED_M_S,
             envelope_limits.LIMIT_VERT_SPEED_GREEN_M_S,
         )
         self.assertEqual(
-            metrics.LIMIT_VERT_SPEED_M_S, envelope_limits.LIMIT_VERT_SPEED_ORANGE_M_S
+            metrics.LIMIT_VERT_SPEED_M_S,
+            envelope_limits.LIMIT_VERT_SPEED_ORANGE_M_S,
         )
 
         # 6. Yaw speed scoring boundaries must equal envelope limits
@@ -88,11 +106,12 @@ class TestLimitsContract(unittest.TestCase):
             envelope_limits.LIMIT_YAW_SPEED_GREEN_DEG_S,
         )
         self.assertEqual(
-            metrics.LIMIT_YAW_SPEED_DEG_S, envelope_limits.LIMIT_YAW_SPEED_ORANGE_DEG_S
+            metrics.LIMIT_YAW_SPEED_DEG_S,
+            envelope_limits.LIMIT_YAW_SPEED_ORANGE_DEG_S,
         )
 
     def test_safety_limits_contract(self):
-        """Verifies safety override and recovery stabilization limit values in envelope_limits."""
+        """Verifies safety override and recovery stabilization limits."""
         self.assertEqual(envelope_limits.LIMIT_ATTITUDE_DEG, 15.0)
         self.assertEqual(envelope_limits.LIMIT_YAW_RATE_DEG_S, 30.0)
         self.assertEqual(envelope_limits.LIMIT_VSPEED_FT_MIN, 300.0)

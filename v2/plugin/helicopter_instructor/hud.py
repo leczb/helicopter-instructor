@@ -1,4 +1,4 @@
-"""HUD overlay (Heads-Up Display and altitude bar) for Helicopter Flight Instructor."""
+"""HUD overlay (Heads-Up Display) for Helicopter Flight Instructor."""
 
 import math
 
@@ -18,7 +18,7 @@ from helicopter_instructor.envelope_limits import (
     LIMIT_YAW_SPEED_GREEN_DEG_S,
 )
 
-# Try importing PyOpenGL once at the module level to avoid costly imports/searches on every frame
+# Try importing PyOpenGL once at the module level to avoid costly imports
 try:
     # pyrefly: ignore [missing-import]
     from OpenGL.GL import (
@@ -80,7 +80,7 @@ ALT_BAR_WIDTH = 24
 
 
 class HUDViewModel(object):
-    """Stateless Data Transfer Object (DTO) containing telemetry and configuration for the HUD overlay."""
+    """Stateless DTO containing telemetry and configuration for the HUD."""
 
     def __init__(self, **kwargs):
         """Initializes the HUDViewModel with arbitrary keyword arguments."""
@@ -116,14 +116,19 @@ def draw_hud(view_model, window_id):
     # Helper function to automatically adjust drawing coordinates under scale
     def draw_string_scaled(color, x, y, text, font_id=xp.Font_Proportional):
         if gl_available:
-            xp.drawString(color, int(x / 2.0), int(y / 2.0), text, fontID=font_id)
+            xp.drawString(
+                color, int(x / 2.0), int(y / 2.0), text, fontID=font_id
+            )
         else:
             xp.drawString(color, x, y, text, fontID=font_id)
 
     def draw_box_scaled(left, top, right, bottom):
         if gl_available:
             xp.drawTranslucentDarkBox(
-                int(left / 2.0), int(top / 2.0), int(right / 2.0), int(bottom / 2.0)
+                int(left / 2.0),
+                int(top / 2.0),
+                int(right / 2.0),
+                int(bottom / 2.0),
             )
         else:
             xp.drawTranslucentDarkBox(left, top, right, bottom)
@@ -137,7 +142,12 @@ def draw_hud(view_model, window_id):
         cy_scaled = center_y_val / 2.0
         r_scaled = radius / 2.0
 
-        glColor4f(color[0], color[1], color[2], 1.0 if len(color) < 4 else color[3])
+        glColor4f(
+            color[0],
+            color[1],
+            color[2],
+            1.0 if len(color) < 4 else color[3],
+        )
 
         if fill:
             glBegin(GL_TRIANGLE_FAN)
@@ -158,7 +168,9 @@ def draw_hud(view_model, window_id):
                 glVertex2f(x, y)
             glEnd()
 
-    def draw_vector_line_scaled(color, start_x, start_y, end_x, end_y, line_width=1.5):
+    def draw_vector_line_scaled(
+        color, start_x, start_y, end_x, end_y, line_width=1.5
+    ):
         if not gl_available:
             return
         x1_scaled = start_x / 2.0
@@ -166,7 +178,12 @@ def draw_hud(view_model, window_id):
         x2_scaled = end_x / 2.0
         y2_scaled = end_y / 2.0
 
-        glColor4f(color[0], color[1], color[2], 1.0 if len(color) < 4 else color[3])
+        glColor4f(
+            color[0],
+            color[1],
+            color[2],
+            1.0 if len(color) < 4 else color[3],
+        )
         glLineWidth(line_width)
         glBegin(GL_LINES)
         glVertex2f(x1_scaled, y1_scaled)
@@ -183,7 +200,12 @@ def draw_hud(view_model, window_id):
         r_scaled = right / 2.0
         b_scaled = bottom / 2.0
 
-        glColor4f(color[0], color[1], color[2], 1.0 if len(color) < 4 else color[3])
+        glColor4f(
+            color[0],
+            color[1],
+            color[2],
+            1.0 if len(color) < 4 else color[3],
+        )
 
         if fill:
             glBegin(GL_TRIANGLE_FAN)
@@ -228,7 +250,12 @@ def draw_hud(view_model, window_id):
     }
 
     # Draw translucent background card behind the control input graphics only
-    draw_box_scaled(box_left, box_bottom + CONTROL_BACKGROUND_HEIGHT, box_right, box_bottom)
+    draw_box_scaled(
+        box_left,
+        box_bottom + CONTROL_BACKGROUND_HEIGHT,
+        box_right,
+        box_bottom,
+    )
     xp.setGraphicsState(0, 1, 0, 0, 1, 0, 0)
 
     # Color definitions
@@ -247,7 +274,11 @@ def draw_hud(view_model, window_id):
     if not view_model.ap_enabled:
         title_str = "Helicopter Flight Instructor (STANDBY)"
     draw_string_scaled(
-        color_title, box_left + 20, y_cursor, title_str, font_id=xp.Font_Proportional
+        color_title,
+        box_left + 20,
+        y_cursor,
+        title_str,
+        font_id=xp.Font_Proportional,
     )
 
     # 2. Phase Details
@@ -257,7 +288,11 @@ def draw_hud(view_model, window_id):
         f"{virtual_instructor.PHASE_NAMES[view_model.phase]}"
     )
     draw_string_scaled(
-        color_white, box_left + 20, y_cursor, phase_str, font_id=xp.Font_Proportional
+        color_white,
+        box_left + 20,
+        y_cursor,
+        phase_str,
+        font_id=xp.Font_Proportional,
     )
 
     # 3. System state
@@ -296,11 +331,18 @@ def draw_hud(view_model, window_id):
         state_label = f"STABILIZING HOVER... ({time_left}s)"
 
     draw_string_scaled(
-        state_color, box_left + 230, y_cursor, state_label, font_id=xp.Font_Proportional
+        state_color,
+        box_left + 230,
+        y_cursor,
+        state_label,
+        font_id=xp.Font_Proportional,
     )
 
     # --- 3b. Student Performance Metrics ---
-    if view_model.ap_enabled and view_model.system_state == VFIState.STUDENT_FLIGHT:
+    if (
+        view_model.ap_enabled
+        and view_model.system_state == VFIState.STUDENT_FLIGHT
+    ):
         y_cursor -= 22
         draw_string_scaled(
             color_white,
@@ -310,10 +352,13 @@ def draw_hud(view_model, window_id):
             font_id=xp.Font_Proportional,
         )
         grade_str = (
-            f"{view_model.envelope} (Stability: {int(view_model.overall_score)}%)"
+            f"{view_model.envelope} "
+            f"(Stability: {int(view_model.overall_score)}%)"
         )
         grade_color = (
-            color_green if view_model.envelope in (Envelope.EXCELLENT, Envelope.GOOD) else color_red
+            color_green
+            if view_model.envelope in (Envelope.EXCELLENT, Envelope.GOOD)
+            else color_red
         )
         draw_string_scaled(
             grade_color,
@@ -341,7 +386,8 @@ def draw_hud(view_model, window_id):
         from helicopter_instructor.virtual_instructor import PHASE_CONFIGS
 
         phase_config = PHASE_CONFIGS.get(view_model.phase, {})
-        if view_model.show_envelope_debug and phase_config.get(ControlAxis.YAW) == Authority.STUDENT:
+        is_yaw_stud = phase_config.get(ControlAxis.YAW) == Authority.STUDENT
+        if view_model.show_envelope_debug and is_yaw_stud:
             y_cursor -= 20
             draw_string_scaled(
                 COLOR_DARK_GREY,
@@ -366,7 +412,8 @@ def draw_hud(view_model, window_id):
                 color_white,
                 box_left + 20,
                 y_cursor,
-                f"Hdg Err: {hdg_err:5.1f} deg  (lim {LIMIT_HDG_GREEN_DEG:.0f} deg)",
+                f"Hdg Err: {hdg_err:5.1f} deg "
+                f"(lim {LIMIT_HDG_GREEN_DEG:.0f} deg)",
                 font_id=xp.Font_Proportional,
             )
             draw_string_scaled(
@@ -387,7 +434,8 @@ def draw_hud(view_model, window_id):
                 color_white,
                 box_left + 20,
                 y_cursor,
-                f"Yaw Rate: {yaw_speed:5.1f} d/s  (lim {LIMIT_YAW_SPEED_GREEN_DEG_S:.0f} d/s)",
+                f"Yaw Rate: {yaw_speed:5.1f} d/s "
+                f"(lim {LIMIT_YAW_SPEED_GREEN_DEG_S:.0f} d/s)",
                 font_id=xp.Font_Proportional,
             )
             draw_string_scaled(
@@ -453,12 +501,15 @@ def draw_hud(view_model, window_id):
     col_y = y_graph_base
     col_height = COLLECTIVE_TRACK_HEIGHT
 
-    vfi_coll_y = int(col_y + view_model.last_commands[ControlAxis.COLLECTIVE] * col_height)
+    cmd_coll = view_model.last_commands[ControlAxis.COLLECTIVE]
+    vfi_coll_y = int(col_y + cmd_coll * col_height)
     phys_coll_y = int(
-        col_y + view_model.last_hardware_inputs[ControlAxis.COLLECTIVE] * col_height
+        col_y
+        + view_model.last_hardware_inputs[ControlAxis.COLLECTIVE] * col_height
     )
 
-    # Over-controlling visual warning state (solid red when overcontrolled, representing Over-Controlling Index (OCI))
+    # Over-controlling visual warning state (solid red when overcontrolled,
+    # representing Over-Controlling Index (OCI))
     oci = view_model.oci
 
     if gl_available:
@@ -523,13 +574,21 @@ def draw_hud(view_model, window_id):
         # Draw vertical scale ticks fallback
         for h in range(0, col_height + 1, 15):
             draw_string_scaled(
-                COLOR_GREY, col_x, col_y + h - 4, "-", font_id=xp.Font_Proportional
+                COLOR_GREY,
+                col_x,
+                col_y + h - 4,
+                "-",
+                font_id=xp.Font_Proportional,
             )
 
         # Draw fallback pointers only when OpenGL is not available
         if draw_vfi:
             draw_string_scaled(
-                color_vfi, col_x - 20, vfi_coll_y - 4, "►", font_id=xp.Font_Proportional
+                color_vfi,
+                col_x - 20,
+                vfi_coll_y - 4,
+                "►",
+                font_id=xp.Font_Proportional,
             )
         draw_string_scaled(
             COLOR_FALLBACK_ARROW,
@@ -541,7 +600,11 @@ def draw_hud(view_model, window_id):
 
     # Label (consistently aligned below the vertical track)
     draw_string_scaled(
-        color_white, col_x - 42, col_y - 22, "COLLECTIVE", font_id=xp.Font_Proportional
+        color_white,
+        col_x - 42,
+        col_y - 22,
+        "COLLECTIVE",
+        font_id=xp.Font_Proportional,
     )
 
     # --- 2. Horizontal Pedals Slider ---
@@ -550,7 +613,9 @@ def draw_hud(view_model, window_id):
     ped_width = PEDALS_TRACK_WIDTH
 
     vfi_yaw_x = int(
-        ped_x + ped_width / 2.0 + view_model.last_commands[ControlAxis.YAW] * (ped_width / 2.0)
+        ped_x + ped_width / 2.0 + (
+            view_model.last_commands[ControlAxis.YAW] * (ped_width / 2.0)
+        )
     )
     phys_yaw_x = int(
         ped_x
@@ -630,7 +695,11 @@ def draw_hud(view_model, window_id):
         # Draw fallback pointers only when OpenGL is not available
         if draw_vfi:
             draw_string_scaled(
-                color_vfi, vfi_yaw_x - 6, ped_y + 12, "▼", font_id=xp.Font_Proportional
+                color_vfi,
+                vfi_yaw_x - 6,
+                ped_y + 12,
+                "▼",
+                font_id=xp.Font_Proportional,
             )
         draw_string_scaled(
             COLOR_FALLBACK_ARROW,
@@ -656,19 +725,27 @@ def draw_hud(view_model, window_id):
 
     # Draw physical stick position scaled to stick scale
     stick_scale = CYCLIC_STICK_SCALE
-    stick_x = int(cross_x + view_model.last_hardware_inputs[ControlAxis.ROLL] * stick_scale)
-    stick_y = int(cross_y - view_model.last_hardware_inputs[ControlAxis.PITCH] * stick_scale)
+    hw_roll = view_model.last_hardware_inputs[ControlAxis.ROLL]
+    stick_x = int(cross_x + hw_roll * stick_scale)
+    hw_pitch = view_model.last_hardware_inputs[ControlAxis.PITCH]
+    stick_y = int(cross_y - hw_pitch * stick_scale)
 
     # Draw target VFI position scaled to stick scale
-    vfi_x = int(cross_x + view_model.last_commands[ControlAxis.ROLL] * stick_scale)
-    vfi_y = int(cross_y - view_model.last_commands[ControlAxis.PITCH] * stick_scale)
+    cmd_roll = view_model.last_commands[ControlAxis.ROLL]
+    vfi_x = int(cross_x + cmd_roll * stick_scale)
+    cmd_pitch = view_model.last_commands[ControlAxis.PITCH]
+    vfi_y = int(cross_y - cmd_pitch * stick_scale)
 
     # Dynamic stick deflection pointer color
     stick_color = COLOR_ORANGE  # Bright orange
-    if view_model.sync_locked[ControlAxis.ROLL] and view_model.sync_locked[ControlAxis.PITCH]:
+    locked_roll = view_model.sync_locked[ControlAxis.ROLL]
+    locked_pitch = view_model.sync_locked[ControlAxis.PITCH]
+    if locked_roll and locked_pitch:
         stick_color = COLOR_GREEN  # Bright green
 
-    cyclic_overcontrolled = max(oci.get(ControlAxis.ROLL, 0.0), oci.get(ControlAxis.PITCH, 0.0)) > 1.0
+    oci_roll = oci.get(ControlAxis.ROLL, 0.0)
+    oci_pitch = oci.get(ControlAxis.PITCH, 0.0)
+    cyclic_overcontrolled = max(oci_roll, oci_pitch) > 1.0
     if cyclic_overcontrolled:
         stick_color = COLOR_RED
 
@@ -708,7 +785,9 @@ def draw_hud(view_model, window_id):
             )
 
         # 5. Draw the physical stick position as a solid filled circle
-        draw_vector_circle_scaled(stick_color, stick_x, stick_y, ball_radius, fill=True)
+        draw_vector_circle_scaled(
+            stick_color, stick_x, stick_y, ball_radius, fill=True
+        )
 
         # 6. Restore face culling and graphics state
         glEnable(GL_CULL_FACE)
@@ -717,7 +796,11 @@ def draw_hud(view_model, window_id):
         # Fallback text character drawing if OpenGL is not available
         if draw_vfi:
             draw_string_scaled(
-                COLOR_GREEN, vfi_x - 5, vfi_y - 5, "○", font_id=xp.Font_Proportional
+                COLOR_GREEN,
+                vfi_x - 5,
+                vfi_y - 5,
+                "○",
+                font_id=xp.Font_Proportional,
             )
         draw_string_scaled(
             COLOR_GREEN,
@@ -734,7 +817,11 @@ def draw_hud(view_model, window_id):
             font_id=xp.Font_Proportional,
         )
         draw_string_scaled(
-            stick_color, stick_x - 5, stick_y - 5, "●", font_id=xp.Font_Proportional
+            stick_color,
+            stick_x - 5,
+            stick_y - 5,
+            "●",
+            font_id=xp.Font_Proportional,
         )
 
     # Label (consistently aligned below the cyclic crosshair box)
@@ -770,9 +857,13 @@ def draw_alt_bar(view_model, window_id):
 
     # Only show when autopilot is enabled and Lesson collective is STUDENT
     is_student_coll = (
-        virtual_instructor.PHASE_CONFIGS[view_model.phase][ControlAxis.COLLECTIVE] == Authority.STUDENT
+        virtual_instructor.PHASE_CONFIGS[view_model.phase][
+            ControlAxis.COLLECTIVE
+        ] == Authority.STUDENT
     )
-    active_visible = new_show_alt_bar and view_model.ap_enabled and is_student_coll
+    active_visible = (
+        new_show_alt_bar and view_model.ap_enabled and is_student_coll
+    )
 
     if not active_visible:
         return 1, new_show_alt_bar
@@ -787,14 +878,19 @@ def draw_alt_bar(view_model, window_id):
     # Helper function to automatically adjust drawing coordinates under scale
     def draw_string_scaled(color, x, y, text, font_id=xp.Font_Proportional):
         if gl_available:
-            xp.drawString(color, int(x / 2.0), int(y / 2.0), text, fontID=font_id)
+            xp.drawString(
+                color, int(x / 2.0), int(y / 2.0), text, fontID=font_id
+            )
         else:
             xp.drawString(color, x, y, text, fontID=font_id)
 
     def draw_box_scaled(left, top, right, bottom):
         if gl_available:
             xp.drawTranslucentDarkBox(
-                int(left / 2.0), int(top / 2.0), int(right / 2.0), int(bottom / 2.0)
+                int(left / 2.0),
+                int(top / 2.0),
+                int(right / 2.0),
+                int(bottom / 2.0),
             )
         else:
             xp.drawTranslucentDarkBox(left, top, right, bottom)
@@ -809,7 +905,12 @@ def draw_alt_bar(view_model, window_id):
         r_scaled = right / 2.0
         b_scaled = bottom / 2.0
 
-        glColor4f(color[0], color[1], color[2], 1.0 if len(color) < 4 else color[3])
+        glColor4f(
+            color[0],
+            color[1],
+            color[2],
+            1.0 if len(color) < 4 else color[3],
+        )
 
         if fill:
             glBegin(GL_TRIANGLE_FAN)
@@ -827,7 +928,9 @@ def draw_alt_bar(view_model, window_id):
             glVertex2f(l_scaled, b_scaled)
             glEnd()
 
-    def draw_vector_line_scaled(color, start_x, start_y, end_x, end_y, line_width=1.5):
+    def draw_vector_line_scaled(
+        color, start_x, start_y, end_x, end_y, line_width=1.5
+    ):
         if not gl_available:
             return
         x1_scaled = start_x / 2.0
@@ -835,7 +938,12 @@ def draw_alt_bar(view_model, window_id):
         x2_scaled = end_x / 2.0
         y2_scaled = end_y / 2.0
 
-        glColor4f(color[0], color[1], color[2], 1.0 if len(color) < 4 else color[3])
+        glColor4f(
+            color[0],
+            color[1],
+            color[2],
+            1.0 if len(color) < 4 else color[3],
+        )
         glLineWidth(line_width)
         glBegin(GL_LINES)
         glVertex2f(x1_scaled, y1_scaled)
@@ -954,7 +1062,11 @@ def draw_alt_bar(view_model, window_id):
         # Fallback when OpenGL is not available
         for h in range(0, alt_height + 1, 15):
             draw_string_scaled(
-                COLOR_GREY, alt_x, alt_y + h - 4, "-", font_id=xp.Font_Proportional
+                COLOR_GREY,
+                alt_x,
+                alt_y + h - 4,
+                "-",
+                font_id=xp.Font_Proportional,
             )
         draw_string_scaled(
             COLOR_WHITE,
@@ -966,7 +1078,11 @@ def draw_alt_bar(view_model, window_id):
 
     # Centered label below the scale
     draw_string_scaled(
-        COLOR_WHITE, alt_x - 13, box_bottom + 25, "ALT", font_id=xp.Font_Proportional
+        COLOR_WHITE,
+        alt_x - 13,
+        box_bottom + 25,
+        "ALT",
+        font_id=xp.Font_Proportional,
     )
     if gl_available:
         glColor4f(1.0, 1.0, 1.0, 1.0)

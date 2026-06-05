@@ -25,11 +25,12 @@ def get_gains_filepath(plugin_dir):
     try:
         filename, _ = xp.getNthAircraftModel(0)
         if filename:
-            aircraft_name = os.path.splitext(filename)[0]
+            name_base = os.path.splitext(filename)[0]
             aircraft_name = "".join(
-                [c if c.isalnum() or c == "_" else "_" for c in aircraft_name]
+                c if c.isalnum() or c == "_" else "_" for c in name_base
             )
-            return os.path.join(autopilot_dir, f"autopilot_gains_{aircraft_name}.json")
+            gains_filename = f"autopilot_gains_{aircraft_name}.json"
+            return os.path.join(autopilot_dir, gains_filename)
     except Exception as e:
         log.error(f"Error getting aircraft filename: {e}")
     return os.path.join(autopilot_dir, "autopilot_gains.json")
@@ -56,17 +57,19 @@ def save_gains(plugin_dir, gains):
 
 
 def load_gains(plugin_dir):
-    """Loads PID parameters from a local JSON file into an AutopilotGains instance.
+    """Loads PID parameters from a JSON file into AutopilotGains.
 
     Args:
         plugin_dir: The plugin directory path.
 
     Returns:
-        An AutopilotGains instance, or None if no file was found or an error occurred.
+        AutopilotGains instance, or None if file not found/error occurred.
     """
     filepath = get_gains_filepath(plugin_dir)
     if not os.path.exists(filepath):
-        generic_filepath = os.path.join(plugin_dir, "autopilot", "autopilot_gains.json")
+        generic_filepath = os.path.join(
+            plugin_dir, "autopilot", "autopilot_gains.json"
+        )
         if os.path.exists(generic_filepath):
             filepath = generic_filepath
         else:

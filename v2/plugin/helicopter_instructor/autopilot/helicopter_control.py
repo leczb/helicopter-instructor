@@ -4,7 +4,14 @@ from helicopter_instructor.enums import ControlAxis
 
 
 def wrap_180(angle_deg):
-    """Wraps an angle in degrees to the range [-180, 180]."""
+    """Wraps an angle in degrees to the range [-180, 180].
+
+    Args:
+        angle_deg: The input angle in degrees.
+
+    Returns:
+        The wrapped angle in degrees in the range [-180, 180].
+    """
     return (angle_deg + 180.0) % 360.0 - 180.0
 
 
@@ -112,10 +119,23 @@ class PIDGains(object):
         self.kd = kd
 
     def to_list(self):
+        """Converts gains to a list representation [Kp, Ki, Kd].
+
+        Returns:
+            A list containing proportional, integral, and derivative gains.
+        """
         return [self.kp, self.ki, self.kd]
 
     @classmethod
     def from_list(cls, lst):
+        """Creates a PIDGains instance from a list of gains.
+
+        Args:
+            lst: A list containing [Kp, Ki, Kd].
+
+        Returns:
+            A PIDGains instance.
+        """
         if lst and len(lst) >= 3:
             return cls(lst[0], lst[1], lst[2])
         elif lst and len(lst) == 2:
@@ -229,11 +249,17 @@ class AutopilotGains(object):
         )
         self.yaw = PIDGains(DEFAULT_KP_YAW, DEFAULT_KI_YAW, DEFAULT_KD_YAW)
         self.alt = PIDGains(DEFAULT_KP_ALT, DEFAULT_KI_ALT, DEFAULT_KD_ALT)
-        self.vspeed = PIDGains(DEFAULT_KP_VSPEED, DEFAULT_KI_VSPEED, DEFAULT_KD_VSPEED)
+        self.vspeed = PIDGains(
+            DEFAULT_KP_VSPEED, DEFAULT_KI_VSPEED, DEFAULT_KD_VSPEED
+        )
         self.hover_feedforward = DEFAULT_HOVER_FEEDFORWARD
 
     def to_dict(self):
-        """Converts gains to a standard dictionary representation for JSON serialization."""
+        """Converts gains to a dictionary for JSON serialization.
+
+        Returns:
+            A dictionary representation of the gains.
+        """
         return {
             "pos_lat": self.pos_lat.to_list(),
             "vel_lat": self.vel_lat.to_list(),
@@ -249,7 +275,14 @@ class AutopilotGains(object):
 
     @classmethod
     def from_dict(cls, data):
-        """Creates an AutopilotGains instance from a dictionary."""
+        """Creates an AutopilotGains instance from a dictionary.
+
+        Args:
+            data: A dictionary containing gains configuration data.
+
+        Returns:
+            An AutopilotGains instance.
+        """
         gains = cls()
         if not data:
             return gains
@@ -549,7 +582,11 @@ class HoverAutopilotController(object):
         return gains
 
     def set_gains(self, gains):
-        """Safely maps AutopilotGains properties onto active PID controllers."""
+        """Safely maps AutopilotGains properties onto active PID controllers.
+
+        Args:
+            gains: An AutopilotGains instance containing the new coefficients.
+        """
         if not gains:
             return
 
@@ -575,8 +612,8 @@ class HoverAutopilotController(object):
         Args:
             dt: Time step in seconds.
             state: Dict containing current flight states:
-              'x', 'y', 'z', 'vx', 'vy', 'vz', 'phi', 'theta', 'psi',
-              'P', 'Q', 'R', 'g_side'.
+              "x", "y", "z", "vx", "vy", "vz", "phi", "theta", "psi",
+              "P", "Q", "R", "g_side".
               Angles in degrees.
               Angular rates in degrees/second.
               g_side in units of Gs.
@@ -584,7 +621,7 @@ class HoverAutopilotController(object):
         Returns:
             Dict containing calculated deflection commands (range -1.0 to 1.0,
             or 0.0 to 1.0 for collective):
-            { 'roll', 'pitch', 'yaw', 'collective' }
+            { "roll", "pitch", "yaw", "collective" }
         """
         # Synchronize target setpoints for inactive axes to match current state
         # (prevents jumps on engagement)
@@ -708,7 +745,9 @@ class HoverAutopilotController(object):
             # --- Longitudinal Control Loop (Pitch) ---
             if self.pitch_active:
                 target_v_fwd = self.pos_lon_pid.update(fwd_err, dt)
-                target_pitch = -self.vel_lon_pid.update(target_v_fwd - v_fwd, dt)
+                target_pitch = -self.vel_lon_pid.update(
+                    target_v_fwd - v_fwd, dt
+                )
                 pitch_cmd = self.att_pitch_pid.update(
                     target_pitch - state["theta"], dt, rate=pitch_rate_deg_s
                 )

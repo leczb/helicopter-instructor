@@ -6,9 +6,14 @@ import unittest
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(
-    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor", "autopilot")
+    0,
+    os.path.join(
+        base_dir, "..", "plugin", "helicopter_instructor", "autopilot"
+    ),
 )
-sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor"))
+sys.path.insert(
+    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor")
+)
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
 # pyrefly: ignore [missing-import]
@@ -67,14 +72,18 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
     def test_session_state_duration_and_takeovers(self):
         """Verifies session calculations (time, takeovers)."""
         # Active student flight accumulates flight time
-        self.metrics.update(0.5, self.nominal_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            0.5, self.nominal_telemetry, self.nominal_inputs, True, 6
+        )
         self.assertEqual(self.metrics.current_flight_time, 0.5)
         self.assertEqual(self.metrics.longest_flight_time, 0.5)
         self.assertEqual(self.metrics.total_takeovers, 0)
         self.assertTrue(self.metrics.was_student_flying_last_frame)
 
-        # Transition to VFI flight resets current flight duration and logs takeover
-        self.metrics.update(0.1, self.nominal_telemetry, self.nominal_inputs, False, 6)
+        # Transition to VFI resets current flight duration and logs takeover
+        self.metrics.update(
+            0.1, self.nominal_telemetry, self.nominal_inputs, False, 6
+        )
         self.assertEqual(self.metrics.current_flight_time, 0.0)
         self.assertEqual(self.metrics.longest_flight_time, 0.5)
         self.assertEqual(self.metrics.total_takeovers, 1)
@@ -83,7 +92,9 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
     def test_oci_smoothness_under_jerky_inputs(self):
         """Verifies over-controlling OCI index reacts to input velocities."""
         # 1. Nominal inputs: OCI should remain zero
-        self.metrics.update(0.02, self.nominal_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            0.02, self.nominal_telemetry, self.nominal_inputs, True, 6
+        )
         self.assertEqual(self.metrics.oci[ControlAxis.ROLL], 0.0)
 
         # 2. Sudden jerky input on roll: from 0.0 to 0.4 in 20ms
@@ -107,12 +118,12 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             {
                 "x": 250.0,  # Huge horizontal drift (150 meters)
                 "y_agl": 20.0,  # Huge altitude error (14 meters)
-                "psi": 15.0,  # Heading error = 15 deg (limit 30 deg -> 50% score)
+                "psi": 15.0,  # Heading error = 15 deg (limit 30 -> 50% score)
                 "target_psi": 0.0,
             }
         )
         self.metrics.update(0.02, telemetry, self.nominal_inputs, True, 1)
-        # Precision score must ignore alt/drift and equal heading score (100% since 15.0 deg < 30.0 deg green)
+        # Precision score must ignore alt/drift and equal heading score
         self.assertAlmostEqual(self.metrics.precision_score, 100.0)
 
     def test_precision_scoring_collective_only_phase(self):
@@ -127,7 +138,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             }
         )
         self.metrics.update(0.02, telemetry, self.nominal_inputs, True, 2)
-        # Precision score must ignore drift/yaw and equal altitude score (100% since 1.5m < 2.0m green)
+        # Precision score must ignore drift/yaw and equal altitude score
         self.assertAlmostEqual(self.metrics.precision_score, 100.0)
 
     def test_precision_scoring_cyclic_only_phase(self):
@@ -143,7 +154,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             }
         )
         self.metrics.update(0.02, telemetry, self.nominal_inputs, True, 4)
-        # Precision score must ignore yaw/collective and equal drift score (100% since 7.5m < 15.0m green)
+        # Precision score must ignore yaw/collective and equal drift score
         self.assertAlmostEqual(self.metrics.precision_score, 100.0)
 
     def test_precision_scoring_drift_speed(self):
@@ -159,32 +170,32 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         # Drift distance is 0.0 (100%), drift speed is 0.4 (100%) -> 100% total
         self.assertAlmostEqual(self.metrics.precision_score, 100.0)
 
-        # 2. Outside orange limit (speed = 2.5 m/s >= 2.0 m/s) -> 0% score component
+        # 2. Outside orange limit (speed = 2.5 m/s -> 0% score component)
         telemetry.update(
             {
                 "vx": 2.5,
             }
         )
         self.metrics.update(0.02, telemetry, self.nominal_inputs, True, 4)
-        # Drift distance is 0.0 (100%), drift speed is 2.5 (0%) -> average is 50%
+        # Drift distance is 0.0, drift speed is 2.5 (0%) -> average is 50%
         self.assertAlmostEqual(self.metrics.precision_score, 50.0)
 
     def test_precision_scoring_vert_speed(self):
         """Verifies vertical speed precision component scoring."""
-        # 1. Inside green zone (|vy| = 0.1 m/s <= 0.2 m/s) -> 100% vert_speed_score
+        # 1. Inside green zone (|vy| = 0.1 m/s -> 100% vert_speed_score)
         telemetry = self.nominal_telemetry.copy()
         telemetry.update({"vy": 0.1})
         self.metrics.update(0.02, telemetry, self.nominal_inputs, True, 2)
         # Altitude err is 0.0 (100%), vert speed is 0.1 (100%) -> 100% total
         self.assertAlmostEqual(self.metrics.precision_score, 100.0)
 
-        # 2. Outside orange limit (|vy| = 1.0 m/s >= 0.8 m/s) -> 0% vert_speed_score
+        # 2. Outside orange limit (|vy| = 1.0 m/s -> 0% vert_speed_score)
         telemetry.update({"vy": 1.0})
         self.metrics.update(0.02, telemetry, self.nominal_inputs, True, 2)
         # Altitude err is 0.0 (100%), vert speed is 1.0 (0%) -> average is 50%
         self.assertAlmostEqual(self.metrics.precision_score, 50.0)
 
-        # 3. Midpoint (|vy| = 0.5 m/s -> halfway between 0.2 and 0.8 -> 50% component)
+        # 3. Midpoint (|vy| = 0.5 m/s -> 50% component)
         telemetry.update({"vy": 0.5})
         self.metrics.update(0.02, telemetry, self.nominal_inputs, True, 2)
         # Altitude err is 0.0 (100%), vert speed is 0.5 (50%) -> average is 75%
@@ -208,7 +219,9 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             }
         )
         self.metrics.update(0.02, telemetry, self.nominal_inputs, True, 1)
-        self.assertAlmostEqual(self.metrics.precision_score, 29.1666667, places=4)
+        self.assertAlmostEqual(
+            self.metrics.precision_score, 29.1666667, places=4
+        )
 
         # 2. Altitude and vert speed components outside green zone.
         #    Alt err = 3.0m (halfway -> 50% deviation)
@@ -268,7 +281,9 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
 
         for i in range(10):
             frame = {
-                "telemetry": unstable_telemetry if i < 3 else self.nominal_telemetry,
+                "telemetry": (
+                    unstable_telemetry if i < 3 else self.nominal_telemetry
+                ),
                 "inputs": dict(self.nominal_inputs),
                 "oci": {
                     ControlAxis.ROLL: 0.0,
@@ -293,11 +308,15 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.metrics.oci[ControlAxis.ROLL] = 1.1
 
         # Timer counts up with dt = 0.5s. Below 1.5s -> no trigger yet
-        self.metrics.update(0.5, self.nominal_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            0.5, self.nominal_telemetry, self.nominal_inputs, True, 6
+        )
         self.assertEqual(len(self.metrics.audio_queue), 0)
 
         # Exceeding 1.5s -> trigger "Relax cyclic.wav"
-        self.metrics.update(1.1, self.nominal_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            1.1, self.nominal_telemetry, self.nominal_inputs, True, 6
+        )
         self.assertEqual(len(self.metrics.audio_queue), 1)
         self.assertEqual(self.metrics.audio_queue[0], "Relax cyclic.wav")
 
@@ -306,7 +325,9 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
 
         # Cooldown prevents immediate re-triggering of the same warning
         self.metrics.oci[ControlAxis.ROLL] = 1.2
-        self.metrics.update(2.0, self.nominal_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            2.0, self.nominal_telemetry, self.nominal_inputs, True, 6
+        )
         self.assertEqual(len(self.metrics.audio_queue), 0)
 
     def test_altitude_direction_specific_warnings(self):
@@ -343,7 +364,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
 
         self.metrics.audio_queue.clear()
 
-        # 2. Nice Recovery: had warning, returned to green zone (precision >= 85)
+        # 2. Nice Recovery: had warning, returned to green (precision >= 85)
         self.metrics.was_in_warning_zone = True
         self.metrics.precision_score = 90.0
         self.metrics._check_feedback_triggers(0.1, telemetry, 6)
@@ -358,7 +379,9 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.metrics.perfect_hover_timer = 9.5
 
         # 1. Excellent envelope for 0.6s -> triggers Perfect.wav
-        self.metrics.update(0.6, self.nominal_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            0.6, self.nominal_telemetry, self.nominal_inputs, True, 6
+        )
         self.assertIn("Perfect.wav", self.metrics.audio_queue)
         self.assertEqual(self.metrics.perfect_hover_timer, 0.0)
         self.assertEqual(self.metrics.audio_cooldowns["Perfect.wav"], 30.0)
@@ -368,23 +391,30 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         # 2. Resets timer if envelope is Good, not Excellent
         self.metrics.envelope = Envelope.GOOD
         self.metrics.perfect_hover_timer = 5.0
-        self.metrics.update(0.1, self.nominal_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            0.1, self.nominal_telemetry, self.nominal_inputs, True, 6
+        )
         self.assertEqual(self.metrics.perfect_hover_timer, 0.0)
 
         # 3. Resets timer when student is not flying
         self.metrics.perfect_hover_timer = 5.0
-        self.metrics.update(0.1, self.nominal_telemetry, self.nominal_inputs, False, 6)
+        self.metrics.update(
+            0.1, self.nominal_telemetry, self.nominal_inputs, False, 6
+        )
         self.assertEqual(self.metrics.perfect_hover_timer, 0.0)
 
-        # 4. Perfect hover timer ticks in Phase 1 (yaw-only control) if student is flying and envelope is Excellent
+        # 4. Perfect hover timer ticks in Phase 1 if student is flying and
+        # envelope is Excellent
         self.metrics.envelope = Envelope.EXCELLENT
         self.metrics.perfect_hover_timer = 5.0
-        self.metrics.update(0.1, self.nominal_telemetry, self.nominal_inputs, True, 1)
+        self.metrics.update(
+            0.1, self.nominal_telemetry, self.nominal_inputs, True, 1
+        )
         self.assertAlmostEqual(self.metrics.perfect_hover_timer, 5.1)
 
     def test_praise_blocked_by_drift_speed(self):
         """Verifies praise is blocked/reset when drift speed is > 1.0 m/s."""
-        # Telemetry with high drift speed (vx = 1.0, vz = 1.0 -> speed = sqrt(2) ~ 1.41 m/s > 1.0)
+        # Telemetry with high drift speed (vx=1.0, vz=1.0 -> speed > 1.0)
         fast_drift_telemetry = dict(self.nominal_telemetry)
         fast_drift_telemetry["vx"] = 1.0
         fast_drift_telemetry["vz"] = 1.0
@@ -392,14 +422,18 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         # 2. Block Pedal Master praise
         self.metrics.pedal_praise_timer = 14.5
         # Heading deviation < 5, yaw rate < 3, but high drift speed
-        self.metrics.update(0.6, fast_drift_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            0.6, fast_drift_telemetry, self.nominal_inputs, True, 6
+        )
         self.assertNotIn("Great pedals.wav", self.metrics.audio_queue)
         self.assertEqual(self.metrics.pedal_praise_timer, 0.0)
 
         # 3. Block Smooth Hands praise
         self.metrics.cyclic_praise_timer = 29.5
         self.metrics.precision_score = 90.0
-        self.metrics.update(0.6, fast_drift_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            0.6, fast_drift_telemetry, self.nominal_inputs, True, 6
+        )
         self.assertNotIn("Smooth cyclic.wav", self.metrics.audio_queue)
         self.assertEqual(self.metrics.cyclic_praise_timer, 0.0)
 
@@ -407,7 +441,9 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.metrics.audio_queue.clear()
         self.metrics.was_in_warning_zone = True
         self.metrics.precision_score = 90.0
-        self.metrics.update(0.1, fast_drift_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            0.1, fast_drift_telemetry, self.nominal_inputs, True, 6
+        )
         self.assertNotIn("Nice recovery.wav", self.metrics.audio_queue)
 
     def test_nice_recovery_takeover_and_warning_conditions(self):
@@ -418,14 +454,16 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.metrics.jerk_timers["cyclic"] = 1.0
 
         # When student is not active, all should be reset
-        self.metrics.update(0.1, self.nominal_telemetry, self.nominal_inputs, False, 6)
+        self.metrics.update(
+            0.1, self.nominal_telemetry, self.nominal_inputs, False, 6
+        )
         self.assertFalse(self.metrics.was_in_warning_zone)
         self.assertEqual(self.metrics.drift_warning_timer, 0.0)
         self.assertEqual(self.metrics.jerk_timers["cyclic"], 0.0)
 
         # 2. Test Nice Recovery blocked while still in active drift warning
         self.metrics.was_in_warning_zone = True
-        # Set telemetry with drift of 8.0 meters (limit is MARGIN_DRIFT_LIMIT = 7.0m)
+        # Set telemetry with drift of 8.0m (limit is 7.0m)
         drift_telemetry = self.nominal_telemetry.copy()
         drift_telemetry.update(
             {
@@ -474,7 +512,9 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.metrics.precision_score = 90.0
         self.metrics.drift_speed = 0.5
 
-        self.metrics.update(0.1, recovered_telemetry, self.nominal_inputs, True, 6)
+        self.metrics.update(
+            0.1, recovered_telemetry, self.nominal_inputs, True, 6
+        )
         # Should trigger now
         self.assertIn("Nice recovery.wav", self.metrics.audio_queue)
         self.assertFalse(self.metrics.was_in_warning_zone)
@@ -483,7 +523,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         """Verifies Perfect praise yaw rate limit of 4.0 deg/s in all phases."""
         self.metrics.history.clear()
 
-        # 1. Populate history with frames having high yaw rate (> 4.0 deg/s limit)
+        # 1. Populate history with frames having high yaw rate (> 4.0 deg/s)
         unstable_telemetry = self.nominal_telemetry.copy()
         unstable_telemetry.update({"R": 4.5})
         for _ in range(10):
@@ -499,11 +539,11 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             }
             self.metrics.history.append(frame)
 
-        # Evaluate envelope -> should not be Excellent since yaw rate > 4.0 limit
+        # Evaluate envelope -> should not be Excellent since yaw rate > 4.0
         self.metrics._evaluate_proficiency_envelope(6)
         self.assertNotEqual(self.metrics.envelope, Envelope.EXCELLENT)
 
-        # 2. Populate history with frames having low yaw rate (< 4.0 deg/s limit)
+        # 2. Populate history with frames having low yaw rate (< 4.0 deg/s)
         self.metrics.history.clear()
         excellent_telemetry = self.nominal_telemetry.copy()
         excellent_telemetry.update({"R": 1.5})
@@ -525,10 +565,10 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
         self.assertEqual(self.metrics.envelope, Envelope.EXCELLENT)
 
     def test_envelope_evaluation_ignores_vfi_controlled_axes(self):
-        """Verifies envelope ignores errors/OCI on VFI-controlled axes in Phase 1."""
+        """Verifies envelope ignores errors/OCI on VFI axes in Phase 1."""
         self.metrics.history.clear()
 
-        # Populate history with frames having high roll OCI (1.8 > 1.5 limit) and high drift (50.0m > 45.0m limit)
+        # Populate history with frames having high roll OCI and high drift
         # but otherwise nominal yaw (pedal) metrics.
         unstable_vfi_telemetry = self.nominal_telemetry.copy()
         unstable_vfi_telemetry.update(
@@ -541,7 +581,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
                 "telemetry": unstable_vfi_telemetry,
                 "inputs": dict(self.nominal_inputs),
                 "oci": {
-                    ControlAxis.ROLL: 1.8,  # Jerky roll cyclic (ignored in Phase 1)
+                    ControlAxis.ROLL: 1.8,  # Jerky roll cyclic (ignored)
                     ControlAxis.PITCH: 0.1,
                     ControlAxis.YAW: 0.05,
                     ControlAxis.COLLECTIVE: 0.0,
@@ -549,18 +589,18 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             }
             self.metrics.history.append(frame)
 
-        # Evaluate envelope in Phase 1 -> should be Excellent (as yaw is excellent and cyclic is ignored)
+        # Phase 1 envelope: Excellent (yaw excellent, cyclic ignored)
         self.metrics._evaluate_proficiency_envelope(1)
         self.assertEqual(self.metrics.envelope, Envelope.EXCELLENT)
 
-        # In Phase 6 (all axes under student control), the same frames must be Unstable
+        # In Phase 6 (all axes under student control) -> must be Unstable
         self.metrics._evaluate_proficiency_envelope(6)
         self.assertEqual(self.metrics.envelope, Envelope.UNSTABLE)
 
-    def test_gated_precision_speeds_and_scores_when_not_student_controlled(self):
-        """Verifies speeds and scores are forced to 0/100 when VFI-controlled."""
+    def test_gated_precision_speeds_when_not_student_controlled(self):
+        """Verifies speeds/scores are forced to 0/100 when VFI-controlled."""
         # Phase 1: only pedals/yaw is student-controlled.
-        # Set telemetry with massive drift speed (vx = 2.0) and vertical speed (vy = 1.0)
+        # Set telemetry with massive drift and vertical speed
         telemetry = self.nominal_telemetry.copy()
         telemetry.update(
             {
@@ -569,7 +609,7 @@ class TestPerformanceMetricsEvaluator(unittest.TestCase):
             }
         )
         self.metrics.update(0.02, telemetry, self.nominal_inputs, True, 1)
-        # Drift speed and vertical speed must be forced to 0.0, and their scores to 100.0
+        # Drift/vertical speed forced to 0.0, and scores to 100.0
         self.assertEqual(self.metrics.drift_speed, 0.0)
         self.assertEqual(self.metrics.drift_speed_score, 100.0)
         self.assertEqual(self.metrics.vert_speed, 0.0)
