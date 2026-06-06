@@ -5,9 +5,7 @@ from unittest import mock
 
 # Set up paths so we can import helicopter_instructor
 base_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(
-    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor")
-)
+sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor"))
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
 # Mock the modules before importing PI_helicopter_instructor or audio
@@ -45,9 +43,7 @@ class TestAudio(unittest.TestCase):
 
         # Mock the logger
         self.mock_log = mock.MagicMock()
-        self.log_patcher = mock.patch(
-            "helicopter_instructor.audio.log", self.mock_log
-        )
+        self.log_patcher = mock.patch("helicopter_instructor.audio.log", self.mock_log)
         self.log_patcher.start()
 
         # Set up an AudioManager instance
@@ -86,9 +82,7 @@ class TestAudio(unittest.TestCase):
         # Verify registration in sound_registry
         self.assertIn("Perfect.wav", self.audio_manager.sound_registry)
         self.assertIn("I have control.wav", self.audio_manager.sound_registry)
-        self.assertNotIn(
-            "unrelated_file.txt", self.audio_manager.sound_registry
-        )
+        self.assertNotIn("unrelated_file.txt", self.audio_manager.sound_registry)
 
         sound_info = self.audio_manager.sound_registry["Perfect.wav"]
         self.assertEqual(sound_info["data"], b"\x00\x00" * 100)
@@ -98,9 +92,7 @@ class TestAudio(unittest.TestCase):
         self.assertEqual(sound_info["num_channels"], 1)
 
         # Verify log output
-        self.mock_log.info.assert_any_call(
-            "Preloaded 2 audio assets into memory."
-        )
+        self.mock_log.info.assert_any_call("Preloaded 2 audio assets into memory.")
 
     def test_play_sound_success(self):
         # Manually register a mock sound in sound_registry
@@ -250,6 +242,7 @@ class TestPluginAudio(unittest.TestCase):
 
     def test_pending_handoff_in_flight_loop(self):
         # Import enums locally inside test to avoid dependency issues
+        # pyrefly: ignore [missing-import]
         from helicopter_instructor.enums import ControlAxis, VFIState
 
         # 1. Setup mocks to avoid calling real X-Plane DLL APIs
@@ -259,21 +252,23 @@ class TestPluginAudio(unittest.TestCase):
         self.plugin.audio_queue = []
 
         # Mock the controller, instructor, and metrics update dependencies
-        self.plugin.get_current_state = mock.MagicMock(return_value={
-            "x": 0.0,
-            "y": 0.0,
-            "z": 0.0,
-            "vx": 0.0,
-            "vy": 0.0,
-            "vz": 0.0,
-            "phi": 0.0,
-            "theta": 0.0,
-            "psi": 0.0,
-            "P": 0.0,
-            "Q": 0.0,
-            "R": 0.0,
-            "g_side": 0.0,
-        })
+        self.plugin.get_current_state = mock.MagicMock(
+            return_value={
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "vx": 0.0,
+                "vy": 0.0,
+                "vz": 0.0,
+                "phi": 0.0,
+                "theta": 0.0,
+                "psi": 0.0,
+                "P": 0.0,
+                "Q": 0.0,
+                "R": 0.0,
+                "g_side": 0.0,
+            }
+        )
         self.plugin.controller = mock.MagicMock()
         self.plugin.controller.update.return_value = {
             ControlAxis.ROLL: 0.0,
@@ -281,12 +276,14 @@ class TestPluginAudio(unittest.TestCase):
             ControlAxis.YAW: 0.0,
             ControlAxis.COLLECTIVE: 0.5,
         }
-        self.plugin.get_hardware_inputs = mock.MagicMock(return_value={
-            ControlAxis.ROLL: 0.0,
-            ControlAxis.PITCH: 0.0,
-            ControlAxis.YAW: 0.0,
-            ControlAxis.COLLECTIVE: 0.5,
-        })
+        self.plugin.get_hardware_inputs = mock.MagicMock(
+            return_value={
+                ControlAxis.ROLL: 0.0,
+                ControlAxis.PITCH: 0.0,
+                ControlAxis.YAW: 0.0,
+                ControlAxis.COLLECTIVE: 0.5,
+            }
+        )
 
         self.plugin.instructor = mock.MagicMock()
         self.plugin.instructor.system_state = VFIState.VFI_FLIGHT

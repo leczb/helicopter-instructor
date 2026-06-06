@@ -6,23 +6,33 @@ import unittest
 base_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(
     0,
-    os.path.join(
-        base_dir, "..", "plugin", "helicopter_instructor", "autopilot"
-    ),
+    os.path.join(base_dir, "..", "plugin", "helicopter_instructor", "autopilot"),
 )
-sys.path.insert(
-    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor")
-)
+sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor"))
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
 # pyrefly: ignore [missing-import]
 from helicopter_instructor import constants
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor import virtual_instructor
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor.enums import Authority
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor.enums import CaptionStyle
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor.enums import Envelope
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor.enums import HeadingZone
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor.enums import VFIState
+
+# pyrefly: ignore [missing-import]
 from helicopter_instructor.enums import ControlAxis
 
 VirtualInstructor = virtual_instructor.VirtualInstructor
@@ -67,9 +77,7 @@ class TestVirtualInstructor(unittest.TestCase):
         self.assertEqual(self.instructor.phase, 1)
         self.assertEqual(self.instructor.system_state, VFIState.VFI_FLIGHT)
         for axis in ControlAxis:
-            self.assertEqual(
-                self.instructor.control_assignment[axis], Authority.VFI
-            )
+            self.assertEqual(self.instructor.control_assignment[axis], Authority.VFI)
 
     def test_initiate_handoff_phase1(self):
         # Phase 1: Yaw Pedals Only
@@ -84,11 +92,11 @@ class TestVirtualInstructor(unittest.TestCase):
             self.instructor.control_assignment[ControlAxis.PITCH], Authority.VFI
         )
         self.assertEqual(
-            self.instructor.control_assignment[ControlAxis.COLLECTIVE],
-            Authority.VFI
+            self.instructor.control_assignment[ControlAxis.COLLECTIVE], Authority.VFI
         )
         self.assertEqual(
-            self.instructor.control_assignment[ControlAxis.YAW], Authority.VFI,
+            self.instructor.control_assignment[ControlAxis.YAW],
+            Authority.VFI,
         )  # VFI flies yaw until synced
 
         self.assertTrue(self.instructor.sync_locked[ControlAxis.ROLL])
@@ -116,7 +124,8 @@ class TestVirtualInstructor(unittest.TestCase):
             self.instructor.sync_locked[ControlAxis.YAW]
         )  # Real-time match indicator is True because within tolerance
         self.assertEqual(
-            self.instructor.control_assignment[ControlAxis.YAW], Authority.VFI,
+            self.instructor.control_assignment[ControlAxis.YAW],
+            Authority.VFI,
         )  # Flight authority is NOT yet student
         # Still VFI output during syncing
         self.assertEqual(out[ControlAxis.YAW], self.vfi[ControlAxis.YAW])
@@ -129,8 +138,7 @@ class TestVirtualInstructor(unittest.TestCase):
         )
         self.assertEqual(self.instructor.system_state, VFIState.STUDENT_FLIGHT)
         self.assertEqual(
-            self.instructor.control_assignment[ControlAxis.YAW],
-            Authority.STUDENT
+            self.instructor.control_assignment[ControlAxis.YAW], Authority.STUDENT
         )
         self.assertTrue(self.instructor.sync_locked[ControlAxis.YAW])
         self.assertEqual(out[ControlAxis.YAW], self.vfi[ControlAxis.YAW])
@@ -149,16 +157,12 @@ class TestVirtualInstructor(unittest.TestCase):
         # Hardware matches at first
         self.hardware[ControlAxis.YAW] = 0.01
         self.vfi[ControlAxis.YAW] = 0.01
-        self.instructor.update(
-            0.3, self.nominal_telemetry, self.hardware, self.vfi
-        )
+        self.instructor.update(0.3, self.nominal_telemetry, self.hardware, self.vfi)
         self.assertEqual(self.instructor.sync_timer, 0.3)
 
         # Hardware drifts away: delta = 0.05 > 0.04
         self.hardware[ControlAxis.YAW] = 0.06
-        self.instructor.update(
-            0.1, self.nominal_telemetry, self.hardware, self.vfi
-        )
+        self.instructor.update(0.1, self.nominal_telemetry, self.hardware, self.vfi)
 
         # Timer should be reset to 0.0 and state remains SYNCING
         self.assertEqual(self.instructor.sync_timer, 0.0)
@@ -171,9 +175,7 @@ class TestVirtualInstructor(unittest.TestCase):
         self.instructor.control_assignment[ControlAxis.YAW] = Authority.STUDENT
 
         # Telemetry is safe
-        self.assertFalse(
-            self.instructor.check_safety_limits(self.nominal_telemetry)
-        )
+        self.assertFalse(self.instructor.check_safety_limits(self.nominal_telemetry))
 
         # Test 1: Pitch attitude exceeds 15 deg (e.g. 15.5)
         # Use an unstable rate or roll to keep in OVERRIDE during recovery
@@ -188,7 +190,8 @@ class TestVirtualInstructor(unittest.TestCase):
         out = self.instructor.update(0.02, telem, self.hardware, self.vfi)
         self.assertEqual(self.instructor.system_state, VFIState.OVERRIDE)
         self.assertEqual(
-            self.instructor.control_assignment[ControlAxis.YAW], Authority.VFI,
+            self.instructor.control_assignment[ControlAxis.YAW],
+            Authority.VFI,
         )  # Stripped student authority
         # Returns VFI stabilization
         self.assertEqual(out[ControlAxis.YAW], self.vfi[ControlAxis.YAW])
@@ -235,9 +238,7 @@ class TestVirtualInstructor(unittest.TestCase):
         self.instructor.phase = 4
         self.instructor._system_state = VFIState.STUDENT_FLIGHT
         self.instructor.control_assignment[ControlAxis.ROLL] = Authority.STUDENT
-        self.instructor.control_assignment[
-            ControlAxis.PITCH
-        ] = Authority.STUDENT
+        self.instructor.control_assignment[ControlAxis.PITCH] = Authority.STUDENT
 
         telem = self.nominal_telemetry.copy()
         telem["theta"] = 12.0  # In caution zone
@@ -436,25 +437,19 @@ class TestVirtualInstructor(unittest.TestCase):
         self.hardware[ControlAxis.PITCH] = -0.10
 
         # First update: 200ms -> still syncing
-        self.instructor.update(
-            0.2, self.nominal_telemetry, self.hardware, self.vfi
-        )
+        self.instructor.update(0.2, self.nominal_telemetry, self.hardware, self.vfi)
         self.assertEqual(self.instructor.system_state, VFIState.SYNCING)
         self.assertTrue(self.instructor.sync_locked[ControlAxis.ROLL])
         self.assertTrue(self.instructor.sync_locked[ControlAxis.PITCH])
 
         # Second update: 400ms -> transitions to STUDENT_FLIGHT
-        self.instructor.update(
-            0.4, self.nominal_telemetry, self.hardware, self.vfi
-        )
+        self.instructor.update(0.4, self.nominal_telemetry, self.hardware, self.vfi)
         self.assertEqual(self.instructor.system_state, VFIState.STUDENT_FLIGHT)
         self.assertEqual(
-            self.instructor.control_assignment[ControlAxis.ROLL],
-            Authority.STUDENT
+            self.instructor.control_assignment[ControlAxis.ROLL], Authority.STUDENT
         )
         self.assertEqual(
-            self.instructor.control_assignment[ControlAxis.PITCH],
-            Authority.STUDENT
+            self.instructor.control_assignment[ControlAxis.PITCH], Authority.STUDENT
         )
 
     def test_cyclic_circular_synchronization_boundary(self):
@@ -469,9 +464,7 @@ class TestVirtualInstructor(unittest.TestCase):
         self.vfi[ControlAxis.PITCH] = -0.08
         self.hardware[ControlAxis.PITCH] = -0.10
 
-        self.instructor.update(
-            0.2, self.nominal_telemetry, self.hardware, self.vfi
-        )
+        self.instructor.update(0.2, self.nominal_telemetry, self.hardware, self.vfi)
         self.assertTrue(self.instructor.sync_locked[ControlAxis.ROLL])
         self.assertTrue(self.instructor.sync_locked[ControlAxis.PITCH])
 
@@ -486,9 +479,7 @@ class TestVirtualInstructor(unittest.TestCase):
         self.vfi[ControlAxis.PITCH] = -0.07
         self.hardware[ControlAxis.PITCH] = -0.10
 
-        self.instructor.update(
-            0.2, self.nominal_telemetry, self.hardware, self.vfi
-        )
+        self.instructor.update(0.2, self.nominal_telemetry, self.hardware, self.vfi)
         self.assertFalse(self.instructor.sync_locked[ControlAxis.ROLL])
         self.assertFalse(self.instructor.sync_locked[ControlAxis.PITCH])
         self.assertEqual(self.instructor.sync_timer, 0.0)
@@ -615,9 +606,7 @@ class TestStateTransitions(unittest.TestCase):
         self.instructor.reset_to_vfi_flight()
         self.assertEqual(self.instructor.system_state, VFIState.VFI_FLIGHT)
         for axis in ControlAxis:
-            self.assertEqual(
-                self.instructor.control_assignment[axis], Authority.VFI
-            )
+            self.assertEqual(self.instructor.control_assignment[axis], Authority.VFI)
             self.assertFalse(self.instructor.sync_locked[axis])
 
     def test_update_result_events(self):
@@ -630,14 +619,26 @@ class TestStateTransitions(unittest.TestCase):
         self.instructor.phase = 3
         # Tick the instructor to trigger auto phase advance
         telemetry = {
-            "x": 10.0, "y": 6.0, "z": 20.0,
-            "target_x": 10.0, "target_y": 6.0, "target_z": 20.0,
-            "phi": 0.0, "theta": 0.0, "psi": 0.0, "R": 0.0,
-            "vx": 0.0, "vz": 0.0, "vy": 0.0, "y_agl": 6.0
+            "x": 10.0,
+            "y": 6.0,
+            "z": 20.0,
+            "target_x": 10.0,
+            "target_y": 6.0,
+            "target_z": 20.0,
+            "phi": 0.0,
+            "theta": 0.0,
+            "psi": 0.0,
+            "R": 0.0,
+            "vx": 0.0,
+            "vz": 0.0,
+            "vy": 0.0,
+            "y_agl": 6.0,
         }
         hardware = {
-            ControlAxis.ROLL: 0.0, ControlAxis.PITCH: 0.0,
-            ControlAxis.YAW: 0.0, ControlAxis.COLLECTIVE: 0.0
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.0,
         }
         vfi = hardware.copy()
 
@@ -649,12 +650,13 @@ class TestStateTransitions(unittest.TestCase):
         self.assertTrue(hasattr(res, "events"))
         # Should contain StateChangedEvent to VFI_FLIGHT,
         # then StateChangedEvent to SYNCING, and PhaseAdvancedEvent to 4
+        # pyrefly: ignore [missing-import]
         from helicopter_instructor.virtual_instructor import (
-            PhaseAdvancedEvent, StateChangedEvent
+            PhaseAdvancedEvent,
+            StateChangedEvent,
         )
-        phase_events = [
-            e for e in res.events if isinstance(e, PhaseAdvancedEvent)
-        ]
+
+        phase_events = [e for e in res.events if isinstance(e, PhaseAdvancedEvent)]
         self.assertEqual(len(phase_events), 1)
         self.assertEqual(phase_events[0].from_phase, 3)
         self.assertEqual(phase_events[0].to_phase, 4)
@@ -684,9 +686,7 @@ class TestStateTransitions(unittest.TestCase):
         self.instructor.phase = 3
         # Set all axes to STUDENT control in phase 3
         self.instructor.control_assignment[ControlAxis.YAW] = Authority.STUDENT
-        self.instructor.control_assignment[
-            ControlAxis.COLLECTIVE
-        ] = Authority.STUDENT
+        self.instructor.control_assignment[ControlAxis.COLLECTIVE] = Authority.STUDENT
 
         # Simulate Excellent duration to trigger transition pending
         self.instructor.last_envelope = Envelope.EXCELLENT
@@ -695,18 +695,32 @@ class TestStateTransitions(unittest.TestCase):
 
         # Call update() to process the pending transition
         telemetry = {
-            "x": 10.0, "y": 6.0, "z": 20.0,
-            "target_x": 10.0, "target_y": 6.0, "target_z": 20.0,
-            "phi": 0.0, "theta": 0.0, "psi": 0.0, "R": 0.0,
-            "vx": 0.0, "vz": 0.0, "vy": 0.0, "y_agl": 6.0
+            "x": 10.0,
+            "y": 6.0,
+            "z": 20.0,
+            "target_x": 10.0,
+            "target_y": 6.0,
+            "target_z": 20.0,
+            "phi": 0.0,
+            "theta": 0.0,
+            "psi": 0.0,
+            "R": 0.0,
+            "vx": 0.0,
+            "vz": 0.0,
+            "vy": 0.0,
+            "y_agl": 6.0,
         }
         hardware = {
-            ControlAxis.ROLL: 0.1, ControlAxis.PITCH: 0.2,
-            ControlAxis.YAW: 0.3, ControlAxis.COLLECTIVE: 0.4
+            ControlAxis.ROLL: 0.1,
+            ControlAxis.PITCH: 0.2,
+            ControlAxis.YAW: 0.3,
+            ControlAxis.COLLECTIVE: 0.4,
         }
         vfi = {
-            ControlAxis.ROLL: -0.1, ControlAxis.PITCH: -0.2,
-            ControlAxis.YAW: -0.3, ControlAxis.COLLECTIVE: -0.4
+            ControlAxis.ROLL: -0.1,
+            ControlAxis.PITCH: -0.2,
+            ControlAxis.YAW: -0.3,
+            ControlAxis.COLLECTIVE: -0.4,
         }
 
         # Update should transition from STUDENT_FLIGHT to CELEBRATING
@@ -715,9 +729,7 @@ class TestStateTransitions(unittest.TestCase):
 
         # Check student retains control during CELEBRATING state
         self.assertEqual(res[ControlAxis.YAW], hardware[ControlAxis.YAW])
-        self.assertEqual(
-            res[ControlAxis.COLLECTIVE], hardware[ControlAxis.COLLECTIVE]
-        )
+        self.assertEqual(res[ControlAxis.COLLECTIVE], hardware[ControlAxis.COLLECTIVE])
         # VFI keeps control of VFI axes
         self.assertEqual(res[ControlAxis.ROLL], vfi[ControlAxis.ROLL])
         self.assertEqual(res[ControlAxis.PITCH], vfi[ControlAxis.PITCH])
@@ -737,18 +749,32 @@ class TestStateTransitions(unittest.TestCase):
 
         # Telemetry with a critical safety violation (e.g. extreme pitch)
         telemetry = {
-            "x": 10.0, "y": 6.0, "z": 20.0,
-            "target_x": 10.0, "target_y": 6.0, "target_z": 20.0,
-            "phi": 0.0, "theta": 45.0, "psi": 0.0, "R": 0.0,
-            "vx": 0.0, "vz": 0.0, "vy": 0.0, "y_agl": 6.0
+            "x": 10.0,
+            "y": 6.0,
+            "z": 20.0,
+            "target_x": 10.0,
+            "target_y": 6.0,
+            "target_z": 20.0,
+            "phi": 0.0,
+            "theta": 45.0,
+            "psi": 0.0,
+            "R": 0.0,
+            "vx": 0.0,
+            "vz": 0.0,
+            "vy": 0.0,
+            "y_agl": 6.0,
         }
         hardware = {
-            ControlAxis.ROLL: 0.1, ControlAxis.PITCH: 0.2,
-            ControlAxis.YAW: 0.3, ControlAxis.COLLECTIVE: 0.4
+            ControlAxis.ROLL: 0.1,
+            ControlAxis.PITCH: 0.2,
+            ControlAxis.YAW: 0.3,
+            ControlAxis.COLLECTIVE: 0.4,
         }
         vfi = {
-            ControlAxis.ROLL: -0.1, ControlAxis.PITCH: -0.2,
-            ControlAxis.YAW: -0.3, ControlAxis.COLLECTIVE: -0.4
+            ControlAxis.ROLL: -0.1,
+            ControlAxis.PITCH: -0.2,
+            ControlAxis.YAW: -0.3,
+            ControlAxis.COLLECTIVE: -0.4,
         }
 
         res = self.instructor.update(0.02, telemetry, hardware, vfi)

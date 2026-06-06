@@ -7,13 +7,9 @@ from unittest import mock
 base_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(
     0,
-    os.path.join(
-        base_dir, "..", "plugin", "helicopter_instructor", "autopilot"
-    ),
+    os.path.join(base_dir, "..", "plugin", "helicopter_instructor", "autopilot"),
 )
-sys.path.insert(
-    0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor")
-)
+sys.path.insert(0, os.path.join(base_dir, "..", "plugin", "helicopter_instructor"))
 sys.path.insert(0, os.path.join(base_dir, "..", "plugin"))
 
 # Mock xp, xp_imgui, and imgui modules before importing PI_helicopter_instructor
@@ -282,9 +278,7 @@ class TestHelicopterControl(unittest.TestCase):
             controller.vel_lon_pid,
             controller.att_pitch_pid,
         ):
-            self.assertAlmostEqual(
-                pid.integral, 0.0, msg=f"{pid} integral not reset"
-            )
+            self.assertAlmostEqual(pid.integral, 0.0, msg=f"{pid} integral not reset")
             self.assertAlmostEqual(
                 pid.last_error, 0.0, msg=f"{pid} last_error not reset"
             )
@@ -331,16 +325,14 @@ class TestHelicopterControl(unittest.TestCase):
             controller.yaw_pid.integral,
             yaw_integral_before,
             msg=(
-                "yaw_pid integral must not be touched by "
-                "reset_position_hold_pids()"
+                "yaw_pid integral must not be touched by " "reset_position_hold_pids()"
             ),
         )
         self.assertAlmostEqual(
             controller.alt_pid.integral,
             alt_integral_before,
             msg=(
-                "alt_pid integral must not be touched by "
-                "reset_position_hold_pids()"
+                "alt_pid integral must not be touched by " "reset_position_hold_pids()"
             ),
         )
 
@@ -480,9 +472,7 @@ class TestAutopilotPlugin(unittest.TestCase):
     @patch("os.path.exists")
     @patch("builtins.open", new_callable=unittest.mock.mock_open)
     @patch("json.load")
-    def test_load_gains_new_format(
-        self, mock_json_load, mock_open, mock_exists
-    ):
+    def test_load_gains_new_format(self, mock_json_load, mock_open, mock_exists):
         mock_exists.return_value = True
         # Mock new format gains
         mock_json_load.return_value = {
@@ -614,9 +604,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         )
         filepath = config.get_gains_filepath(self.plugin.plugin_dir)
         # Non-alphanumeric/underscore chars should be replaced with underscores
-        self.assertTrue(
-            filepath.endswith("autopilot_gains_Cessna_172SP__Custom_.json")
-        )
+        self.assertTrue(filepath.endswith("autopilot_gains_Cessna_172SP__Custom_.json"))
 
     def test_get_gains_filepath_fallback_exception(self):
         mock_xp.getNthAircraftModel.side_effect = Exception("X-Plane error")
@@ -868,9 +856,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         instructor.update() (Step C), so the check in the POST-C4 re-read
         block must catch it via last_system_state == STUDENT_FLIGHT.
         """
-        self.plugin.controller.update = MagicMock(
-            return_value=self._make_vfi_output()
-        )
+        self.plugin.controller.update = MagicMock(return_value=self._make_vfi_output())
         self.plugin.get_hardware_inputs = MagicMock(
             return_value={
                 ControlAxis.ROLL: 0.0,
@@ -923,9 +909,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         flight loop, so on the next frame last_system_state is STUDENT_FLIGHT
         but curr_state (read after Step C) is already SYNCING.
         """
-        self.plugin.controller.update = MagicMock(
-            return_value=self._make_vfi_output()
-        )
+        self.plugin.controller.update = MagicMock(return_value=self._make_vfi_output())
         self.plugin.get_hardware_inputs = MagicMock(
             return_value={
                 ControlAxis.ROLL: 0.0,
@@ -963,9 +947,7 @@ class TestAutopilotPlugin(unittest.TestCase):
         after the STEP C4 re-read must fire because last_system_state is
         STUDENT_FLIGHT and the final curr_state is SYNCING.
         """
-        self.plugin.controller.update = MagicMock(
-            return_value=self._make_vfi_output()
-        )
+        self.plugin.controller.update = MagicMock(return_value=self._make_vfi_output())
         self.plugin.get_hardware_inputs = MagicMock(
             return_value={
                 ControlAxis.ROLL: 0.0,
@@ -981,7 +963,10 @@ class TestAutopilotPlugin(unittest.TestCase):
         self.plugin.instructor._system_state = VFIState.STUDENT_FLIGHT
         self.plugin.instructor.phase = 4
 
+        # pyrefly: ignore [missing-import]
         from helicopter_instructor.virtual_instructor import UpdateResult
+
+        # pyrefly: ignore [missing-import]
         from helicopter_instructor.virtual_instructor import PhaseAdvancedEvent
 
         # instructor.update() still returns STUDENT_FLIGHT this frame, but
@@ -992,7 +977,7 @@ class TestAutopilotPlugin(unittest.TestCase):
             self.plugin.instructor.initiate_handoff()
             return UpdateResult(
                 {k: hardware[k] for k in hardware},
-                [PhaseAdvancedEvent(4, 5, is_final=False)]
+                [PhaseAdvancedEvent(4, 5, is_final=False)],
             )
 
         self.plugin.instructor.update = student_with_pending_transition
