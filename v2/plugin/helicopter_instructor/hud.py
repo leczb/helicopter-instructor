@@ -116,9 +116,7 @@ def draw_hud(view_model, window_id):
     # Helper function to automatically adjust drawing coordinates under scale
     def draw_string_scaled(color, x, y, text, font_id=xp.Font_Proportional):
         if gl_available:
-            xp.drawString(
-                color, int(x / 2.0), int(y / 2.0), text, fontID=font_id
-            )
+            xp.drawString(color, int(x / 2.0), int(y / 2.0), text, fontID=font_id)
         else:
             xp.drawString(color, x, y, text, fontID=font_id)
 
@@ -168,9 +166,7 @@ def draw_hud(view_model, window_id):
                 glVertex2f(x, y)
             glEnd()
 
-    def draw_vector_line_scaled(
-        color, start_x, start_y, end_x, end_y, line_width=1.5
-    ):
+    def draw_vector_line_scaled(color, start_x, start_y, end_x, end_y, line_width=1.5):
         if not gl_available:
             return
         x1_scaled = start_x / 2.0
@@ -311,20 +307,20 @@ def draw_hud(view_model, window_id):
 
     if not view_model.ap_enabled:
         state_color = color_orange
-        state_label = "STANDBY (DISENGAGED)"
+        state_label = "STANDBY"
     elif state_str == VFIState.VFI_FLIGHT:
         state_color = color_title
-        state_label = "AUTO HOVER ACTIVE"
+        state_label = "INSTRUCTOR FLYING"
     elif state_str == VFIState.SYNCING:
         state_color = color_orange
         ratio = view_model.sync_timer / view_model.sync_hold_duration
         state_label = f"ALIGNING CONTROLS... ({int(ratio * 100)}%)"
     elif state_str == VFIState.STUDENT_FLIGHT:
         state_color = color_green
-        state_label = "STUDENT IN CONTROL"
+        state_label = "STUDENT FLYING"
     elif state_str == VFIState.OVERRIDE:
         state_color = color_red
-        state_label = "TAKEBACK TAKEOVER ACTIVE!"
+        state_label = "SAFETY INTERVENTION"
     elif state_str == VFIState.RECOVERY_HOLD:
         state_color = color_title
         time_left = int(view_model.recovery_timer)
@@ -339,10 +335,7 @@ def draw_hud(view_model, window_id):
     )
 
     # --- 3b. Student Performance Metrics ---
-    if (
-        view_model.ap_enabled
-        and view_model.system_state == VFIState.STUDENT_FLIGHT
-    ):
+    if view_model.ap_enabled and view_model.system_state == VFIState.STUDENT_FLIGHT:
         y_cursor -= 22
         draw_string_scaled(
             color_white,
@@ -351,10 +344,12 @@ def draw_hud(view_model, window_id):
             "STABILITY GRADE:",
             font_id=xp.Font_Proportional,
         )
-        grade_str = (
-            f"{view_model.envelope} "
-            f"(Stability: {int(view_model.overall_score)}%)"
+        envelope_name = (
+            view_model.envelope.name
+            if hasattr(view_model.envelope, "name")
+            else str(view_model.envelope)
         )
+        grade_str = f"{envelope_name} " f"(Stability: {int(view_model.overall_score)}%)"
         grade_color = (
             color_green
             if view_model.envelope in (Envelope.EXCELLENT, Envelope.GOOD)
@@ -412,8 +407,7 @@ def draw_hud(view_model, window_id):
                 color_white,
                 box_left + 20,
                 y_cursor,
-                f"Hdg Err: {hdg_err:5.1f} deg "
-                f"(lim {LIMIT_HDG_GREEN_DEG:.0f} deg)",
+                f"Hdg Err: {hdg_err:5.1f} deg " f"(lim {LIMIT_HDG_GREEN_DEG:.0f} deg)",
                 font_id=xp.Font_Proportional,
             )
             draw_string_scaled(
@@ -504,8 +498,7 @@ def draw_hud(view_model, window_id):
     cmd_coll = view_model.last_commands[ControlAxis.COLLECTIVE]
     vfi_coll_y = int(col_y + cmd_coll * col_height)
     phys_coll_y = int(
-        col_y
-        + view_model.last_hardware_inputs[ControlAxis.COLLECTIVE] * col_height
+        col_y + view_model.last_hardware_inputs[ControlAxis.COLLECTIVE] * col_height
     )
 
     # Over-controlling visual warning state (solid red when overcontrolled,
@@ -613,9 +606,9 @@ def draw_hud(view_model, window_id):
     ped_width = PEDALS_TRACK_WIDTH
 
     vfi_yaw_x = int(
-        ped_x + ped_width / 2.0 + (
-            view_model.last_commands[ControlAxis.YAW] * (ped_width / 2.0)
-        )
+        ped_x
+        + ped_width / 2.0
+        + (view_model.last_commands[ControlAxis.YAW] * (ped_width / 2.0))
     )
     phys_yaw_x = int(
         ped_x
@@ -785,9 +778,7 @@ def draw_hud(view_model, window_id):
             )
 
         # 5. Draw the physical stick position as a solid filled circle
-        draw_vector_circle_scaled(
-            stick_color, stick_x, stick_y, ball_radius, fill=True
-        )
+        draw_vector_circle_scaled(stick_color, stick_x, stick_y, ball_radius, fill=True)
 
         # 6. Restore face culling and graphics state
         glEnable(GL_CULL_FACE)
@@ -857,13 +848,10 @@ def draw_alt_bar(view_model, window_id):
 
     # Only show when autopilot is enabled and Lesson collective is STUDENT
     is_student_coll = (
-        virtual_instructor.PHASE_CONFIGS[view_model.phase][
-            ControlAxis.COLLECTIVE
-        ] == Authority.STUDENT
+        virtual_instructor.PHASE_CONFIGS[view_model.phase][ControlAxis.COLLECTIVE]
+        == Authority.STUDENT
     )
-    active_visible = (
-        new_show_alt_bar and view_model.ap_enabled and is_student_coll
-    )
+    active_visible = new_show_alt_bar and view_model.ap_enabled and is_student_coll
 
     if not active_visible:
         return 1, new_show_alt_bar
@@ -878,9 +866,7 @@ def draw_alt_bar(view_model, window_id):
     # Helper function to automatically adjust drawing coordinates under scale
     def draw_string_scaled(color, x, y, text, font_id=xp.Font_Proportional):
         if gl_available:
-            xp.drawString(
-                color, int(x / 2.0), int(y / 2.0), text, fontID=font_id
-            )
+            xp.drawString(color, int(x / 2.0), int(y / 2.0), text, fontID=font_id)
         else:
             xp.drawString(color, x, y, text, fontID=font_id)
 
@@ -928,9 +914,7 @@ def draw_alt_bar(view_model, window_id):
             glVertex2f(l_scaled, b_scaled)
             glEnd()
 
-    def draw_vector_line_scaled(
-        color, start_x, start_y, end_x, end_y, line_width=1.5
-    ):
+    def draw_vector_line_scaled(color, start_x, start_y, end_x, end_y, line_width=1.5):
         if not gl_available:
             return
         x1_scaled = start_x / 2.0

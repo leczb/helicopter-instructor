@@ -1,6 +1,10 @@
 # Release Notes
 
-## v2.1.66 - 2026-06-05
+## v2.1.67 - 2026-06-06
+
+- **Improvement**: Formatted the stability envelope grade on the HUD to use the enum member's name string (e.g., `"EXCELLENT"`, `"GOOD"`, `"UNSTABLE"`) instead of displaying the raw Python object representation (`"Envelope.EXCELLENT"`).
+- **Improvement**: Re-formatted `hud.py` code for styling consistency.
+- **Improvement**: Updated system state status labels on the HUD to be more user-friendly (e.g. "STANDBY" instead of "STANDBY (DISENGAGED)", "INSTRUCTOR FLYING" instead of "AUTO HOVER ACTIVE", "STUDENT FLYING" instead of "STUDENT IN CONTROL", and "SAFETY INTERVENTION" instead of "TAKEBACK TAKEOVER ACTIVE!").
 
 - **Docs**: Updated `v2/docs/state_machine_diagram.md` to reflect the current state of the virtual instructor state machine, adding the `CELEBRATING` transitional state and documenting the delayed control handoff behavior (which waits for the phase explanation audio to finish).
 
