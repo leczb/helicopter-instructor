@@ -349,6 +349,130 @@ class TestPluginAudio(unittest.TestCase):
         # Verify pending_handoff is set to True
         self.assertTrue(self.plugin.pending_handoff)
 
+    def test_manual_phase_change_clears_queue(self):
+        # Import enums locally inside test to avoid dependency issues
+        from helicopter_instructor.enums import ControlAxis, VFIState
+
+        # Setup plugin state
+        self.plugin.ap_enabled = True
+        self.plugin.instructor.phase = 2
+        self.plugin.last_phase = 1
+        self.plugin.last_system_state = VFIState.VFI_FLIGHT
+        self.plugin.instructor.system_state = VFIState.VFI_FLIGHT
+        self.plugin.audio_queue = ["some_other_audio.wav"]
+        self.plugin.audio_playback_timer = 2.0
+
+        # Mock dependencies in flight loop callback
+        self.plugin.get_current_state = mock.MagicMock(
+            return_value={
+                "x": 0.0,
+                "y": 6.0,
+                "z": 0.0,
+                "vx": 0.0,
+                "vy": 0.0,
+                "vz": 0.0,
+                "phi": 0.0,
+                "theta": 0.0,
+                "psi": 0.0,
+                "P": 0.0,
+                "Q": 0.0,
+                "R": 0.0,
+                "g_side": 0.0,
+            }
+        )
+        self.plugin.controller = mock.MagicMock()
+        self.plugin.controller.update.return_value = {
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
+        }
+        self.plugin.get_hardware_inputs = mock.MagicMock(
+            return_value={
+                ControlAxis.ROLL: 0.0,
+                ControlAxis.PITCH: 0.0,
+                ControlAxis.YAW: 0.0,
+                ControlAxis.COLLECTIVE: 0.5,
+            }
+        )
+        self.plugin.metrics = mock.MagicMock()
+        self.plugin.metrics.pop_audio_queue.return_value = None
+        self.plugin.graphics = mock.MagicMock()
+        self.plugin.alt_bar_window = None
+
+        # Execute flight loop callback (which processes phase change)
+        self.plugin.flight_loop_callback(0.02, 0.02, 1, None)
+
+        # The queue should have been cleared because last_system_state was VFI_FLIGHT,
+        # so it only contains the new phase 2 intro sound. Since timer is 0.0,
+        # the first sound is popped to be played immediately.
+        self.assertEqual(self.plugin.audio_queue, [])
+        self.assertEqual(self.plugin.last_played_sound, "Phase 2 intro.wav")
+        # The playback timer should be updated with the duration + 0.3
+        self.assertAlmostEqual(self.plugin.audio_playback_timer, 0.3)
+
+    def test_manual_phase_change_from_student_flight_clears_queue(self):
+        # Import enums locally inside test to avoid dependency issues
+        from helicopter_instructor.enums import ControlAxis, VFIState
+
+        # Setup plugin state
+        self.plugin.ap_enabled = True
+        self.plugin.instructor.phase = 2
+        self.plugin.last_phase = 1
+        self.plugin.last_system_state = VFIState.STUDENT_FLIGHT
+        self.plugin.instructor.system_state = VFIState.VFI_FLIGHT
+        self.plugin.audio_queue = ["some_other_audio.wav"]
+        self.plugin.audio_playback_timer = 2.0
+
+        # Mock dependencies in flight loop callback
+        self.plugin.get_current_state = mock.MagicMock(
+            return_value={
+                "x": 0.0,
+                "y": 6.0,
+                "z": 0.0,
+                "vx": 0.0,
+                "vy": 0.0,
+                "vz": 0.0,
+                "phi": 0.0,
+                "theta": 0.0,
+                "psi": 0.0,
+                "P": 0.0,
+                "Q": 0.0,
+                "R": 0.0,
+                "g_side": 0.0,
+            }
+        )
+        self.plugin.controller = mock.MagicMock()
+        self.plugin.controller.update.return_value = {
+            ControlAxis.ROLL: 0.0,
+            ControlAxis.PITCH: 0.0,
+            ControlAxis.YAW: 0.0,
+            ControlAxis.COLLECTIVE: 0.5,
+        }
+        self.plugin.get_hardware_inputs = mock.MagicMock(
+            return_value={
+                ControlAxis.ROLL: 0.0,
+                ControlAxis.PITCH: 0.0,
+                ControlAxis.YAW: 0.0,
+                ControlAxis.COLLECTIVE: 0.5,
+            }
+        )
+        self.plugin.metrics = mock.MagicMock()
+        self.plugin.metrics.pop_audio_queue.return_value = None
+        self.plugin.graphics = mock.MagicMock()
+        self.plugin.alt_bar_window = None
+
+        # Execute flight loop callback (which processes phase change)
+        self.plugin.flight_loop_callback(0.02, 0.02, 1, None)
+
+        # When transitioning from STUDENT_FLIGHT, we clear the queue, play
+        # "I have control.wav" (which clears queue), then play Phase 2 intro.
+        # So "I have control.wav" will be first, and "Phase 2 intro.wav" next.
+        # The first sound is popped immediately.
+        self.assertEqual(self.plugin.audio_queue, ["Phase 2 intro.wav"])
+        self.assertEqual(self.plugin.last_played_sound, "I have control.wav")
+        self.assertAlmostEqual(self.plugin.audio_playback_timer, 0.3)
+
 
 if __name__ == "__main__":
     unittest.main()

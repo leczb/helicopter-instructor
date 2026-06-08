@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.69 - 2026-06-08
+
+- **Fixed**: Prevent skipped lesson introduction audio files from piling up in the sequential playback queue during rapid manual phase navigation. Changing phases now cancels and clears any playing or queued intros.
+
 ## v2.1.68 - 2026-06-08
 
 - **Feature**: Automatically trigger control hand-off (transition to `SYNCING` state) after the initial lesson introduction audio plays and finishes upon autopilot engagement.

@@ -466,7 +466,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.68"
+        self.version = "2.1.69"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -1350,9 +1350,16 @@ class PythonInterface(object):
                                 SOUND_I_HAVE_CONTROL, clear_queue=True
                             )
                             self.pending_handoff = True
-                        self.play_sound(
-                            SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase)
-                        )
+                            self.play_sound(
+                                SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase)
+                            )
+                        else:
+                            # If already VFI_FLIGHT, clear other/skipped intros
+                            # and play the target intro directly.
+                            self.play_sound(
+                                SOUND_PHASE_INTRO_TEMPLATE.format(curr_phase),
+                                clear_queue=True,
+                            )
                     elif state_changed:
                         if curr_state == VFIState.SYNCING:
                             is_prev_student = (
