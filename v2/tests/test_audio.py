@@ -319,6 +319,36 @@ class TestPluginAudio(unittest.TestCase):
         self.plugin.instructor.initiate_handoff.assert_called_once()
         self.assertFalse(self.plugin.pending_handoff)
 
+    def test_ap_enabled_sets_pending_handoff(self):
+        # Initially, ap_enabled is False and pending_handoff is False
+        self.plugin.ap_enabled = False
+        self.plugin.pending_handoff = False
+
+        # Prepare/mock dependencies used in the ap_enabled.setter
+        self.plugin.get_current_state = mock.MagicMock(
+            return_value={"x": 0.0, "y": 6.0, "z": 0.0, "psi": 0.0}
+        )
+        self.plugin.controller = mock.MagicMock()
+        self.plugin.instructor = mock.MagicMock()
+        self.plugin.instructor.phase = 1
+        self.plugin.play_sound = mock.MagicMock()
+
+        # Set ap_enabled = True on UI controller
+        self.plugin.ui_controller.ap_enabled = True
+
+        # Verify it engaged the controller and reset the instructor
+        self.plugin.controller.engage.assert_called_once()
+        self.plugin.instructor.reset_to_vfi_flight.assert_called_once()
+
+        # Verify it queued the correct sounds
+        self.plugin.play_sound.assert_any_call(
+            "I have control.wav", clear_queue=True
+        )
+        self.plugin.play_sound.assert_any_call("Phase 1 intro.wav")
+
+        # Verify pending_handoff is set to True
+        self.assertTrue(self.plugin.pending_handoff)
+
 
 if __name__ == "__main__":
     unittest.main()

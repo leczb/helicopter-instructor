@@ -155,6 +155,9 @@ class PluginUIController(object):
                 self._plugin.play_sound(
                     SOUND_PHASE_INTRO_TEMPLATE.format(phase)
                 )
+                # Automatically trigger control hand-off sequence once the
+                # initial introduction audio finishes playing.
+                self._plugin.pending_handoff = True
             else:
                 self._plugin.ap_enabled = False
                 self._plugin.release_all_overrides()
@@ -463,7 +466,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.67"
+        self.version = "2.1.68"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (

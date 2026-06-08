@@ -1,5 +1,10 @@
 # Release Notes
 
+## v2.1.68 - 2026-06-08
+
+- **Feature**: Automatically trigger control hand-off (transition to `SYNCING` state) after the initial lesson introduction audio plays and finishes upon autopilot engagement.
+- **Docs**: Updated README.md instructions under "How to Use" to reflect the new automatic hand-off behavior.
+
 ## v2.1.67 - 2026-06-06
 
 - **Improvement**: Formatted the stability envelope grade on the HUD to use the enum member's name string (e.g., `"EXCELLENT"`, `"GOOD"`, `"UNSTABLE"`) instead of displaying the raw Python object representation (`"Envelope.EXCELLENT"`).
