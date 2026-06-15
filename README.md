@@ -6,7 +6,7 @@ A virtual flight instructor plugin for **X-Plane 12** designed to teach student 
 > **Disclaimer:** This software is not intended or approved for real-world flight training. It is strictly for simulator flying.
 
 
-![Helicopter Virtual Flight Instructor External View](v2/docs/screenshots/Screenshot%20-%20Pedals%20only%20-%20external%20view.png)
+[![Helicopter Virtual Flight Instructor External View](v2/docs/screenshots/Screenshot%20-%20Pedals%20only%20-%20external%20view.small.png)](v2/docs/screenshots/Screenshot%20-%20Pedals%20only%20-%20external%20view.png)
 
 ---
 
@@ -27,16 +27,16 @@ A virtual flight instructor plugin for **X-Plane 12** designed to teach student 
 ### 3D Visual Guidance & Control Panel
 | 3D Safety Zones & Guidance Rings | ImGui Instructor Control Panel |
 | :---: | :---: |
-| ![3D Safety Zones](v2/docs/screenshots/Screenshot%20-%20Safety%20zones.png) | ![Control Panel](v2/docs/screenshots/Screenshot%20-%20Control%20panel.png) |
+| [![3D Safety Zones](v2/docs/screenshots/Screenshot%20-%20Safety%20zones.small.png)](v2/docs/screenshots/Screenshot%20-%20Safety%20zones.png) | [![Control Panel](v2/docs/screenshots/Screenshot%20-%20Control%20panel.small.png)](v2/docs/screenshots/Screenshot%20-%20Control%20panel.png) |
 
 ### Curriculum Training Phases
 | Phase 1: Pedals Only | Phase 2: Collective Only |
 | :---: | :---: |
-| ![Pedals Only](v2/docs/screenshots/Screenshot%20-%20Pedals%20only.png) | ![Collective Only](v2/docs/screenshots/Screenshot%20-%20Collective%20only.png) |
+| [![Pedals Only](v2/docs/screenshots/Screenshot%20-%20Pedals%20only.small.png)](v2/docs/screenshots/Screenshot%20-%20Pedals%20only.png) | [![Collective Only](v2/docs/screenshots/Screenshot%20-%20Collective%20only.small.png)](v2/docs/screenshots/Screenshot%20-%20Collective%20only.png) |
 
 | Phase 4: Cyclic Only | Phase 6: All Controls |
 | :---: | :---: |
-| ![Cyclic Only](v2/docs/screenshots/Screenshot%20-%20Cyclic%20only.png) | ![All Controls](v2/docs/screenshots/Screenshot%20-%20All%20three%20controls.png) |
+| [![Cyclic Only](v2/docs/screenshots/Screenshot%20-%20Cyclic%20only.small.png)](v2/docs/screenshots/Screenshot%20-%20Cyclic%20only.png) | [![All Controls](v2/docs/screenshots/Screenshot%20-%20All%20three%20controls.small.png)](v2/docs/screenshots/Screenshot%20-%20All%20three%20controls.png) |
 
 ---
 
