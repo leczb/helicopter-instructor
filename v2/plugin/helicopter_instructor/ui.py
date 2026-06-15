@@ -38,7 +38,7 @@ def draw_window(ui_controller, window_id, ref_con):
         imgui.same_line()
         imgui.text_colored(" (Update Available!)", 0.2, 0.8, 0.2, 1.0)
         imgui.same_line()
-        if imgui.button(f"Get v{ui_controller.latest_version}"):
+        if imgui.button(f"Get {ui_controller.latest_version}"):
             ui_controller.open_update_url()
     elif update_status == UpdateStatus.UP_TO_DATE:
         imgui.same_line()
