@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.71 - 2026-06-15
+
+- **Feature**: Hide the HUD by default, and automatically show it once the "MASTER INSTRUCTOR ENGAGE" is enabled by the user.
+
 ## v2.1.70 - 2026-06-15
 
 - **Docs**: Added a clear disclaimer warning that this software is strictly for simulator flying and not intended or approved for real-world flight training.

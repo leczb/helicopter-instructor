@@ -146,6 +146,7 @@ class PluginUIController(object):
                     "VFI ENGAGED - AUTO HOVER"
                 )
                 self._plugin.ap_enabled = True
+                self.show_hud = True
                 self._plugin.play_sound(SOUND_I_HAVE_CONTROL, clear_queue=True)
                 # Queue the intro for the current phase so the student learns
                 # what they are about to practice. This also ensures Phase 1
@@ -466,12 +467,12 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.70"
+        self.version = "2.1.71"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
-            "Version {self.version} - An intelligent virtual flight "
-            "instructor that helps you learn how to hover a helicopter."
+            f"Version {self.version} - An intelligent virtual flight "
+            f"instructor that helps you learn how to hover a helicopter."
         )
 
         # Core VFI (Virtual Flight Instructor) States
@@ -499,7 +500,7 @@ class PythonInterface(object):
         self.show_3d_boundaries = True
         self.show_3d_disks = True
         self.show_3d_arcs = True
-        self.show_hud = True
+        self.show_hud = False
         self.show_alt_bar = True
         self.show_envelope_debug = False
 

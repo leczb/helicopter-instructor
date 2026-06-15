@@ -633,6 +633,15 @@ class TestAutopilotPlugin(unittest.TestCase):
         self.plugin.cmd_handler_instructor_toggle(None, 0, None)
         self.assertFalse(self.plugin.ap_enabled)
 
+    def test_hud_visibility_on_master_engage(self):
+        # By default, show_hud should be False
+        plugin = PythonInterface()
+        self.assertFalse(plugin.show_hud)
+
+        # When Master Instructor is enabled via ap_enabled setter, HUD becomes True
+        plugin.ui_controller.ap_enabled = True
+        self.assertTrue(plugin.show_hud)
+
     def test_cmd_handler_phase_navigation(self):
         self.plugin.instructor.phase = 1
 
