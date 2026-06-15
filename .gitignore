@@ -20,3 +20,6 @@ htmlcov/
 # Runtime log files
 v2/plugin/helicopter_instructor/helicopter_instructor.log
 
+# Generated scenery
+v2/plugin/helicopter_instructor/assets/generated/
+
