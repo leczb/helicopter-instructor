@@ -2,6 +2,9 @@
 
 An intelligent virtual flight instructor (VFI) training aid plugin for X-Plane, optimized for learning how to hover a helicopter using standard non-force-feedback flight controls.
 
+> [!WARNING]
+> **Disclaimer:** This software is not intended or approved for real-world flight training. It is strictly for simulator flying.
+
 ---
 
 ## Overview

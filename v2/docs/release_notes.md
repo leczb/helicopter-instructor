@@ -1,5 +1,9 @@
 # Release Notes
 
+## v2.1.70 - 2026-06-15
+
+- **Docs**: Added a clear disclaimer warning that this software is strictly for simulator flying and not intended or approved for real-world flight training.
+
 ## v2.1.69 - 2026-06-08
 
 - **Fixed**: Prevent skipped lesson introduction audio files from piling up in the sequential playback queue during rapid manual phase navigation. Changing phases now cancels and clears any playing or queued intros.

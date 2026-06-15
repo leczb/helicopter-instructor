@@ -2,6 +2,10 @@
 
 A virtual flight instructor plugin for **X-Plane 12** designed to teach student pilots how to master hovering a helicopter. Written in Python, it runs under the **XPPython3** runtime environment and provides automated hands-on curriculum training, real-time coaching cues, performance scoring, and Vulkan/Metal-native 3D overlay visualization.
 
+> [!WARNING]
+> **Disclaimer:** This software is not intended or approved for real-world flight training. It is strictly for simulator flying.
+
+
 ![Helicopter Virtual Flight Instructor External View](v2/docs/screenshots/Screenshot%20-%20Pedals%20only%20-%20external%20view.png)
 
 ---
