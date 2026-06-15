@@ -1,5 +1,14 @@
 # Release Notes
 
+## v2.1.73 - 2026-06-15
+
+- **Feature**: Added automated update checking using the GitHub releases API.
+  The plugin checks for updates in a background thread at startup, comparing
+  the latest release version against the installed version.
+- **Feature**: Added update status displays (checking, up to date, update
+  available, and error with retry option) and a button to view/download the
+  release in the browser within the ImGui control panel.
+
 ## v2.1.72 - 2026-06-15
 
 - **Feature**: Automatically hide the HUD when "MASTER INSTRUCTOR ENGAGE" is disabled.

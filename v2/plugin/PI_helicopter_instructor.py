@@ -22,6 +22,7 @@ from helicopter_instructor import hud
 from helicopter_instructor import logger
 from helicopter_instructor import metrics
 from helicopter_instructor import ui
+from helicopter_instructor import update_checker
 from helicopter_instructor import virtual_instructor
 from helicopter_instructor.autopilot import helicopter_control
 from helicopter_instructor.enums import Authority
@@ -41,6 +42,7 @@ importlib.reload(graphics)
 importlib.reload(hud)
 importlib.reload(metrics)
 importlib.reload(ui)
+importlib.reload(update_checker)
 importlib.reload(virtual_instructor)
 importlib.reload(helicopter_control)
 
@@ -106,6 +108,32 @@ class PluginUIController(object):
             str: The version string.
         """
         return self._plugin.version
+
+    @property
+    def update_status(self):
+        """Gets the update check status.
+
+        Returns:
+            str: The update check status.
+        """
+        return self._plugin.update_checker.status
+
+    @property
+    def latest_version(self):
+        """Gets the latest version string found.
+
+        Returns:
+            str: The latest version string or None.
+        """
+        return self._plugin.update_checker.latest_version
+
+    def trigger_update_check(self):
+        """Triggers a background check for updates."""
+        self._plugin.update_checker.check_for_updates()
+
+    def open_update_url(self):
+        """Opens the latest release URL in browser."""
+        self._plugin.update_checker.open_update_url()
 
     @property
     def ap_enabled(self):
@@ -466,12 +494,14 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.72"
+        self.version = "2.1.73"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
-            f"Version {self.version} - An intelligent virtual flight "
-            f"instructor that helps you learn how to hover a helicopter."
+            f"Version {self.version} - A flight instructor plugin that "
+            "helps you learn how to fly a helicopter in X-Plane. "
+            "Disclaimer: This software is not intended or approved for "
+            "real-world flight training. It is strictly for simulator flying."
         )
 
         # Core VFI (Virtual Flight Instructor) States
@@ -493,6 +523,7 @@ class PythonInterface(object):
         self.pending_is_final = False
         self.pending_handoff = False
         self.graphics = graphics.GraphicsAssetManager(self.plugin_dir)
+        self.update_checker = update_checker.UpdateChecker(self.version)
         self.ui_controller = PluginUIController(self)
 
         # Custom view state flags
@@ -610,6 +641,12 @@ class PythonInterface(object):
         import importlib
         importlib.reload(logger)
         logger.setup_logging(self.plugin_dir)
+
+        # Trigger background check for updates
+        try:
+            self.ui_controller.trigger_update_check()
+        except Exception as e:
+            log.error(f"Failed to start update check: {e}")
 
         # 1. Find all required datarefs
         self.dref_local_x = xp.findDataRef("sim/flightmodel/position/local_x")

@@ -83,3 +83,13 @@ class CaptionStyle(Enum):
     WARNING = "warning"
     INFO = "info"
 
+
+class UpdateStatus(Enum):
+    """Status states for the automated update checker."""
+
+    IDLE = "idle"
+    CHECKING = "checking"
+    UP_TO_DATE = "up_to_date"
+    UPDATE_AVAILABLE = "update_available"
+    ERROR = "error"
+

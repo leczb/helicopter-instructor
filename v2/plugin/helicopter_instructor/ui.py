@@ -7,6 +7,7 @@ from helicopter_instructor import virtual_instructor
 from helicopter_instructor.enums import Authority
 from helicopter_instructor.enums import ControlAxis
 from helicopter_instructor.enums import Envelope
+from helicopter_instructor.enums import UpdateStatus
 from helicopter_instructor.enums import VFIState
 
 # Symbolic curriculum phase constants to avoid magic numbers
@@ -27,6 +28,27 @@ def draw_window(ui_controller, window_id, ref_con):
         ref_con: Reference constant pointer.
     """
     imgui.text_disabled(f"Version {ui_controller.version}")
+
+    # Draw background update checker status
+    update_status = ui_controller.update_status
+    if update_status == UpdateStatus.CHECKING:
+        imgui.same_line()
+        imgui.text_disabled(" (Checking for updates...)")
+    elif update_status == UpdateStatus.UPDATE_AVAILABLE:
+        imgui.same_line()
+        imgui.text_colored(" (Update Available!)", 0.2, 0.8, 0.2, 1.0)
+        imgui.same_line()
+        if imgui.button(f"Get v{ui_controller.latest_version}"):
+            ui_controller.open_update_url()
+    elif update_status == UpdateStatus.UP_TO_DATE:
+        imgui.same_line()
+        imgui.text_disabled(" (Up to date)")
+    elif update_status == UpdateStatus.ERROR:
+        imgui.same_line()
+        imgui.text_disabled(" (Update check failed)")
+        imgui.same_line()
+        if imgui.button("Retry"):
+            ui_controller.trigger_update_check()
 
     # --- Collapsing Header: Master Control ---
     imgui.push_style_color(imgui.COLOR_HEADER, 0.1, 0.5, 0.3, 1.0)
