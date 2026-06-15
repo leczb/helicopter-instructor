@@ -1,5 +1,10 @@
 # Release Notes
 
+## v2.1.72 - 2026-06-15
+
+- **Feature**: Automatically hide the HUD when "MASTER INSTRUCTOR ENGAGE" is disabled.
+- **Fixed**: Resolved a graphics pipeline conflict under Linux/Wayland where creating the HUD window as invisible caused the ImGui Control Panel UI to render blank. The HUD window is now kept registered as visible in X-Plane but renders as transparent off-screen when disabled.
+
 ## v2.1.71 - 2026-06-15
 
 - **Feature**: Hide the HUD by default, and automatically show it once the "MASTER INSTRUCTOR ENGAGE" is enabled by the user.

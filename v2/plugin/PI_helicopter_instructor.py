@@ -161,6 +161,7 @@ class PluginUIController(object):
                 self._plugin.pending_handoff = True
             else:
                 self._plugin.ap_enabled = False
+                self.show_hud = False
                 self._plugin.release_all_overrides()
                 self._plugin.instructor.reset_to_vfi_flight()
                 self._plugin.instructor.set_hud_caption("INSTRUCTOR DISENGAGED")
@@ -204,8 +205,6 @@ class PluginUIController(object):
             value (bool): The HUD visibility value.
         """
         self._plugin.show_hud = value
-        if self._plugin.hud_window:
-            xp.setWindowIsVisible(self._plugin.hud_window, 1 if value else 0)
 
     @property
     def show_alt_bar(self):
@@ -467,7 +466,7 @@ class PythonInterface(object):
 
     def __init__(self):
         """Initializes the PythonInterface plugin instance."""
-        self.version = "2.1.71"
+        self.version = "2.1.72"
         self.Name = "Helicopter Virtual Flight Instructor"
         self.Sig = "hu.lecz.helicopter.instructor"
         self.Desc = (
@@ -734,7 +733,7 @@ class PythonInterface(object):
                 init_top,  # 2. Top coordinate (in boxels)
                 init_right,  # 3. Right coordinate (in boxels)
                 init_bottom,  # 4. Bottom coordinate (in boxels)
-                1 if self.show_hud else 0,  # 5. Visibility state
+                1,  # 5. Visibility state (must create as visible to avoid blank UI bug)
                 draw_hud_cb,  # 6. Window drawing callback
                 dummy_mouse_cb,  # 7. Mouse click callback
                 dummy_key_cb,  # 8. Keyboard key callback

@@ -642,6 +642,10 @@ class TestAutopilotPlugin(unittest.TestCase):
         plugin.ui_controller.ap_enabled = True
         self.assertTrue(plugin.show_hud)
 
+        # When Master Instructor is disabled, HUD becomes False again
+        plugin.ui_controller.ap_enabled = False
+        self.assertFalse(plugin.show_hud)
+
     def test_cmd_handler_phase_navigation(self):
         self.plugin.instructor.phase = 1
 

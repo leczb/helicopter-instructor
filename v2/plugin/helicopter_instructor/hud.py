@@ -98,12 +98,12 @@ def draw_hud(view_model, window_id):
     Returns:
         A tuple of (draw_success_code, new_visibility_state).
     """
-    # Sync visibility state in case user closed window using native button
     new_show_hud = view_model.show_hud
-    if view_model.hud_window:
-        new_show_hud = xp.getWindowIsVisible(view_model.hud_window) != 0
 
     if not new_show_hud:
+        # Submit a dummy draw command off-screen to keep the rendering context alive
+        # for Wayland/X11 Vulkan bridge compatibility on Linux.
+        xp.drawString((0.0, 0.0, 0.0), -9999, -9999, " ")
         return 1, new_show_hud
 
     # Use cached PyOpenGL availability
